@@ -1,0 +1,735 @@
+{
+  "name": "northstar",
+  "level": "Enterprise",
+  "label": "Northstar Drive Components",
+  "children": [
+    {
+      "name": "hosur",
+      "level": "Site",
+      "label": "Hosur Plant",
+      "children": [
+        {
+          "name": "press-shop",
+          "level": "Area",
+          "label": "Press Shop",
+          "children": [
+            {
+              "name": "blanking-1",
+              "level": "Work center",
+              "label": "Blanking Line 1",
+              "children": [
+                {
+                  "name": "pr-01",
+                  "level": "Work unit",
+                  "label": "Fine-blanking press 400T",
+                  "asset": "PR-01",
+                  "children": [
+                    {
+                      "name": "tonnage",
+                      "level": "Tag",
+                      "label": "Press tonnage",
+                      "unit": "t",
+                      "asset": "PR-01",
+                      "tag": "tonnage"
+                    },
+                    {
+                      "name": "spm",
+                      "level": "Tag",
+                      "label": "Stroke rate",
+                      "unit": "spm",
+                      "asset": "PR-01",
+                      "tag": "spm"
+                    },
+                    {
+                      "name": "oil_temp",
+                      "level": "Tag",
+                      "label": "Hydraulic oil temp",
+                      "unit": "°C",
+                      "asset": "PR-01",
+                      "tag": "oil_temp"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "PR-01",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "pr-02",
+                  "level": "Work unit",
+                  "label": "Power press 250T",
+                  "asset": "PR-02",
+                  "children": [
+                    {
+                      "name": "tonnage",
+                      "level": "Tag",
+                      "label": "Press tonnage",
+                      "unit": "t",
+                      "asset": "PR-02",
+                      "tag": "tonnage"
+                    },
+                    {
+                      "name": "spm",
+                      "level": "Tag",
+                      "label": "Stroke rate",
+                      "unit": "spm",
+                      "asset": "PR-02",
+                      "tag": "spm"
+                    },
+                    {
+                      "name": "oil_temp",
+                      "level": "Tag",
+                      "label": "Hydraulic oil temp",
+                      "unit": "°C",
+                      "asset": "PR-02",
+                      "tag": "oil_temp"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "PR-02",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "machining",
+          "level": "Area",
+          "label": "Machining",
+          "children": [
+            {
+              "name": "sprocket-line-1",
+              "level": "Work center",
+              "label": "Sprocket Line 1",
+              "children": [
+                {
+                  "name": "hb-01",
+                  "level": "Work unit",
+                  "label": "CNC hobber #1",
+                  "asset": "HB-01",
+                  "children": [
+                    {
+                      "name": "spindle_vibration",
+                      "level": "Tag",
+                      "label": "Spindle vibration",
+                      "unit": "mm/s",
+                      "asset": "HB-01",
+                      "tag": "spindle_vibration"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Spindle bearing temp",
+                      "unit": "°C",
+                      "asset": "HB-01",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "cycle_time",
+                      "level": "Tag",
+                      "label": "Cycle time",
+                      "unit": "s",
+                      "asset": "HB-01",
+                      "tag": "cycle_time"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "HB-01",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "hb-02",
+                  "level": "Work unit",
+                  "label": "CNC hobber #2",
+                  "asset": "HB-02",
+                  "children": [
+                    {
+                      "name": "spindle_vibration",
+                      "level": "Tag",
+                      "label": "Spindle vibration",
+                      "unit": "mm/s",
+                      "asset": "HB-02",
+                      "tag": "spindle_vibration"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Spindle bearing temp",
+                      "unit": "°C",
+                      "asset": "HB-02",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "cycle_time",
+                      "level": "Tag",
+                      "label": "Cycle time",
+                      "unit": "s",
+                      "asset": "HB-02",
+                      "tag": "cycle_time"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "HB-02",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "sprocket-line-2",
+              "level": "Work center",
+              "label": "Sprocket Line 2",
+              "children": [
+                {
+                  "name": "hb-03",
+                  "level": "Work unit",
+                  "label": "CNC hobber #3",
+                  "asset": "HB-03",
+                  "children": [
+                    {
+                      "name": "spindle_vibration",
+                      "level": "Tag",
+                      "label": "Spindle vibration",
+                      "unit": "mm/s",
+                      "asset": "HB-03",
+                      "tag": "spindle_vibration"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Spindle bearing temp",
+                      "unit": "°C",
+                      "asset": "HB-03",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "cycle_time",
+                      "level": "Tag",
+                      "label": "Cycle time",
+                      "unit": "s",
+                      "asset": "HB-03",
+                      "tag": "cycle_time"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "HB-03",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "hb-04",
+                  "level": "Work unit",
+                  "label": "CNC hobber #4",
+                  "asset": "HB-04",
+                  "children": [
+                    {
+                      "name": "spindle_vibration",
+                      "level": "Tag",
+                      "label": "Spindle vibration",
+                      "unit": "mm/s",
+                      "asset": "HB-04",
+                      "tag": "spindle_vibration"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Spindle bearing temp",
+                      "unit": "°C",
+                      "asset": "HB-04",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "cycle_time",
+                      "level": "Tag",
+                      "label": "Cycle time",
+                      "unit": "s",
+                      "asset": "HB-04",
+                      "tag": "cycle_time"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "HB-04",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "heat-treatment",
+          "level": "Area",
+          "label": "Heat Treatment",
+          "children": [
+            {
+              "name": "induction-cell",
+              "level": "Work center",
+              "label": "Induction cell",
+              "children": [
+                {
+                  "name": "ih-01",
+                  "level": "Work unit",
+                  "label": "Induction hardening #1",
+                  "asset": "IH-01",
+                  "children": [
+                    {
+                      "name": "quench_flow",
+                      "level": "Tag",
+                      "label": "Quench water flow",
+                      "unit": "L/min",
+                      "asset": "IH-01",
+                      "tag": "quench_flow"
+                    },
+                    {
+                      "name": "coil_power",
+                      "level": "Tag",
+                      "label": "Coil power",
+                      "unit": "kW",
+                      "asset": "IH-01",
+                      "tag": "coil_power"
+                    },
+                    {
+                      "name": "quench_temp",
+                      "level": "Tag",
+                      "label": "Quench temp",
+                      "unit": "°C",
+                      "asset": "IH-01",
+                      "tag": "quench_temp"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "IH-01",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "ih-02",
+                  "level": "Work unit",
+                  "label": "Induction hardening #2",
+                  "asset": "IH-02",
+                  "children": [
+                    {
+                      "name": "quench_flow",
+                      "level": "Tag",
+                      "label": "Quench water flow",
+                      "unit": "L/min",
+                      "asset": "IH-02",
+                      "tag": "quench_flow"
+                    },
+                    {
+                      "name": "coil_power",
+                      "level": "Tag",
+                      "label": "Coil power",
+                      "unit": "kW",
+                      "asset": "IH-02",
+                      "tag": "coil_power"
+                    },
+                    {
+                      "name": "quench_temp",
+                      "level": "Tag",
+                      "label": "Quench temp",
+                      "unit": "°C",
+                      "asset": "IH-02",
+                      "tag": "quench_temp"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "IH-02",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "furnace-line",
+              "level": "Work center",
+              "label": "Furnace line",
+              "children": [
+                {
+                  "name": "sqf-01",
+                  "level": "Work unit",
+                  "label": "Sealed quench furnace",
+                  "asset": "SQF-01",
+                  "children": [
+                    {
+                      "name": "zone_temp",
+                      "level": "Tag",
+                      "label": "Zone temperature",
+                      "unit": "°C",
+                      "asset": "SQF-01",
+                      "tag": "zone_temp"
+                    },
+                    {
+                      "name": "carbon_potential",
+                      "level": "Tag",
+                      "label": "Carbon potential",
+                      "unit": "%C",
+                      "asset": "SQF-01",
+                      "tag": "carbon_potential"
+                    },
+                    {
+                      "name": "belt_current",
+                      "level": "Tag",
+                      "label": "Drive motor current",
+                      "unit": "A",
+                      "asset": "SQF-01",
+                      "tag": "belt_current"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "SQF-01",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "mbf-01",
+                  "level": "Work unit",
+                  "label": "Mesh belt furnace",
+                  "asset": "MBF-01",
+                  "children": [
+                    {
+                      "name": "zone_temp",
+                      "level": "Tag",
+                      "label": "Zone temperature",
+                      "unit": "°C",
+                      "asset": "MBF-01",
+                      "tag": "zone_temp"
+                    },
+                    {
+                      "name": "carbon_potential",
+                      "level": "Tag",
+                      "label": "Carbon potential",
+                      "unit": "%C",
+                      "asset": "MBF-01",
+                      "tag": "carbon_potential"
+                    },
+                    {
+                      "name": "belt_current",
+                      "level": "Tag",
+                      "label": "Drive motor current",
+                      "unit": "A",
+                      "asset": "MBF-01",
+                      "tag": "belt_current"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "MBF-01",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "chain-assembly",
+          "level": "Area",
+          "label": "Chain Assembly",
+          "children": [
+            {
+              "name": "assembly-a",
+              "level": "Work center",
+              "label": "Assembly Line A",
+              "children": [
+                {
+                  "name": "ca-01",
+                  "level": "Work unit",
+                  "label": "Chain assembly A",
+                  "asset": "CA-01",
+                  "children": [
+                    {
+                      "name": "speed",
+                      "level": "Tag",
+                      "label": "Assembly speed",
+                      "unit": "links/min",
+                      "asset": "CA-01",
+                      "tag": "speed"
+                    },
+                    {
+                      "name": "rivet_force",
+                      "level": "Tag",
+                      "label": "Riveting force",
+                      "unit": "kN",
+                      "asset": "CA-01",
+                      "tag": "rivet_force"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "CA-01",
+                      "tag": "energy"
+                    }
+                  ]
+                },
+                {
+                  "name": "ca-02",
+                  "level": "Work unit",
+                  "label": "Chain assembly B",
+                  "asset": "CA-02",
+                  "children": [
+                    {
+                      "name": "speed",
+                      "level": "Tag",
+                      "label": "Assembly speed",
+                      "unit": "links/min",
+                      "asset": "CA-02",
+                      "tag": "speed"
+                    },
+                    {
+                      "name": "rivet_force",
+                      "level": "Tag",
+                      "label": "Riveting force",
+                      "unit": "kN",
+                      "asset": "CA-02",
+                      "tag": "rivet_force"
+                    },
+                    {
+                      "name": "energy",
+                      "level": "Tag",
+                      "label": "Energy",
+                      "unit": "kWh",
+                      "asset": "CA-02",
+                      "tag": "energy"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "quality",
+          "level": "Area",
+          "label": "Quality",
+          "children": [
+            {
+              "name": "vision",
+              "level": "Work center",
+              "label": "Vision inspection",
+              "children": [
+                {
+                  "name": "vi-01",
+                  "level": "Work unit",
+                  "label": "Sprocket vision station",
+                  "asset": "VI-01",
+                  "children": [
+                    {
+                      "name": "reject_rate",
+                      "level": "Tag",
+                      "label": "Reject rate",
+                      "unit": "%",
+                      "asset": "VI-01",
+                      "tag": "reject_rate"
+                    },
+                    {
+                      "name": "confidence",
+                      "level": "Tag",
+                      "label": "Model confidence",
+                      "unit": "%",
+                      "asset": "VI-01",
+                      "tag": "confidence"
+                    }
+                  ]
+                },
+                {
+                  "name": "vi-02",
+                  "level": "Work unit",
+                  "label": "Chain vision station",
+                  "asset": "VI-02",
+                  "children": [
+                    {
+                      "name": "reject_rate",
+                      "level": "Tag",
+                      "label": "Reject rate",
+                      "unit": "%",
+                      "asset": "VI-02",
+                      "tag": "reject_rate"
+                    },
+                    {
+                      "name": "confidence",
+                      "level": "Tag",
+                      "label": "Model confidence",
+                      "unit": "%",
+                      "asset": "VI-02",
+                      "tag": "confidence"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "utilities",
+          "level": "Area",
+          "label": "Utilities",
+          "children": [
+            {
+              "name": "compressed-air",
+              "level": "Work center",
+              "label": "Compressed air",
+              "children": [
+                {
+                  "name": "ac-01",
+                  "level": "Work unit",
+                  "label": "Compressor 132 kW #1",
+                  "asset": "AC-01",
+                  "children": [
+                    {
+                      "name": "pressure",
+                      "level": "Tag",
+                      "label": "Discharge pressure",
+                      "unit": "bar",
+                      "asset": "AC-01",
+                      "tag": "pressure"
+                    },
+                    {
+                      "name": "load",
+                      "level": "Tag",
+                      "label": "Load",
+                      "unit": "%",
+                      "asset": "AC-01",
+                      "tag": "load"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "AC-01",
+                      "tag": "power"
+                    },
+                    {
+                      "name": "oil_temp",
+                      "level": "Tag",
+                      "label": "Oil temp",
+                      "unit": "°C",
+                      "asset": "AC-01",
+                      "tag": "oil_temp"
+                    }
+                  ]
+                },
+                {
+                  "name": "ac-02",
+                  "level": "Work unit",
+                  "label": "Compressor 132 kW #2",
+                  "asset": "AC-02",
+                  "children": [
+                    {
+                      "name": "pressure",
+                      "level": "Tag",
+                      "label": "Discharge pressure",
+                      "unit": "bar",
+                      "asset": "AC-02",
+                      "tag": "pressure"
+                    },
+                    {
+                      "name": "load",
+                      "level": "Tag",
+                      "label": "Load",
+                      "unit": "%",
+                      "asset": "AC-02",
+                      "tag": "load"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "AC-02",
+                      "tag": "power"
+                    },
+                    {
+                      "name": "oil_temp",
+                      "level": "Tag",
+                      "label": "Oil temp",
+                      "unit": "°C",
+                      "asset": "AC-02",
+                      "tag": "oil_temp"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "power",
+              "level": "Work center",
+              "label": "Power distribution",
+              "children": [
+                {
+                  "name": "tr-01",
+                  "level": "Work unit",
+                  "label": "Transformer 2.5 MVA",
+                  "asset": "TR-01",
+                  "children": [
+                    {
+                      "name": "load",
+                      "level": "Tag",
+                      "label": "Load",
+                      "unit": "kVA",
+                      "asset": "TR-01",
+                      "tag": "load"
+                    },
+                    {
+                      "name": "oil_temp",
+                      "level": "Tag",
+                      "label": "Oil temp",
+                      "unit": "°C",
+                      "asset": "TR-01",
+                      "tag": "oil_temp"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,266 @@
+{
+  "demo": "cement",
+  "connector": {
+    "name": "plantdb",
+    "transport": "stdio",
+    "command": "node mcp/server.mjs",
+    "env": {
+      "PLANTDB_DEMOS": "cement"
+    }
+  },
+  "agents": [
+    {
+      "id": "cement.process",
+      "name": "Process Agent",
+      "version": "2.1.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Keep the kiln stable and efficient. Warn of jams, explain heat losses and advise raw mix changes.",
+      "skills": [
+        "cyclone-jam-prediction",
+        "raw-mix-control",
+        "heat-balance"
+      ],
+      "tools": [
+        "plantdb.uns_browse",
+        "plantdb.uns_search",
+        "plantdb.get_tag_history",
+        "plantdb.get_kpis",
+        "plantdb.get_kpi_trend",
+        "plantdb.get_asset_health",
+        "plantdb.diagnose_asset",
+        "plantdb.get_production",
+        "plantdb.get_oee_losses",
+        "plantdb.get_energy",
+        "plantdb.get_quality",
+        "plantdb.list_messages",
+        "plantdb.search_docs",
+        "deepsense.forecast"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "event",
+          "on": "c4_draft rising"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act_with_approval",
+      "policies": [
+        "P-01",
+        "P-02",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "cost"
+    },
+    {
+      "id": "cement.asset-health",
+      "name": "Asset Health Agent",
+      "version": "2.3.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Detect developing faults on mills, fans and kiln, and estimate remaining life.",
+      "skills": [
+        "bearing-diagnosis"
+      ],
+      "tools": [
+        "plantdb.uns_browse",
+        "plantdb.uns_search",
+        "plantdb.get_tag_history",
+        "plantdb.get_kpis",
+        "plantdb.get_kpi_trend",
+        "plantdb.get_asset_health",
+        "plantdb.diagnose_asset",
+        "plantdb.get_production",
+        "plantdb.get_oee_losses",
+        "plantdb.get_energy",
+        "plantdb.get_quality",
+        "plantdb.list_messages",
+        "plantdb.search_docs",
+        "deepsense.rul_predict",
+        "sap_pm.create_notification"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "event",
+          "on": "health < 50"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "maintenance"
+    },
+    {
+      "id": "cement.maintenance-planner",
+      "name": "Maintenance Planner",
+      "version": "1.6.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Plan jobs into mill and kiln stops and draft work orders.",
+      "skills": [],
+      "tools": [
+        "plantdb.get_asset_health",
+        "sap_pm.create_order"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act_with_approval",
+      "policies": [
+        "P-01",
+        "P-03"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "maintenance"
+    },
+    {
+      "id": "cement.quality",
+      "name": "Quality Agent",
+      "version": "1.8.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Track free lime, Blaine and strength, and link quality drift to process causes.",
+      "skills": [
+        "raw-mix-control"
+      ],
+      "tools": [
+        "plantdb.get_quality",
+        "plantdb.get_tag_history",
+        "plantdb.diagnose_asset"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "quality"
+    },
+    {
+      "id": "cement.energy",
+      "name": "Energy Agent",
+      "version": "1.9.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Track heat and power per tonne, and find savings in mills and fans.",
+      "skills": [
+        "heat-balance"
+      ],
+      "tools": [
+        "plantdb.get_energy",
+        "plantdb.get_kpi_trend"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "energy"
+    },
+    {
+      "id": "cement.shift-report",
+      "name": "Shift Report Agent",
+      "version": "4.0.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Write shift and daily process reports.",
+      "skills": [],
+      "tools": [
+        "plantdb.get_production",
+        "plantdb.get_kpis",
+        "msg.send_email"
+      ],
+      "triggers": [
+        {
+          "type": "schedule",
+          "cron": "0 7 * * *"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "cement",
+        "uns": "aravali/unit-2/#"
+      },
+      "domain": "reports"
+    }
+  ]
+}

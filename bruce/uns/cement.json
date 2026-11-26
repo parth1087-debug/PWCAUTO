@@ -1,0 +1,483 @@
+{
+  "name": "aravali",
+  "level": "Enterprise",
+  "label": "Aravali Cement",
+  "children": [
+    {
+      "name": "unit-2",
+      "level": "Site",
+      "label": "Unit 2",
+      "children": [
+        {
+          "name": "raw-material",
+          "level": "Area",
+          "label": "Raw material",
+          "children": [
+            {
+              "name": "crushing",
+              "level": "Work center",
+              "label": "Crushing",
+              "children": [
+                {
+                  "name": "cr-01",
+                  "level": "Work unit",
+                  "label": "Limestone crusher",
+                  "asset": "CR-01",
+                  "children": [
+                    {
+                      "name": "throughput",
+                      "level": "Tag",
+                      "label": "Throughput",
+                      "unit": "t/h",
+                      "asset": "CR-01",
+                      "tag": "throughput"
+                    },
+                    {
+                      "name": "vibration",
+                      "level": "Tag",
+                      "label": "Bearing vibration",
+                      "unit": "mm/s",
+                      "asset": "CR-01",
+                      "tag": "vibration"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "CR-01",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "raw-grinding",
+              "level": "Work center",
+              "label": "Raw grinding",
+              "children": [
+                {
+                  "name": "rm-01",
+                  "level": "Work unit",
+                  "label": "Raw mill (VRM)",
+                  "asset": "RM-01",
+                  "children": [
+                    {
+                      "name": "feed",
+                      "level": "Tag",
+                      "label": "Feed rate",
+                      "unit": "t/h",
+                      "asset": "RM-01",
+                      "tag": "feed"
+                    },
+                    {
+                      "name": "dp",
+                      "level": "Tag",
+                      "label": "Mill differential pressure",
+                      "unit": "mbar",
+                      "asset": "RM-01",
+                      "tag": "dp"
+                    },
+                    {
+                      "name": "residue",
+                      "level": "Tag",
+                      "label": "Residue 90 µm",
+                      "unit": "%",
+                      "asset": "RM-01",
+                      "tag": "residue"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "RM-01",
+                      "tag": "power"
+                    }
+                  ]
+                },
+                {
+                  "name": "rmf-01",
+                  "level": "Work unit",
+                  "label": "Raw mill fan",
+                  "asset": "RMF-01",
+                  "children": [
+                    {
+                      "name": "speed",
+                      "level": "Tag",
+                      "label": "Fan speed",
+                      "unit": "rpm",
+                      "asset": "RMF-01",
+                      "tag": "speed"
+                    },
+                    {
+                      "name": "vibration",
+                      "level": "Tag",
+                      "label": "Bearing vibration",
+                      "unit": "mm/s",
+                      "asset": "RMF-01",
+                      "tag": "vibration"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "RMF-01",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pyro",
+          "level": "Area",
+          "label": "Pyroprocessing",
+          "children": [
+            {
+              "name": "kiln-line-1",
+              "level": "Work center",
+              "label": "Kiln line 1",
+              "children": [
+                {
+                  "name": "kl-01",
+                  "level": "Work unit",
+                  "label": "Rotary kiln",
+                  "asset": "KL-01",
+                  "children": [
+                    {
+                      "name": "feed",
+                      "level": "Tag",
+                      "label": "Kiln feed",
+                      "unit": "t/h",
+                      "asset": "KL-01",
+                      "tag": "feed"
+                    },
+                    {
+                      "name": "shell_temp",
+                      "level": "Tag",
+                      "label": "Shell temperature (max)",
+                      "unit": "°C",
+                      "asset": "KL-01",
+                      "tag": "shell_temp"
+                    },
+                    {
+                      "name": "burning_zone",
+                      "level": "Tag",
+                      "label": "Burning zone temp",
+                      "unit": "°C",
+                      "asset": "KL-01",
+                      "tag": "burning_zone"
+                    },
+                    {
+                      "name": "torque",
+                      "level": "Tag",
+                      "label": "Kiln drive torque",
+                      "unit": "%",
+                      "asset": "KL-01",
+                      "tag": "torque"
+                    },
+                    {
+                      "name": "free_lime",
+                      "level": "Tag",
+                      "label": "Clinker free lime",
+                      "unit": "%",
+                      "asset": "KL-01",
+                      "tag": "free_lime"
+                    }
+                  ]
+                },
+                {
+                  "name": "ph-01",
+                  "level": "Work unit",
+                  "label": "Preheater 5-stage",
+                  "asset": "PH-01",
+                  "children": [
+                    {
+                      "name": "c4_draft",
+                      "level": "Tag",
+                      "label": "Cyclone C4 draft",
+                      "unit": "mbar",
+                      "asset": "PH-01",
+                      "tag": "c4_draft"
+                    },
+                    {
+                      "name": "c5_outlet_temp",
+                      "level": "Tag",
+                      "label": "C5 outlet temp",
+                      "unit": "°C",
+                      "asset": "PH-01",
+                      "tag": "c5_outlet_temp"
+                    },
+                    {
+                      "name": "ph_o2",
+                      "level": "Tag",
+                      "label": "Preheater exit O₂",
+                      "unit": "%",
+                      "asset": "PH-01",
+                      "tag": "ph_o2"
+                    }
+                  ]
+                },
+                {
+                  "name": "id-01",
+                  "level": "Work unit",
+                  "label": "Kiln ID fan",
+                  "asset": "ID-01",
+                  "children": [
+                    {
+                      "name": "speed",
+                      "level": "Tag",
+                      "label": "Fan speed",
+                      "unit": "rpm",
+                      "asset": "ID-01",
+                      "tag": "speed"
+                    },
+                    {
+                      "name": "vibration",
+                      "level": "Tag",
+                      "label": "Bearing vibration",
+                      "unit": "mm/s",
+                      "asset": "ID-01",
+                      "tag": "vibration"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "ID-01",
+                      "tag": "power"
+                    }
+                  ]
+                },
+                {
+                  "name": "cl-01",
+                  "level": "Work unit",
+                  "label": "Grate cooler",
+                  "asset": "CL-01",
+                  "children": [
+                    {
+                      "name": "grate_pressure",
+                      "level": "Tag",
+                      "label": "Under-grate pressure",
+                      "unit": "mbar",
+                      "asset": "CL-01",
+                      "tag": "grate_pressure"
+                    },
+                    {
+                      "name": "clinker_temp",
+                      "level": "Tag",
+                      "label": "Clinker outlet temp",
+                      "unit": "°C",
+                      "asset": "CL-01",
+                      "tag": "clinker_temp"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "cement-grinding",
+          "level": "Area",
+          "label": "Cement grinding",
+          "children": [
+            {
+              "name": "cement-mills",
+              "level": "Work center",
+              "label": "Cement mills",
+              "children": [
+                {
+                  "name": "cm-01",
+                  "level": "Work unit",
+                  "label": "Cement mill 1",
+                  "asset": "CM-01",
+                  "children": [
+                    {
+                      "name": "feed",
+                      "level": "Tag",
+                      "label": "Feed rate",
+                      "unit": "t/h",
+                      "asset": "CM-01",
+                      "tag": "feed"
+                    },
+                    {
+                      "name": "blaine",
+                      "level": "Tag",
+                      "label": "Blaine",
+                      "unit": "cm²/g",
+                      "asset": "CM-01",
+                      "tag": "blaine"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Main bearing temp",
+                      "unit": "°C",
+                      "asset": "CM-01",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "CM-01",
+                      "tag": "power"
+                    }
+                  ]
+                },
+                {
+                  "name": "cm-02",
+                  "level": "Work unit",
+                  "label": "Cement mill 2",
+                  "asset": "CM-02",
+                  "children": [
+                    {
+                      "name": "feed",
+                      "level": "Tag",
+                      "label": "Feed rate",
+                      "unit": "t/h",
+                      "asset": "CM-02",
+                      "tag": "feed"
+                    },
+                    {
+                      "name": "blaine",
+                      "level": "Tag",
+                      "label": "Blaine",
+                      "unit": "cm²/g",
+                      "asset": "CM-02",
+                      "tag": "blaine"
+                    },
+                    {
+                      "name": "bearing_temp",
+                      "level": "Tag",
+                      "label": "Main bearing temp",
+                      "unit": "°C",
+                      "asset": "CM-02",
+                      "tag": "bearing_temp"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "CM-02",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "packing",
+          "level": "Area",
+          "label": "Packing & dispatch",
+          "children": [
+            {
+              "name": "packing-plant",
+              "level": "Work center",
+              "label": "Packing plant",
+              "children": [
+                {
+                  "name": "pk-01",
+                  "level": "Work unit",
+                  "label": "Rotary packer 1",
+                  "asset": "PK-01",
+                  "children": [
+                    {
+                      "name": "bags",
+                      "level": "Tag",
+                      "label": "Bags per hour",
+                      "unit": "bags/h",
+                      "asset": "PK-01",
+                      "tag": "bags"
+                    },
+                    {
+                      "name": "weight_sd",
+                      "level": "Tag",
+                      "label": "Bag weight deviation",
+                      "unit": "kg",
+                      "asset": "PK-01",
+                      "tag": "weight_sd"
+                    }
+                  ]
+                },
+                {
+                  "name": "pk-02",
+                  "level": "Work unit",
+                  "label": "Rotary packer 2",
+                  "asset": "PK-02",
+                  "children": [
+                    {
+                      "name": "bags",
+                      "level": "Tag",
+                      "label": "Bags per hour",
+                      "unit": "bags/h",
+                      "asset": "PK-02",
+                      "tag": "bags"
+                    },
+                    {
+                      "name": "weight_sd",
+                      "level": "Tag",
+                      "label": "Bag weight deviation",
+                      "unit": "kg",
+                      "asset": "PK-02",
+                      "tag": "weight_sd"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "utilities",
+          "level": "Area",
+          "label": "Utilities",
+          "children": [
+            {
+              "name": "compressed-air",
+              "level": "Work center",
+              "label": "Compressed air",
+              "children": [
+                {
+                  "name": "ac-11",
+                  "level": "Work unit",
+                  "label": "Compressor 160 kW",
+                  "asset": "AC-11",
+                  "children": [
+                    {
+                      "name": "pressure",
+                      "level": "Tag",
+                      "label": "Discharge pressure",
+                      "unit": "bar",
+                      "asset": "AC-11",
+                      "tag": "pressure"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "AC-11",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

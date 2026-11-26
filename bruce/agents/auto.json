@@ -1,0 +1,283 @@
+{
+  "demo": "auto",
+  "connector": {
+    "name": "plantdb",
+    "transport": "stdio",
+    "command": "node mcp/server.mjs",
+    "env": {
+      "PLANTDB_DEMOS": "auto"
+    }
+  },
+  "agents": [
+    {
+      "id": "auto.asset-health",
+      "name": "Asset Health Agent",
+      "version": "2.3.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Detect developing faults on critical assets, diagnose the failure mode and estimate remaining life. Cite tags and documents.",
+      "skills": [
+        "fft-bearing-diagnosis"
+      ],
+      "tools": [
+        "plantdb.uns_browse",
+        "plantdb.uns_search",
+        "plantdb.get_tag_history",
+        "plantdb.get_kpis",
+        "plantdb.get_kpi_trend",
+        "plantdb.get_asset_health",
+        "plantdb.diagnose_asset",
+        "plantdb.get_production",
+        "plantdb.get_oee_losses",
+        "plantdb.get_energy",
+        "plantdb.get_quality",
+        "plantdb.list_messages",
+        "plantdb.search_docs",
+        "deepsense.fft_diagnose",
+        "deepsense.rul_predict",
+        "sap_pm.create_notification"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "event",
+          "on": "health < 50"
+        }
+      ],
+      "can_call": [
+        "auto.maintenance-planner"
+      ],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "maintenance"
+    },
+    {
+      "id": "auto.maintenance-planner",
+      "name": "Maintenance Planner",
+      "version": "1.6.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Plan maintenance into production windows and draft SAP PM work orders for approval.",
+      "skills": [
+        "shutdown-planning"
+      ],
+      "tools": [
+        "plantdb.get_asset_health",
+        "plantdb.get_production",
+        "sap_pm.create_order",
+        "sap_mm.get_stock"
+      ],
+      "triggers": [
+        {
+          "type": "schedule",
+          "cron": "0 16 * * 5"
+        },
+        {
+          "type": "call"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act_with_approval",
+      "policies": [
+        "P-01",
+        "P-03",
+        "P-04"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "maintenance"
+    },
+    {
+      "id": "auto.cost-conversion",
+      "name": "Cost Conversion Agent",
+      "version": "2.0.1",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Explain OEE and conversion cost against budget and baseline, rank losses in ₹ and recommend actions.",
+      "skills": [
+        "oee-loss-tree"
+      ],
+      "tools": [
+        "plantdb.get_kpis",
+        "plantdb.get_kpi_trend",
+        "plantdb.get_oee_losses",
+        "plantdb.get_production",
+        "sap_co.get_actuals"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "event",
+          "on": "line_oee < 65 for 60m"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "cost"
+    },
+    {
+      "id": "auto.quality",
+      "name": "Quality Agent",
+      "version": "2.6.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Watch vision stations and quality tags, link defects to process causes and contain suspect lots.",
+      "skills": [
+        "process-defect-correlation"
+      ],
+      "tools": [
+        "plantdb.get_quality",
+        "plantdb.get_tag_history",
+        "plantdb.diagnose_asset",
+        "sap_qm.create_quality_hold"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "event",
+          "on": "reject_rate > 3 sigma"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act_with_approval",
+      "policies": [
+        "P-01",
+        "P-05",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "quality"
+    },
+    {
+      "id": "auto.energy",
+      "name": "Energy Agent",
+      "version": "1.9.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Track energy per kg, demand and utilities. Find waste and plan loads against the tariff.",
+      "skills": [
+        "air-leak-estimation"
+      ],
+      "tools": [
+        "plantdb.get_energy",
+        "plantdb.get_tag_history",
+        "plantdb.get_kpi_trend"
+      ],
+      "triggers": [
+        {
+          "type": "prompt"
+        },
+        {
+          "type": "schedule",
+          "cron": "0 2 * * 0"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "advise",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "energy"
+    },
+    {
+      "id": "auto.shift-report",
+      "name": "Shift Report Agent",
+      "version": "4.0.0",
+      "status": "active",
+      "model": {
+        "primary": "frontier-llm",
+        "fallback": "local-llm",
+        "confidential_route": "local-llm"
+      },
+      "instructions": "Write shift, daily and monthly reports from plant data and send them to the right people.",
+      "skills": [
+        "shift-report"
+      ],
+      "tools": [
+        "plantdb.get_production",
+        "plantdb.get_kpis",
+        "plantdb.list_messages",
+        "msg.send_email"
+      ],
+      "triggers": [
+        {
+          "type": "schedule",
+          "cron": "5 6,14,22 * * *"
+        },
+        {
+          "type": "prompt"
+        }
+      ],
+      "can_call": [],
+      "autonomy": "act",
+      "policies": [
+        "P-01",
+        "P-06",
+        "P-07",
+        "P-10"
+      ],
+      "data_scope": {
+        "demo": "auto",
+        "uns": "northstar/hosur/#"
+      },
+      "domain": "reports"
+    }
+  ]
+}

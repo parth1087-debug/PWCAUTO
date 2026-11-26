@@ -1,0 +1,349 @@
+{
+  "name": "konark",
+  "level": "Enterprise",
+  "label": "Konark Steel",
+  "children": [
+    {
+      "name": "rolling-complex",
+      "level": "Site",
+      "label": "Rolling Complex",
+      "children": [
+        {
+          "name": "melt-shop",
+          "level": "Area",
+          "label": "Melt shop",
+          "children": [
+            {
+              "name": "eaf-line",
+              "level": "Work center",
+              "label": "EAF line",
+              "children": [
+                {
+                  "name": "eaf-01",
+                  "level": "Work unit",
+                  "label": "Electric arc furnace 60 t",
+                  "asset": "EAF-01",
+                  "children": [
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Active power",
+                      "unit": "MW",
+                      "asset": "EAF-01",
+                      "tag": "power"
+                    },
+                    {
+                      "name": "tap_to_tap",
+                      "level": "Tag",
+                      "label": "Tap-to-tap time",
+                      "unit": "min",
+                      "asset": "EAF-01",
+                      "tag": "tap_to_tap"
+                    },
+                    {
+                      "name": "electrode_current",
+                      "level": "Tag",
+                      "label": "Electrode current deviation",
+                      "unit": "%",
+                      "asset": "EAF-01",
+                      "tag": "electrode_current"
+                    },
+                    {
+                      "name": "kwh_per_t",
+                      "level": "Tag",
+                      "label": "Energy per tonne",
+                      "unit": "kWh/t",
+                      "asset": "EAF-01",
+                      "tag": "kwh_per_t"
+                    }
+                  ]
+                },
+                {
+                  "name": "lf-01",
+                  "level": "Work unit",
+                  "label": "Ladle furnace",
+                  "asset": "LF-01",
+                  "children": [
+                    {
+                      "name": "temp",
+                      "level": "Tag",
+                      "label": "Steel temperature",
+                      "unit": "°C",
+                      "asset": "LF-01",
+                      "tag": "temp"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "MW",
+                      "asset": "LF-01",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "casting",
+          "level": "Area",
+          "label": "Casting",
+          "children": [
+            {
+              "name": "ccm-1",
+              "level": "Work center",
+              "label": "Billet caster",
+              "children": [
+                {
+                  "name": "ccm-01",
+                  "level": "Work unit",
+                  "label": "Billet caster 4-strand",
+                  "asset": "CCM-01",
+                  "children": [
+                    {
+                      "name": "mould_level",
+                      "level": "Tag",
+                      "label": "Mould level deviation",
+                      "unit": "mm",
+                      "asset": "CCM-01",
+                      "tag": "mould_level"
+                    },
+                    {
+                      "name": "cast_speed",
+                      "level": "Tag",
+                      "label": "Casting speed",
+                      "unit": "m/min",
+                      "asset": "CCM-01",
+                      "tag": "cast_speed"
+                    },
+                    {
+                      "name": "mould_flow",
+                      "level": "Tag",
+                      "label": "Mould water flow",
+                      "unit": "m³/h",
+                      "asset": "CCM-01",
+                      "tag": "mould_flow"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rolling",
+          "level": "Area",
+          "label": "Rolling mill",
+          "children": [
+            {
+              "name": "reheating",
+              "level": "Work center",
+              "label": "Reheating",
+              "children": [
+                {
+                  "name": "rhf-01",
+                  "level": "Work unit",
+                  "label": "Walking beam furnace",
+                  "asset": "RHF-01",
+                  "children": [
+                    {
+                      "name": "zone3_temp",
+                      "level": "Tag",
+                      "label": "Soak zone temp",
+                      "unit": "°C",
+                      "asset": "RHF-01",
+                      "tag": "zone3_temp"
+                    },
+                    {
+                      "name": "fuel",
+                      "level": "Tag",
+                      "label": "Fuel rate",
+                      "unit": "GJ/t",
+                      "asset": "RHF-01",
+                      "tag": "fuel"
+                    },
+                    {
+                      "name": "discharge_temp",
+                      "level": "Tag",
+                      "label": "Billet discharge temp",
+                      "unit": "°C",
+                      "asset": "RHF-01",
+                      "tag": "discharge_temp"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bar-mill",
+              "level": "Work center",
+              "label": "Bar mill",
+              "children": [
+                {
+                  "name": "rs-01",
+                  "level": "Work unit",
+                  "label": "Roughing stand",
+                  "asset": "RS-01",
+                  "children": [
+                    {
+                      "name": "gearbox_vibration",
+                      "level": "Tag",
+                      "label": "Gearbox vibration",
+                      "unit": "mm/s",
+                      "asset": "RS-01",
+                      "tag": "gearbox_vibration"
+                    },
+                    {
+                      "name": "motor_current",
+                      "level": "Tag",
+                      "label": "Motor current",
+                      "unit": "A",
+                      "asset": "RS-01",
+                      "tag": "motor_current"
+                    },
+                    {
+                      "name": "roll_temp",
+                      "level": "Tag",
+                      "label": "Roll temperature",
+                      "unit": "°C",
+                      "asset": "RS-01",
+                      "tag": "roll_temp"
+                    }
+                  ]
+                },
+                {
+                  "name": "is-01",
+                  "level": "Work unit",
+                  "label": "Intermediate stand",
+                  "asset": "IS-01",
+                  "children": [
+                    {
+                      "name": "gearbox_vibration",
+                      "level": "Tag",
+                      "label": "Gearbox vibration",
+                      "unit": "mm/s",
+                      "asset": "IS-01",
+                      "tag": "gearbox_vibration"
+                    },
+                    {
+                      "name": "motor_current",
+                      "level": "Tag",
+                      "label": "Motor current",
+                      "unit": "A",
+                      "asset": "IS-01",
+                      "tag": "motor_current"
+                    },
+                    {
+                      "name": "roll_temp",
+                      "level": "Tag",
+                      "label": "Roll temperature",
+                      "unit": "°C",
+                      "asset": "IS-01",
+                      "tag": "roll_temp"
+                    }
+                  ]
+                },
+                {
+                  "name": "fs-01",
+                  "level": "Work unit",
+                  "label": "Finishing stand",
+                  "asset": "FS-01",
+                  "children": [
+                    {
+                      "name": "gearbox_vibration",
+                      "level": "Tag",
+                      "label": "Gearbox vibration",
+                      "unit": "mm/s",
+                      "asset": "FS-01",
+                      "tag": "gearbox_vibration"
+                    },
+                    {
+                      "name": "motor_current",
+                      "level": "Tag",
+                      "label": "Motor current",
+                      "unit": "A",
+                      "asset": "FS-01",
+                      "tag": "motor_current"
+                    },
+                    {
+                      "name": "roll_temp",
+                      "level": "Tag",
+                      "label": "Roll temperature",
+                      "unit": "°C",
+                      "asset": "FS-01",
+                      "tag": "roll_temp"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "utilities",
+          "level": "Area",
+          "label": "Utilities",
+          "children": [
+            {
+              "name": "water-air",
+              "level": "Work center",
+              "label": "Water and air",
+              "children": [
+                {
+                  "name": "ct-01",
+                  "level": "Work unit",
+                  "label": "Cooling tower",
+                  "asset": "CT-01",
+                  "children": [
+                    {
+                      "name": "approach",
+                      "level": "Tag",
+                      "label": "Approach",
+                      "unit": "°C",
+                      "asset": "CT-01",
+                      "tag": "approach"
+                    },
+                    {
+                      "name": "fan_power",
+                      "level": "Tag",
+                      "label": "Fan power",
+                      "unit": "kW",
+                      "asset": "CT-01",
+                      "tag": "fan_power"
+                    }
+                  ]
+                },
+                {
+                  "name": "ac-21",
+                  "level": "Work unit",
+                  "label": "Compressor 250 kW",
+                  "asset": "AC-21",
+                  "children": [
+                    {
+                      "name": "pressure",
+                      "level": "Tag",
+                      "label": "Discharge pressure",
+                      "unit": "bar",
+                      "asset": "AC-21",
+                      "tag": "pressure"
+                    },
+                    {
+                      "name": "power",
+                      "level": "Tag",
+                      "label": "Power",
+                      "unit": "kW",
+                      "asset": "AC-21",
+                      "tag": "power"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

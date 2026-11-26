@@ -1,47 +1,108 @@
-# PwC Connected Plant Intelligence — demo
+# PwC Connected Plant Intelligence
 
-A clickable demo for an auto-ancillary manufacturer (sprockets, chains and components for two-wheeler OEMs).
-It shows Faclon AI agents across four areas: asset maintenance, cost conversion, AI vision quality, and energy and utilities.
+A working demo of an industrial intelligence app, branded PwC, with AI agents powered by Faclon Labs.
+It runs several industry demos side by side, each with its own database, UNS ontology and Bruce agents.
 
-All data is illustrative. Nothing connects to a real plant.
+All plant data is generated. Values are fixed by a seed, so they are the same on every run.
+Timestamps are anchored to "now", so the newest point is always the current hour.
 
-## Run
+## What is in the repository
 
-Open `index.html` in a browser. No build or install needed, and it works offline.
-
-To host it, serve the folder with any static server, for example `python3 -m http.server`.
-
-## Rename the customer
-
-Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and role).
-
-## Structure
-
-| Sidebar | What it shows |
+| Folder | What it is |
 |---|---|
-| User | Signed-in user, role and plant |
-| Copilot | Landing page. Chat history, chat screen with tool trace, session panel (agent, tools, sources, approvals) and a briefing of approvals, alerts and KPIs |
-| Messages | Insights, alerts, workflow approvals and reports from the agents. Approve, reject, acknowledge or open in Copilot. Unread count in the sidebar and bell |
-| Shortcuts | Pinned dashboards. Select ＋ to pin or unpin Plant KPIs, the 5 standard dashboards and custom dashboards (saved in the browser) |
-| Artefactory | Versioned library of dashboards (HTML), reports, workbooks, presentations and documents. "Mine" and "Shared with me", preview, version view and restore |
-| Autopilot | Report schedules, event-driven workflows and run history |
-| Context (read only) | Ontology (ISA-95), Skills (versioned agent procedures), Docs (indexed manuals, SOPs, RCAs with cited passages), Connectors (data connections and MCP tools), Policies (14 rules as policy-as-code with enforcement history) |
-| Settings | Usage (sessions, tokens, cost, model mix), Agents, Users & roles, Notifications, Logs |
+| `web/` | The app: React + Vite, white minimal design, dark mode optional |
+| `shared/` | Data engine, industry demo configs, UNS, and the tools used by both the app and the MCP server |
+| `mcp/` | `plantdb` MCP server: one connector for the app's databases (stdio or HTTP) |
+| `bruce/` | Bruce agent definitions and UNS export per demo, and a script to push agents to a Bruce gateway |
+| `legacy/` | The earlier static HTML version |
 
-## Demo script (about 10 minutes)
+## Run the app
 
-1. **Plant KPIs.** Show value realised against the baseline. Select a KPI row, then **Ask Copilot** why it changed.
-2. **Dashboards › Plant overview.** Point at the plant map and the connected systems. Open the HB-04 insight in Copilot.
-3. **Maintenance.** Ask "Why is HB-04 vibration rising and what should we do?". Select **Raise work order**. On **AI agents**, select **Approve**.
-4. **Cost.** Ask "Why did OEE on Sprocket Line 2 drop this shift?", then "Why is conversion cost per kg above budget this month?".
-5. **Quality.** Show live inspection. Ask "Why are tooth crack rejects up on 428-42T sprockets?". Select **Hold suspect lot** and **Draft 8D**.
-6. **Energy.** Ask "How much compressed air are we losing to leaks?" and "Compare kWh per piece for sprockets across lines this week".
-7. **Autopilot.** Show report schedules and workflows. Select **New schedule by chat** and confirm it, then see it in the schedule list.
-8. **Artefactory.** Open the deck, a document, a report and a workbook. On **Versions**, view an older version and restore it. Switch to **Shared with me**.
-9. **Shortcuts.** Select ＋ next to Dashboards and pin "Heat treatment cell". Open it from the sidebar.
-10. **Copilot builds artefacts.** Ask "Build a dashboard for compressor specific power" and pin it. Ask "Create a presentation for the energy cell review of compressed air" and open it.
-11. **Logs.** Filter to WARN, expand the blocked setpoint write, and watch the live tail.
-12. **Guardrails.** Ask "Increase the SQF-01 furnace setpoint to 900 °C". The agent refuses and offers a change request.
-13. **Configs.** Show the ontology, agents and tools as read only, managed by Faclon.
+```bash
+cd web && npm install && npm run dev
+```
 
-Dark mode: the moon/sun button in the top bar. Press `/` to search for an asset ID (for example `IH-02`).
+Build options:
+
+```bash
+cd web && npm run build
+```
+
+```bash
+cd web && npm run build:single
+```
+
+`build` writes a static site to `web/dist/`. `build:single` writes one file, `web/dist-single/index.html`, that opens offline from disk or a phone.
+
+Sign in with **pwc** / **Demo@2026**. Change it in `web/src/config.js`. This login is a demo gate in the browser, not real security.
+
+## Users and demos
+
+- **Master** sees every demo and switches the database from the top bar. Master can add sub users in Settings › Users.
+- **Sub users** (Auto components, Cement, Steel) each see only their own demo database.
+- Switch users from the user menu at the top of the sidebar. There is one login for all of them.
+- The **Artefactory** is common to all users. Each artefact is tied to the demo whose data it shows.
+
+To add an industry, copy a file in `shared/demos/`, change the plant, assets, tags, KPIs, events and agents, and list it in `shared/index.js`. It gets its own database, UNS, agents, dashboards and MCP access.
+
+## Sidebar
+
+| Item | What it does |
+|---|---|
+| Copilot | Chat with the Bruce agents. History on the left. Each answer shows the agent, the tool calls and the data it used |
+| Messages | Approvals, alerts, insights and reports from agents. Approve or reject in place. Reports open inline |
+| Shortcuts | Pinned dashboards: Plant KPIs, Overview, Maintenance, Cost conversion, Quality, Energy, and custom dashboards from the Artefactory. Use ＋ to change them |
+| Artefactory | Dashboards, reports, workbooks, decks and documents. Mine / shared, search, versions with restore, real `.xlsx` and HTML downloads |
+| Autopilot | Report schedules (run now, on/off), workflows and run history |
+| Context | UNS ontology, skills, docs, connectors and policies, as configured for the demo's agents. Read only |
+| Settings | Users, agent configurations, data and demo clock, usage, notifications, logs |
+
+Other things built in: search and command palette (⌘K or Ctrl+K), date range on every dashboard (24 h to 6 months or custom), "Ask" opens the Copilot in place on any page or card, CSV export on every card, headline chart titles, deep links, and an audit log of every action.
+
+## Demo clock
+
+Settings › Data › Demo clock. **Live** ends the 6-month history at the current hour. **Fixed date** ends it at a date you choose. The data does not change, only the timestamps. The MCP server does the same with `PLANTDB_ANCHOR`.
+
+## plantdb MCP server
+
+```bash
+cd mcp && npm install
+```
+
+```bash
+cd mcp && npm start
+```
+
+```bash
+cd mcp && npm run start:http
+```
+
+`npm start` uses stdio. `npm run start:http` serves `http://localhost:8787/mcp`. `npm test` runs a smoke test.
+
+Tools: `list_demos`, `uns_browse`, `uns_search`, `get_tag_history`, `get_kpis`, `get_kpi_trend`, `get_asset_health`, `diagnose_asset`, `get_production`, `get_oee_losses`, `get_energy`, `get_quality`, `list_messages`, `search_docs`, `list_agents`, `get_policy`. Every data tool takes a `demo` argument.
+
+Environment: `PLANTDB_DEMOS=auto,cement` limits which databases a connector can read. `PLANTDB_ANCHOR` fixes the demo clock. `PLANTDB_TOKEN` requires a bearer token in HTTP mode.
+
+Example client configuration:
+
+```json
+{ "mcpServers": { "plantdb": { "command": "node", "args": ["mcp/server.mjs"], "env": { "PLANTDB_DEMOS": "auto" } } } }
+```
+
+## Bruce agents and UNS
+
+```bash
+node bruce/export.mjs
+```
+
+This writes `bruce/agents/<demo>.json` (agent definitions: model, skills, tools, triggers, autonomy, policies, data scope) and `bruce/uns/<demo>.json` (ISA-95 namespace: enterprise / site / area / work center / work unit / tag).
+
+To create the agents in your Bruce instance through the Bruce MCP gateway:
+
+```bash
+cd bruce && npm install && BRUCE_GATEWAY_URL=https://<your-bruce>/mcp BRUCE_TOKEN=<token> node push-to-bruce.mjs auto
+```
+
+The script lists the gateway's tools and calls the one that creates agents. Set `BRUCE_AGENT_TOOL` if its name is different. Use `--dry-run` to see what would be sent.
+
+Inside the app, the Copilot runs these agents on a built-in demo runtime that calls the same `plantdb` tools.
