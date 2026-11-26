@@ -47,9 +47,9 @@ const inr = v => '₹' + v;
 
 const NAV = [
   { k: 'copilot', t: 'Copilot', icon: 'chat' },
+  { k: 'messages', t: 'Messages', icon: 'inbox', badge: () => unreadCount() },
   { group: 'Shortcuts', dyn: true },
   { k: 'artefactory', t: 'Artefactory', icon: 'folder' },
-  { k: 'messages', t: 'Messages', icon: 'inbox', badge: () => unreadCount() },
   { k: 'autopilot', t: 'Autopilot', icon: 'auto' },
   { group: 'Context', note: 'read only', fold: true, items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'skills', t: 'Skills', icon: 'star' }, { k: 'docs', t: 'Docs', icon: 'doc' }, { k: 'connectors', t: 'Connectors', icon: 'plug' }] },
   { group: 'Settings', fold: true, items: [{ k: 'settings/usage', t: 'Usage', icon: 'target' }, { k: 'settings/agents', t: 'Agents', icon: 'bot' }, { k: 'settings/users', t: 'Users & roles', icon: 'user' }, { k: 'settings/guardrails', t: 'Guardrails', icon: 'shield' }, { k: 'settings/notifications', t: 'Notifications', icon: 'bell' }, { k: 'settings/logs', t: 'Logs', icon: 'logs' }] },
