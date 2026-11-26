@@ -17,6 +17,7 @@ const Copilot = (() => {
     artefactory: ['Build a dashboard for compressor specific power', 'Create a presentation for the energy cell review of compressed air', 'Write the shift report for Shift A'],
     logs: ['What needs my attention in the plant right now?', 'Increase the SQF-01 furnace setpoint to 900 °C'],
     reports: ['Write the shift report for Shift A', 'Create a weekly report of compressor specific power for the energy cell', 'Why is conversion cost per kg above budget this month?'],
+    messages: ['What needs my attention in the plant right now?', 'Why is HB-04 vibration rising and what should we do?', 'Why are tooth crack rejects up on 428-42T sprockets?'],
     agents: ['What needs my attention in the plant right now?', 'Write the shift report for Shift A', 'Increase the SQF-01 furnace setpoint to 900 °C'],
   };
 
@@ -293,7 +294,13 @@ const Copilot = (() => {
     active = null; lastRun = null;
     $('#cpTitle').textContent = 'New chat';
     $('#cpBody').innerHTML = `<div class="cp-empty">${ico('spark', 'style="width:30px;height:30px;color:var(--primary)"')}<h4>Good afternoon, ${CONFIG.user.name.split(' ')[0]}</h4>
-      Ask about any asset, line, cost, quality or energy question.<br>The right agent answers with evidence from plant data, and can raise work orders, holds and reports with approval.</div>`;
+      Ask about any asset, line, cost, quality or energy question.<br>The right agent answers with evidence from plant data, and can raise work orders, holds and reports with approval.
+      <div class="brief">
+        <a href="#messages" class="brief-c" onclick="state.msgF='approval'"><span class="n">${MESSAGES.filter(m => m.type === 'approval' && m.state === 'open').length}</span><span>approvals waiting</span></a>
+        <a href="#messages" class="brief-c" onclick="state.msgF='alert'"><span class="n" style="color:var(--bad)">${MESSAGES.filter(m => m.type === 'alert' && m.state === 'open').length}</span><span>open alerts</span></a>
+        <a href="#kpis" class="brief-c"><span class="n">₹4.32 Cr</span><span>realised vs baseline</span></a>
+        <a href="#d/D1" class="brief-c"><span class="n">71.8 %</span><span>plant OEE today</span></a>
+      </div></div>`;
     renderSugg(); renderSide(); renderHist();
   }
   function replay(s) {

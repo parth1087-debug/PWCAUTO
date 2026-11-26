@@ -21,6 +21,9 @@ const I = {
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   doc: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>',
   logs: '<path d="M4 6h16M4 10h10M4 14h16M4 18h8"/>',
+  inbox: '<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M5 5h14l2 8v6H3v-6z"/>',
+  plug: '<path d="M9 3v5M15 3v5M6 8h12v4a6 6 0 0 1-12 0zM12 18v3"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
   star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',
   slides: '<rect x="3" y="4" width="18" height="13" rx="1"/><path d="M12 17v4M8 21h8"/>',
   plant: '<path d="M2 21V10l6 4V10l6 4V4h8v17z"/>',
@@ -43,28 +46,33 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const inr = v => '₹' + v;
 
 const NAV = [
-  { k: 'kpis', t: 'Plant KPIs', icon: 'target' },
-  { group: 'Configs', note: 'read only', items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'agents', t: 'Agents', icon: 'bot' }, { k: 'tools', t: 'Tools', icon: 'tool' }] },
   { k: 'copilot', t: 'Copilot', icon: 'chat' },
-  { k: 'autopilot', t: 'Autopilot', icon: 'auto', badge: 1 },
-  { group: 'Dashboards', dyn: true },
+  { group: 'Shortcuts', dyn: true },
   { k: 'artefactory', t: 'Artefactory', icon: 'folder' },
-  { k: 'logs', t: 'Logs', icon: 'logs' },
+  { k: 'messages', t: 'Messages', icon: 'inbox', badge: () => unreadCount() },
+  { k: 'autopilot', t: 'Autopilot', icon: 'auto' },
+  { group: 'Context', note: 'read only', fold: true, items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'skills', t: 'Skills', icon: 'star' }, { k: 'docs', t: 'Docs', icon: 'doc' }, { k: 'connectors', t: 'Connectors', icon: 'plug' }] },
+  { group: 'Settings', fold: true, items: [{ k: 'settings/usage', t: 'Usage', icon: 'target' }, { k: 'settings/agents', t: 'Agents', icon: 'bot' }, { k: 'settings/users', t: 'Users & roles', icon: 'user' }, { k: 'settings/guardrails', t: 'Guardrails', icon: 'shield' }, { k: 'settings/notifications', t: 'Notifications', icon: 'bell' }, { k: 'settings/logs', t: 'Logs', icon: 'logs' }] },
 ];
-let current = 'kpis';
+let current = 'copilot';
 const state = { pins: loadPins(), asset: 'HB-04', ontoSel: 'HB-04', ontoOpen: new Set(['ENT', 'HSR', 'MCH', 'MCH-SL2']), station: 'VI-01', costView: 'kg' };
 
 /* ---------- Shell ---------- */
 function navHTML() {
-  const link = i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}</a>`;
+  const badge = i => { const b = typeof i.badge === 'function' ? i.badge() : i.badge; return b ? `<span class="badge">${b}</span>` : ''; };
+  const link = i => `<a href="#${i.k}" data-page="${i.k}" class="${i.k === current ? 'active' : ''}">${ico(i.icon)}<span>${i.t}</span>${badge(i)}${i.custom ? '<span class="nav-pin" title="Custom dashboard">●</span>' : ''}</a>`;
+  state.navOpen = state.navOpen || {};
   return NAV.map(n => {
     if (n.dyn) {
       const items = state.pins.map(k => ALLDASH().find(d => d.k === k)).filter(Boolean);
-      return `<div class="nav-group"><div class="nav-label">Dashboards<button class="nav-add" id="pinBtn" title="Add or remove shortcuts">＋</button></div><div class="nav-sub">${items.map(i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}${i.custom ? '<span class="nav-pin" title="Custom dashboard">●</span>' : ''}</a>`).join('')}</div></div>`;
+      return `<div class="nav-group"><div class="nav-label">Shortcuts<button class="nav-add" id="pinBtn" title="Add or remove shortcuts">＋</button></div><div class="nav-sub">${items.map(link).join('')}</div></div>`;
     }
-    return n.group
-      ? `<div class="nav-group"><div class="nav-label">${n.group}<span class="nav-note">${n.note}</span></div><div class="nav-sub">${n.items.map(link).join('')}</div></div>`
-      : link(n);
+    if (n.group) {
+      const inside = n.items.some(i => i.k === current);
+      const open = !n.fold || inside || state.navOpen[n.group];
+      return `<div class="nav-group"><button class="nav-label nav-fold" data-navgroup="${n.group}"><span class="chev ${open ? 'open' : ''}">›</span>${n.group}${n.note ? `<span class="nav-note">${n.note}</span>` : ''}</button>${open ? `<div class="nav-sub">${n.items.map(link).join('')}</div>` : ''}</div>`;
+    }
+    return link(n);
   }).join('');
 }
 function renderNav() { $('#nav').innerHTML = navHTML(); $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current)); }
@@ -99,7 +107,7 @@ function shell() {
       <label class="search">${ico('search', 'style="width:14px;height:14px"')}<input id="globalSearch" placeholder="Search assets, tags, work orders"><kbd>/</kbd></label>
       <span class="live-pill"><span class="dot pulse"></span><span id="clock" class="num">14:58:12</span></span>
       <button class="icon-btn" id="themeBtn" title="Switch theme">${ico('moon')}</button>
-      <button class="icon-btn" title="Alerts">${ico('bell')}<span class="count">4</span></button>
+      <a class="icon-btn" href="#messages" title="Messages">${ico('bell')}<span class="count" id="bellCount">${unreadCount()}</span></a>
       <button class="copilot-btn" id="copilotBtn">${ico('spark')} Ask Copilot</button>
     </header>
     <main class="content" id="content"></main>
@@ -492,15 +500,20 @@ const RENDER = {
   copilot: [() => Copilot.page(), () => Copilot.mount()], autopilot: [pageAutopilot, () => {}], reports: [pageReports, drawReports],
   'dash/overview': [pageOverview, drawOverview], 'dash/maintenance': [pageMaintenance, drawAssetDetail], 'dash/cost': [pageCost, drawCost],
   'dash/quality': [pageQuality, drawQuality], 'dash/energy': [pageEnergy, drawEnergy],
-  artefactory: [pageArtefactory, drawArtefactory], logs: [pageLogs, drawLogs],
+  artefactory: [pageArtefactory, drawArtefactory], messages: [pageMessages, drawMessages],
+  skills: [pageSkills, () => {}], docs: [pageDocs, drawDocs], connectors: [pageConnectors, () => {}],
+  'settings/usage': [pageUsage, drawUsage], 'settings/agents': [() => setTabs() + pageAgents(), () => {}], 'settings/users': [pageUsers, () => {}],
+  'settings/guardrails': [pageGuardrails, () => {}], 'settings/notifications': [pageNotifications, () => {}], 'settings/logs': [() => setTabs() + pageLogs(), drawLogs],
 };
+const ALIAS = { reports: 'artefactory', logs: 'settings/logs', agents: 'settings/agents', tools: 'connectors', settings: 'settings/usage' };
 function render() {
-  let k = (location.hash || '#kpis').slice(1);
-  if (k === 'reports') k = 'artefactory';
+  let k = (location.hash || '#copilot').slice(1);
+  if (ALIAS[k]) k = ALIAS[k];
   if (k.startsWith('d/') && ARTEFACTS.find(a => a.id === k.slice(2))) { RENDER[k] = [() => pageCustomDash(k.slice(2)), () => drawCustomDash(k.slice(2))]; }
-  current = RENDER[k] ? k : 'kpis';
+  current = RENDER[k] ? k : 'copilot';
   $('.app').classList.toggle('nav-open', false);
-  $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current));
+  renderNav();
+  const bell = $('#bellCount'); if (bell) bell.textContent = unreadCount();
   const c = $('#content');
   c.classList.toggle('flush-page', current === 'copilot');
   c.innerHTML = RENDER[current][0]();
@@ -520,11 +533,13 @@ function toast(msg) {
 
 function bind() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-art],[data-art-open],[data-artscope],[data-artf],[data-arttab],[data-artver],[data-restore],[data-slide],[data-pin],#pinBtn,#modalClose,[data-logsrc],[data-loglvl],[data-logrow],#logLive,[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
+    const t = e.target.closest('[data-navgroup],[data-msg],[data-msgf],[data-msgall],[data-mact],[data-skill],[data-kb],[data-notif],[data-art],[data-art-open],[data-artscope],[data-artf],[data-arttab],[data-artver],[data-restore],[data-slide],[data-pin],#pinBtn,#modalClose,[data-logsrc],[data-loglvl],[data-logrow],#logLive,[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
     if (!t) return;
     if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
     if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
     if (t.dataset.ask) { Copilot.ask(t.dataset.ask); return; }
+    if (t.dataset.navgroup) { state.navOpen = state.navOpen || {}; state.navOpen[t.dataset.navgroup] = !state.navOpen[t.dataset.navgroup]; renderNav(); return; }
+    if (ctxClick(t)) return;
     if (artClick(t)) return;
     if (t.dataset.kpi) { state.kpi = t.dataset.kpi; $$('tr[data-kpi]').forEach(r => r.classList.toggle('sel', r.dataset.kpi === state.kpi)); drawKpis(); return; }
     if (t.dataset.aptab) { state.apTab = t.dataset.aptab; render(); return; }

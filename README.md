@@ -20,13 +20,13 @@ Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and 
 | Sidebar | What it shows |
 |---|---|
 | User | Signed-in user, role and plant |
-| Plant KPIs | 21 KPIs against the locked pre-go-live baseline (Jun–Aug 2026), with target, progress, trend and ₹ value realised |
-| Configs (read only) | **Ontology** (ISA-95 model, links, live tags), **Agents** (6 agents on Bruce), **Tools** (MCP Gateway connectors and approval rules) |
-| Copilot | Chat history, chat screen with tool trace, and a session panel (agent, tools called, sources, approvals) |
-| Autopilot | Report schedules, event-driven workflows (trigger → agent → approval → action) and run history |
-| Dashboards | Sidebar shortcuts to any dashboard. Select ＋ to pin or unpin standard and custom dashboards (saved in the browser) |
-| Artefactory | Versioned library of dashboards (HTML), reports, Excel workbooks, presentations and documents. Tabs for "Mine" and "Shared with me", preview, version history with view and restore |
-| Logs | Agent sessions, tool calls, data events, approvals and changes. Filter by source and level, search, expand a row for detail, live tail |
+| Copilot | Landing page. Chat history, chat screen with tool trace, session panel (agent, tools, sources, approvals) and a briefing of approvals, alerts and KPIs |
+| Shortcuts | Pinned dashboards. Select ＋ to pin or unpin Plant KPIs, the 5 standard dashboards and custom dashboards (saved in the browser) |
+| Artefactory | Versioned library of dashboards (HTML), reports, workbooks, presentations and documents. "Mine" and "Shared with me", preview, version view and restore |
+| Messages | Insights, alerts, workflow approvals and reports from the agents. Approve, reject, acknowledge or open in Copilot. Unread count in the sidebar and bell |
+| Autopilot | Report schedules, event-driven workflows and run history |
+| Context (read only) | Ontology (ISA-95), Skills (versioned agent procedures), Docs (indexed manuals, SOPs, RCAs with cited passages), Connectors (data connections and MCP tools) |
+| Settings | Usage (sessions, tokens, cost, model mix), Agents, Users & roles, Guardrails, Notifications, Logs |
 
 ## Demo script (about 10 minutes)
 

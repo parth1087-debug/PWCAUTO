@@ -79,16 +79,16 @@ const DASHES = {
       { t: 'bars', title: 'Specific power by compressor', labels: ['AC-01', 'AC-02', 'AC-03'], series: [{ name: 'kW/m³/min', color: 'var(--c1)', data: [6.3, 6.9, 5.8] }] }] },
 };
 const ALLDASH = () => [
-  { k: 'dash/overview', t: 'Plant overview', icon: 'home', src: 'Standard' }, { k: 'dash/maintenance', t: 'Asset maintenance', icon: 'wrench', badge: 2, src: 'Standard' },
+  { k: 'kpis', t: 'Plant KPIs', icon: 'target', src: 'Standard' }, { k: 'dash/overview', t: 'Plant overview', icon: 'home', src: 'Standard' }, { k: 'dash/maintenance', t: 'Asset maintenance', icon: 'wrench', badge: 2, src: 'Standard' },
   { k: 'dash/cost', t: 'Cost conversion', icon: 'rupee', src: 'Standard' }, { k: 'dash/quality', t: 'Quality · AI vision', icon: 'eye', badge: 1, src: 'Standard' },
   { k: 'dash/energy', t: 'Energy & utilities', icon: 'bolt', src: 'Standard' },
   ...ARTEFACTS.filter(a => a.type === 'dash').map(a => ({ k: 'd/' + a.id, t: a.name.replace(' · OEE war room', ' war room'), icon: 'dash', custom: true, src: a.scope === 'mine' ? 'My dashboards' : 'Shared with me', owner: a.owner })),
 ];
 function loadPins() {
-  try { const p = JSON.parse(localStorage.getItem('pwc-pins')); if (Array.isArray(p) && p.length) return p; } catch (e) {}
-  return ['dash/overview', 'dash/maintenance', 'dash/cost', 'dash/quality', 'dash/energy', 'd/D1', 'd/D2', 'd/D3'];
+  try { const p = JSON.parse(localStorage.getItem('pwc-pins-v2')); if (Array.isArray(p) && p.length) return p; } catch (e) {}
+  return ['kpis', 'dash/overview', 'dash/maintenance', 'dash/cost', 'dash/quality', 'dash/energy', 'd/D1', 'd/D2', 'd/D3'];
 }
-function savePins() { try { localStorage.setItem('pwc-pins', JSON.stringify(state.pins)); } catch (e) {} }
+function savePins() { try { localStorage.setItem('pwc-pins-v2', JSON.stringify(state.pins)); } catch (e) {} }
 function togglePin(k) {
   state.pins = state.pins.includes(k) ? state.pins.filter(x => x !== k) : [...state.pins, k];
   savePins(); renderNav();
@@ -355,7 +355,7 @@ function logClick(t) {
   return false;
 }
 setInterval(() => {
-  if (current !== 'logs' || !state.logLive || !$('#logBody')) return;
+  if (current !== 'settings/logs' || !state.logLive || !$('#logBody')) return;
   const p = LIVE_POOL[Math.floor(Math.random() * LIVE_POOL.length)];
   const d = new Date();
   const l = { t: d.toTimeString().slice(0, 8) + '.' + String(d.getMilliseconds()).padStart(3, '0'), lvl: p[0], src: p[1], actor: p[2], ev: p[3], obj: p[4], msg: p[5](), trace: 'tr-' + Math.floor(Math.random() * 1e6).toString(16) };
