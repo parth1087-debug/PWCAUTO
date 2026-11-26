@@ -212,7 +212,16 @@ const Copilot = (() => {
           <ol><li>Title</li><li>Specific power down 10 % since go-live (chart against baseline)</li><li>Next actions: leaks, header pressure, AC-02 cooler</li></ol>
           <div class="acts"><button class="btn sm primary" data-art-open="P3">Open in Artefactory</button><button class="btn sm" data-toast="Shared with the energy cell. They can comment and save new versions.">Share with energy cell</button></div>`; } }
   );
-  const ORDER = ['setpoint', 'builddash', 'deck', 'schedule', 'baseline', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
+  INTENTS.push({ id: 'policy', match: /\bpolic(y|ies)\b|\bP-\d\d\b|guardrail/i, agent: 'Plant Copilot · Foundry', cap: 'Data retrieval',
+    steps: [S('foundry.policy.get', 'Read policy set v3.1', 320), S('foundry.audit.query', 'Count checks and enforcement, 30 days', 520)],
+    answer: q => {
+      const p = POLICIES.find(x => q.includes(x.id)) || POLICIES.find(x => q.toLowerCase().includes(x.name.toLowerCase())) || POLICIES[0];
+      return `<p><b>${p.id} · ${p.name}</b> (${p.mode}). ${p.stmt}</p>
+        <ul><li>Applies to: ${p.scope}.</li><li>Approver: ${p.approver}.</li><li>Enforced by: ${p.by}.</li><li>Checked ${p.checks.toLocaleString('en-IN')} times in 30 days; fired ${p.hits} times. Last: ${p.last}.</li></ul>
+        <div class="box"><pre class="pol-code" style="margin:0">${p.code}</pre></div>
+        <div class="acts"><a class="btn sm" href="#policies">Open Policies</a></div>`;
+    } });
+  const ORDER = ['policy', 'setpoint', 'builddash', 'deck', 'schedule', 'baseline', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
   INTENTS.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 
   const FOLLOW = {

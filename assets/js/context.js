@@ -175,7 +175,7 @@ function pageConnectors() {
 }
 
 /* ---------- Settings ---------- */
-const SETTINGS_TABS = [['settings/usage', 'Usage'], ['settings/agents', 'Agents'], ['settings/users', 'Users & roles'], ['settings/guardrails', 'Guardrails'], ['settings/notifications', 'Notifications'], ['settings/logs', 'Logs']];
+const SETTINGS_TABS = [['settings/usage', 'Usage'], ['settings/agents', 'Agents'], ['settings/users', 'Users & roles'], ['settings/notifications', 'Notifications'], ['settings/logs', 'Logs']];
 const setTabs = () => `<div class="set-tabs">${SETTINGS_TABS.map(t => `<a href="#${t[0]}" class="${current === t[0] ? 'on' : ''}">${t[1]}</a>`).join('')}</div>`;
 function pageUsage() {
   return setTabs() + headerBlock('Usage', 'How the agents and Copilot are used, and what they cost, this month.', periodSeg('30 days')) +
@@ -208,18 +208,6 @@ const USERS = [
 function pageUsers() {
   return setTabs() + headerBlock('Users & roles', 'Who can see and do what. Copilot and agents act with the rights of the user they work for. Managed in Foundry.', `<span class="chip outline">Single sign-on · Azure AD</span>`) +
     card('Users', `${USERS.length} entries`, `<div class="card-body flush"><table class="tbl"><thead><tr><th>User</th><th>Role</th><th>Scope</th><th>Permission</th><th>Last active</th><th>MFA</th></tr></thead><tbody>${USERS.map(u => `<tr><td class="strong">${u[0]}</td><td>${u[1]}</td><td class="muted">${u[2]}</td><td><span class="chip ${u[3].startsWith('Approver') ? 'brand' : u[3].startsWith('Admin') ? 'warn' : ''}">${u[3]}</span></td><td class="muted">${u[4]}</td><td>${u[5] ? '<span class="chip good">On</span>' : '<span class="chip warn">Pending</span>'}</td></tr>`).join('')}</tbody></table></div>`);
-}
-const RULES = [
-  ['Write to PLC, DCS or SCADA', 'All agents', 'Blocked', '—'], ['Work order above ₹50,000', 'Maintenance Planner', 'Needs approval', 'Maintenance head (delegate: plant head)'],
-  ['Purchase requisition', 'All agents', 'Needs approval', 'Plant head'], ['Quality lot hold', 'Vision Quality', 'Needs approval', 'QA in-charge'],
-  ['Release a lot from hold', 'All agents', 'Needs approval', 'Quality head'], ['Recipe or setpoint change request', 'All agents', 'Draft only', 'Heat treatment in-charge + PCN'],
-  ['Send message outside plant lists', 'All agents', 'Blocked', '—'], ['Share artefact outside company', 'All users', 'Blocked', '—'],
-  ['Cost data (SAP CO)', 'Copilot', 'Role-based', 'Finance and plant head only'], ['Ontology change proposed by an agent', 'All agents', 'Needs approval', 'Faclon SME + plant SME'],
-  ['Cloud LLM for documents marked confidential', 'All agents', 'Local LLM only', '—'], ['Monthly AI spend above budget', 'Platform', 'Alert', 'Plant head'],
-];
-function pageGuardrails() {
-  return setTabs() + headerBlock('Guardrails', 'Rules that limit what agents may see and do. Every check is logged.', readOnlyChip()) +
-    card('Policies', `${RULES.length} rules · 1,884 checks today · 3 blocked`, `<div class="card-body flush"><table class="tbl"><thead><tr><th>Action</th><th>Applies to</th><th>Rule</th><th>Approver</th></tr></thead><tbody>${RULES.map(r => `<tr><td class="strong">${r[0]}</td><td class="muted">${r[1]}</td><td><span class="chip ${r[2] === 'Blocked' ? 'bad' : r[2] === 'Needs approval' ? 'brand' : r[2] === 'Alert' ? 'warn' : ''}">${r[2]}</span></td><td class="muted">${r[3]}</td></tr>`).join('')}</tbody></table></div>`);
 }
 const NOTIF = { types: ['Approvals', 'Critical alerts', 'Warnings', 'Insights', 'Reports', 'Shared with me'], ch: ['In app', 'Email', 'Teams', 'WhatsApp', 'SMS'],
   on: [[1, 1, 1, 1, 0], [1, 1, 1, 1, 1], [1, 0, 1, 0, 0], [1, 0, 0, 0, 0], [1, 1, 0, 0, 0], [1, 0, 1, 0, 0]] };

@@ -662,6 +662,11 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 0; }
 .brief-c .n { font-size: 20px; font-weight: 300; color: var(--text); }
 a.icon-btn { color: var(--text); }
 
+/* ---------- Policies ---------- */
+.pol-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+.pol-code { margin: 0; padding: 10px 12px; background: var(--surface-3); border-radius: 4px; font-family: var(--mono); font-size: 11.5px; line-height: 1.55; color: var(--text); white-space: pre-wrap; border-left: 3px solid var(--primary); }
+.pol-cats { overflow-x: auto; max-width: 100%; }
+
 .menu-btn { display: none; }
 .nav-scrim { display: none; }
 @media (max-width: 960px) {

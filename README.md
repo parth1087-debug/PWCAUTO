@@ -25,8 +25,8 @@ Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and 
 | Shortcuts | Pinned dashboards. Select ＋ to pin or unpin Plant KPIs, the 5 standard dashboards and custom dashboards (saved in the browser) |
 | Artefactory | Versioned library of dashboards (HTML), reports, workbooks, presentations and documents. "Mine" and "Shared with me", preview, version view and restore |
 | Autopilot | Report schedules, event-driven workflows and run history |
-| Context (read only) | Ontology (ISA-95), Skills (versioned agent procedures), Docs (indexed manuals, SOPs, RCAs with cited passages), Connectors (data connections and MCP tools) |
-| Settings | Usage (sessions, tokens, cost, model mix), Agents, Users & roles, Guardrails, Notifications, Logs |
+| Context (read only) | Ontology (ISA-95), Skills (versioned agent procedures), Docs (indexed manuals, SOPs, RCAs with cited passages), Connectors (data connections and MCP tools), Policies (14 rules as policy-as-code with enforcement history) |
+| Settings | Usage (sessions, tokens, cost, model mix), Agents, Users & roles, Notifications, Logs |
 
 ## Demo script (about 10 minutes)
 

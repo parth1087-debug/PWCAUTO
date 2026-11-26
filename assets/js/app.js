@@ -51,8 +51,8 @@ const NAV = [
   { group: 'Shortcuts', dyn: true },
   { k: 'artefactory', t: 'Artefactory', icon: 'folder' },
   { k: 'autopilot', t: 'Autopilot', icon: 'auto' },
-  { group: 'Context', note: 'read only', fold: true, items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'skills', t: 'Skills', icon: 'star' }, { k: 'docs', t: 'Docs', icon: 'doc' }, { k: 'connectors', t: 'Connectors', icon: 'plug' }] },
-  { group: 'Settings', fold: true, items: [{ k: 'settings/usage', t: 'Usage', icon: 'target' }, { k: 'settings/agents', t: 'Agents', icon: 'bot' }, { k: 'settings/users', t: 'Users & roles', icon: 'user' }, { k: 'settings/guardrails', t: 'Guardrails', icon: 'shield' }, { k: 'settings/notifications', t: 'Notifications', icon: 'bell' }, { k: 'settings/logs', t: 'Logs', icon: 'logs' }] },
+  { group: 'Context', note: 'read only', fold: true, items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'skills', t: 'Skills', icon: 'star' }, { k: 'docs', t: 'Docs', icon: 'doc' }, { k: 'connectors', t: 'Connectors', icon: 'plug' }, { k: 'policies', t: 'Policies', icon: 'shield' }] },
+  { group: 'Settings', fold: true, items: [{ k: 'settings/usage', t: 'Usage', icon: 'target' }, { k: 'settings/agents', t: 'Agents', icon: 'bot' }, { k: 'settings/users', t: 'Users & roles', icon: 'user' }, { k: 'settings/notifications', t: 'Notifications', icon: 'bell' }, { k: 'settings/logs', t: 'Logs', icon: 'logs' }] },
 ];
 let current = 'copilot';
 const state = { pins: loadPins(), asset: 'HB-04', ontoSel: 'HB-04', ontoOpen: new Set(['ENT', 'HSR', 'MCH', 'MCH-SL2']), station: 'VI-01', costView: 'kg' };
@@ -503,9 +503,9 @@ const RENDER = {
   artefactory: [pageArtefactory, drawArtefactory], messages: [pageMessages, drawMessages],
   skills: [pageSkills, () => {}], docs: [pageDocs, drawDocs], connectors: [pageConnectors, () => {}],
   'settings/usage': [pageUsage, drawUsage], 'settings/agents': [() => setTabs() + pageAgents(), () => {}], 'settings/users': [pageUsers, () => {}],
-  'settings/guardrails': [pageGuardrails, () => {}], 'settings/notifications': [pageNotifications, () => {}], 'settings/logs': [() => setTabs() + pageLogs(), drawLogs],
+  policies: [pagePolicies, () => {}], 'settings/notifications': [pageNotifications, () => {}], 'settings/logs': [() => setTabs() + pageLogs(), drawLogs],
 };
-const ALIAS = { reports: 'artefactory', logs: 'settings/logs', agents: 'settings/agents', tools: 'connectors', settings: 'settings/usage' };
+const ALIAS = { 'settings/guardrails': 'policies', guardrails: 'policies', reports: 'artefactory', logs: 'settings/logs', agents: 'settings/agents', tools: 'connectors', settings: 'settings/usage' };
 function render() {
   let k = (location.hash || '#copilot').slice(1);
   if (ALIAS[k]) k = ALIAS[k];
@@ -533,7 +533,7 @@ function toast(msg) {
 
 function bind() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-navgroup],[data-msg],[data-msgf],[data-msgall],[data-mact],[data-skill],[data-kb],[data-notif],[data-art],[data-art-open],[data-artscope],[data-artf],[data-arttab],[data-artver],[data-restore],[data-slide],[data-pin],#pinBtn,#modalClose,[data-logsrc],[data-loglvl],[data-logrow],#logLive,[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
+    const t = e.target.closest('[data-polcat],[data-pol],[data-navgroup],[data-msg],[data-msgf],[data-msgall],[data-mact],[data-skill],[data-kb],[data-notif],[data-art],[data-art-open],[data-artscope],[data-artf],[data-arttab],[data-artver],[data-restore],[data-slide],[data-pin],#pinBtn,#modalClose,[data-logsrc],[data-loglvl],[data-logrow],#logLive,[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
     if (!t) return;
     if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
     if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
@@ -544,6 +544,7 @@ function bind() {
       if (inside) { state.navOpen[g.group] = false; renderNav(); return; }
       state.navOpen[g.group] = true; location.hash = '#' + g.items[0].k; return;
     }
+    if (polClick(t)) return;
     if (ctxClick(t)) return;
     if (artClick(t)) return;
     if (t.dataset.kpi) { state.kpi = t.dataset.kpi; $$('tr[data-kpi]').forEach(r => r.classList.toggle('sel', r.dataset.kpi === state.kpi)); drawKpis(); return; }
@@ -598,7 +599,7 @@ function setTheme(t) {
   try { localStorage.setItem('pwc-theme', t); } catch (e) {}
 }
 
-const LIVE = { logs: [48212, 0, 0, '', 6], oee: [71.8, 0.15, 1, '%'], prod: [48260, 0, 0, 'pcs', 38], insp: [184320, 0, 0, '', 42], def: [2941, 0, 0, '', 1], kwh: [48620, 0, 0, 'kWh', 22], kva: [3864, 40, 0, 'kVA'], runs: [412, 0, 0, '', 0.3] };
+const LIVE = { pol: [1884, 0, 0, '', 0.6], logs: [48212, 0, 0, '', 6], oee: [71.8, 0.15, 1, '%'], prod: [48260, 0, 0, 'pcs', 38], insp: [184320, 0, 0, '', 42], def: [2941, 0, 0, '', 1], kwh: [48620, 0, 0, 'kWh', 22], kva: [3864, 40, 0, 'kVA'], runs: [412, 0, 0, '', 0.3] };
 function liveTick() {
   const now = new Date();
   const c = $('#clock'); if (c) c.textContent = now.toTimeString().slice(0, 8);
