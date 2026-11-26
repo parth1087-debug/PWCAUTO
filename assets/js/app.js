@@ -75,7 +75,7 @@ function navHTML() {
     return link(n);
   }).join('');
 }
-function renderNav() { $('#nav').innerHTML = navHTML(); $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current)); }
+function renderNav() { $('#nav').innerHTML = navHTML(); const act = $('#nav a.active'); if (act) act.scrollIntoView({ block: 'nearest' }); $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current)); }
 
 function shell() {
   const link = i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}</a>`;
@@ -538,7 +538,12 @@ function bind() {
     if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
     if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
     if (t.dataset.ask) { Copilot.ask(t.dataset.ask); return; }
-    if (t.dataset.navgroup) { state.navOpen = state.navOpen || {}; state.navOpen[t.dataset.navgroup] = !state.navOpen[t.dataset.navgroup]; renderNav(); return; }
+    if (t.dataset.navgroup) {
+      const g = NAV.find(n => n.group === t.dataset.navgroup); state.navOpen = state.navOpen || {};
+      const inside = g.items.some(i => i.k === current);
+      if (inside) { state.navOpen[g.group] = false; renderNav(); return; }
+      state.navOpen[g.group] = true; location.hash = '#' + g.items[0].k; return;
+    }
     if (ctxClick(t)) return;
     if (artClick(t)) return;
     if (t.dataset.kpi) { state.kpi = t.dataset.kpi; $$('tr[data-kpi]').forEach(r => r.classList.toggle('sel', r.dataset.kpi === state.kpi)); drawKpis(); return; }

@@ -709,6 +709,7 @@ a.icon-btn { color: var(--text); }
   .cp-main .cp-body { padding: 12px; }
   .rep-wrap { grid-template-columns: 1fr; }
   .art-wrap { grid-template-columns: 1fr; }
+  .sidebar-foot { display: none; }
   .brief { grid-template-columns: 1fr 1fr; }
   .art-f { margin-left: 0; overflow-x: auto; max-width: 100%; }
   .art-head { flex-wrap: wrap; }
