@@ -14,7 +14,8 @@ const Charts = (() => {
     const hi = Math.ceil(max / step) * step;
     const out = [];
     for (let v = lo; v <= hi + step / 2; v += step) out.push(+v.toFixed(6));
-    return { lo, hi, ticks: out };
+    const dec = step < 0.1 ? 2 : step < 1 ? 1 : 0;
+  return { lo, hi, ticks: out, dec };
   }
 
   function mount(el, h) {
@@ -57,7 +58,7 @@ const Charts = (() => {
     });
     sc.ticks.forEach(t => {
       add(svg, `<line class="gridline" x1="${pad.l}" x2="${w - pad.r}" y1="${y(t)}" y2="${y(t)}"/>`);
-      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t)}</text>`);
+      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${Math.abs(t) >= 1000 ? fmt(t) : t.toFixed(sc.dec)}</text>`);
     });
     const every = Math.ceil(n / (o.xTicks || Math.max(2, Math.floor((w - pad.l) / 70))));
     o.labels.forEach((l, i) => { if (i % every === 0 || i === n - 1 && n < 14) add(svg, `<text x="${x(i)}" y="${h - 6}" text-anchor="middle">${l}</text>`); });
@@ -111,7 +112,7 @@ const Charts = (() => {
     const bw = (w - pad.l - pad.r) / n;
     sc.ticks.forEach(t => {
       add(svg, `<line class="gridline" x1="${pad.l}" x2="${w - pad.r}" y1="${y(t)}" y2="${y(t)}"/>`);
-      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t)}</text>`);
+      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${Math.abs(t) >= 1000 ? fmt(t) : t.toFixed(sc.dec)}</text>`);
     });
     o.labels.forEach((l, i) => {
       const cx = pad.l + bw * i + bw / 2;
@@ -177,7 +178,7 @@ const Charts = (() => {
     const bw = (w - pad.l - pad.r) / steps.length;
     sc.ticks.forEach(t => {
       add(svg, `<line class="gridline" x1="${pad.l}" x2="${w - pad.r}" y1="${y(t)}" y2="${y(t)}"/>`);
-      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${fmt(t)}</text>`);
+      add(svg, `<text x="${pad.l - 6}" y="${y(t) + 3}" text-anchor="end">${Math.abs(t) >= 1000 ? fmt(t) : t.toFixed(sc.dec)}</text>`);
     });
     steps.forEach((s, i) => {
       const x0 = pad.l + i * bw + bw * 0.18, ww = bw * 0.64;

@@ -24,8 +24,9 @@ Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and 
 | Configs (read only) | **Ontology** (ISA-95 model, links, live tags), **Agents** (6 agents on Bruce), **Tools** (MCP Gateway connectors and approval rules) |
 | Copilot | Chat history, chat screen with tool trace, and a session panel (agent, tools called, sources, approvals) |
 | Autopilot | Report schedules, event-driven workflows (trigger → agent → approval → action) and run history |
-| Dashboards | Live dashboards: plant overview, asset maintenance, cost conversion, quality · AI vision, energy & utilities |
-| Reports | HTML and Excel artefacts written by the agents, with in-app preview and download |
+| Dashboards | Sidebar shortcuts to any dashboard. Select ＋ to pin or unpin standard and custom dashboards (saved in the browser) |
+| Artefactory | Versioned library of dashboards (HTML), reports, Excel workbooks, presentations and documents. Tabs for "Mine" and "Shared with me", preview, version history with view and restore |
+| Logs | Agent sessions, tool calls, data events, approvals and changes. Filter by source and level, search, expand a row for detail, live tail |
 
 ## Demo script (about 10 minutes)
 
@@ -36,8 +37,11 @@ Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and 
 5. **Quality.** Show live inspection. Ask "Why are tooth crack rejects up on 428-42T sprockets?". Select **Hold suspect lot** and **Draft 8D**.
 6. **Energy.** Ask "How much compressed air are we losing to leaks?" and "Compare kWh per piece for sprockets across lines this week".
 7. **Autopilot.** Show report schedules and workflows. Select **New schedule by chat** and confirm it, then see it in the schedule list.
-8. **Reports.** Open an HTML report and an Excel workbook (select a cell to see its formula). Download one.
-9. **Guardrails.** Ask "Increase the SQF-01 furnace setpoint to 900 °C". The agent refuses and offers a change request.
-10. **Configs.** Show the ontology, agents and tools as read only, managed by Faclon.
+8. **Artefactory.** Open the deck, a document, a report and a workbook. On **Versions**, view an older version and restore it. Switch to **Shared with me**.
+9. **Shortcuts.** Select ＋ next to Dashboards and pin "Heat treatment cell". Open it from the sidebar.
+10. **Copilot builds artefacts.** Ask "Build a dashboard for compressor specific power" and pin it. Ask "Create a presentation for the energy cell review of compressed air" and open it.
+11. **Logs.** Filter to WARN, expand the blocked setpoint write, and watch the live tail.
+12. **Guardrails.** Ask "Increase the SQF-01 furnace setpoint to 900 °C". The agent refuses and offers a change request.
+13. **Configs.** Show the ontology, agents and tools as read only, managed by Faclon.
 
 Dark mode: the moon/sun button in the top bar. Press `/` to search for an asset ID (for example `IH-02`).

@@ -14,6 +14,8 @@ const Copilot = (() => {
     ontology: ['What is upstream and downstream of HB-04?', 'What is the health of IH-02 and what should we do?', 'Which assets does compressor AC-02 supply?'],
     kpis: ['Why did plant OEE change against the baseline?', 'Why did unplanned downtime change against the baseline?', 'Why did specific energy change against the baseline?', 'What needs my attention in the plant right now?'],
     autopilot: ['Create a weekly report of compressor specific power for the energy cell', 'Write the shift report for Shift A', 'Plan maintenance for this Sunday shutdown'],
+    artefactory: ['Build a dashboard for compressor specific power', 'Create a presentation for the energy cell review of compressed air', 'Write the shift report for Shift A'],
+    logs: ['What needs my attention in the plant right now?', 'Increase the SQF-01 furnace setpoint to 900 °C'],
     reports: ['Write the shift report for Shift A', 'Create a weekly report of compressor specific power for the energy cell', 'Why is conversion cost per kg above budget this month?'],
     agents: ['What needs my attention in the plant right now?', 'Write the shift report for Shift A', 'Increase the SQF-01 furnace setpoint to 900 °C'],
   };
@@ -185,7 +187,31 @@ const Copilot = (() => {
         <div class="box">${table(['Setting', 'Value'], [['Report', 'Weekly compressor specific power'], ['Content', 'kW/m³/min per compressor, trend vs baseline 7.2, leak load, top 3 actions'], ['Format', 'HTML, with Excel of hourly data'], ['Schedule', 'Every Monday 07:00'], ['Recipients', 'Energy cell (3) · G. Nair'], ['Channel', 'Email and Teams']])}</div>
         ${acts([['schedOn', 'Confirm and schedule', 1], ['notify', 'Send a sample now']])}` }
   );
-  const ORDER = ['setpoint', 'schedule', 'baseline', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
+  INTENTS.push(
+    { id: 'builddash', match: /(build|create|new|add).*dashboard|dashboard for/i, agent: 'Plant Copilot · I/O Sense', cap: 'Dashboards on demand',
+      steps: [S('ontology.query', 'Find assets and tags for the request', 380), S('udf.kpi', 'Define calculated KPIs', 420), S('iosense.dashboard.build', 'Lay out tiles and charts', 900), S('artefactory.save', 'Save as new version', 260)],
+      answer: q => {
+        const hit = ARTEFACTS.find(a => a.type === 'dash' && q.toLowerCase().includes(a.name.toLowerCase()));
+        if (hit) {
+          const nv = hit.versions[0].v + 1;
+          hit.versions.unshift({ v: nv, who: 'Copilot for Anand Rao', when: 'Just now', note: 'Added chart: energy per piece', size: hit.size }); hit.updated = 'Just now';
+          return `<p>Updated <b>${hit.name}</b> to <b>v${nv}</b>. I added an energy-per-piece chart. The earlier version is kept in Artefactory.</p><div class="box"><div id="cpc-${uid}"></div></div>
+            <div class="acts"><a class="btn sm primary" href="#d/${hit.id}">Open dashboard</a><button class="btn sm" data-art-open="${hit.id}">See versions</button></div>`;
+        }
+        newArtefact({ id: 'D5', type: 'dash', name: 'Compressor specific power', size: '22 KB' });
+        return `<p>I built <b>Compressor specific power</b> as a new dashboard (v1) and saved it in your Artefactory.</p>
+          <div class="box">${table(['Widget', 'Data'], [['6 KPI tiles', 'Specific power per compressor, leak load, saving'], ['Trend', 'kW/m³/min, last 12 weeks, with target'], ['Bar chart', 'Specific power by compressor']])}</div>
+          <div class="acts"><button class="btn sm primary" data-pin="d/D5">Pin to sidebar</button><a class="btn sm" href="#d/D5">Open dashboard</a><button class="btn sm" data-art-open="D5">Open in Artefactory</button></div>`;
+      },
+      chart: id => { const el = document.getElementById(id); if (el) Charts.bars(el, { labels: WEEKDAYS.slice(0, 6), height: 140, unit: ' kWh/pc', dec: 2, series: [{ name: 'kWh per piece', color: 'var(--c1)', data: [0.46, 0.48, 0.47, 0.5, 0.51, 0.53] }] }); } },
+    { id: 'deck', match: /presentation|deck|slides|ppt/i, agent: 'Shift Report Agent', cap: 'Notes and reports',
+      steps: [S('udf.kpi', 'Read KPIs against baseline', 420), S('agents.insights', 'Collect findings from Energy agent', 520), S('doc.compose', 'Write slides in PwC template', 1100), S('artefactory.save', 'Save as v1', 260)],
+      answer: () => { newArtefact({ id: 'P3', type: 'pptx', name: 'Energy cell review · compressed air', size: '1.4 MB' });
+        return `<p>I drafted a 3-slide deck, <b>Energy cell review · compressed air</b>, and saved it in your Artefactory as v1.</p>
+          <ol><li>Title</li><li>Specific power down 10 % since go-live (chart against baseline)</li><li>Next actions: leaks, header pressure, AC-02 cooler</li></ol>
+          <div class="acts"><button class="btn sm primary" data-art-open="P3">Open in Artefactory</button><button class="btn sm" data-toast="Shared with the energy cell. They can comment and save new versions.">Share with energy cell</button></div>`; } }
+  );
+  const ORDER = ['setpoint', 'builddash', 'deck', 'schedule', 'baseline', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
   INTENTS.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 
   const FOLLOW = {

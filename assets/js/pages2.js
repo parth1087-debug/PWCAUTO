@@ -201,19 +201,22 @@ function drawReports() {
   if (r.type === 'HTML') {
     $('#repView').innerHTML = head + `<div class="rep-frame">${reportDoc(r)}</div>`;
   } else {
-    state.sheet = state.sheet && state.sheet.rep === r.id ? state.sheet : { rep: r.id, i: 0 };
-    const sheets = EXCEL[r.id], sh = sheets[state.sheet.i];
-    const letters = sh.cols.map((_, i) => String.fromCharCode(65 + i));
-    const cell = (c, ri) => (c && typeof c === 'object' ? c.v : c);
-    $('#repView').innerHTML = head + `<div class="xl">
+    $('#repView').innerHTML = head + xlGrid(r.id);
+  }
+}
+function xlGrid(repId) {
+  state.sheet = state.sheet && state.sheet.rep === repId ? state.sheet : { rep: repId, i: 0 };
+  const sheets = EXCEL[repId], sh = sheets[state.sheet.i];
+  const letters = sh.cols.map((_, i) => String.fromCharCode(65 + i));
+  const cell = c => (c && typeof c === 'object' ? c.v : c);
+  return `<div class="xl">
       <div class="xl-bar"><span class="xl-ref" id="xlRef">A1</span><span class="xl-fx">fx</span><span id="xlVal">${sh.cols[0]}</span></div>
       <div class="xl-grid"><table><thead><tr><th></th>${letters.map(l => `<th>${l}</th>`).join('')}</tr></thead><tbody>
         <tr><th>1</th>${sh.cols.map((c, i) => `<td class="hd" data-cell="${letters[i]}1" data-v="${c}">${c}</td>`).join('')}</tr>
         ${sh.rows.map((row, ri) => `<tr><th>${ri + 2}</th>${row.map((c, ci) => { const v = cell(c); const fx = c && typeof c === 'object' ? c.f(ri + 2) : v; return `<td class="${typeof v === 'number' ? 'n' : ''}" data-cell="${letters[ci]}${ri + 2}" data-v="${String(fx).replace(/"/g, '&quot;')}">${typeof v === 'number' ? v.toLocaleString('en-IN') : v}</td>`; }).join('')}</tr>`).join('')}
         ${Array.from({ length: 4 }, (_, k) => `<tr><th>${sh.rows.length + 2 + k}</th>${letters.map(() => '<td></td>').join('')}</tr>`).join('')}
       </tbody></table></div>
-      <div class="xl-tabs">${sheets.map((s, i) => `<button class="${i === state.sheet.i ? 'on' : ''}" data-sheet="${i}">${s.name}</button>`).join('')}</div></div>`;
-  }
+      <div class="xl-tabs">${sheets.map((x, i) => `<button class="${i === state.sheet.i ? 'on' : ''}" data-sheet="${i}">${x.name}</button>`).join('')}</div></div>`;
 }
 function downloadReport(id) {
   const r = REPORTS.find(x => x.id === id);

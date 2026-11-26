@@ -20,6 +20,9 @@ const I = {
   pulse: '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   doc: '<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>',
+  logs: '<path d="M4 6h16M4 10h10M4 14h16M4 18h8"/>',
+  star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',
+  slides: '<rect x="3" y="4" width="18" height="13" rx="1"/><path d="M12 17v4M8 21h8"/>',
   plant: '<path d="M2 21V10l6 4V10l6 4V4h8v17z"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
   shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
@@ -44,18 +47,30 @@ const NAV = [
   { group: 'Configs', note: 'read only', items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'agents', t: 'Agents', icon: 'bot' }, { k: 'tools', t: 'Tools', icon: 'tool' }] },
   { k: 'copilot', t: 'Copilot', icon: 'chat' },
   { k: 'autopilot', t: 'Autopilot', icon: 'auto', badge: 1 },
-  { group: 'Dashboards', note: 'live', items: [{ k: 'dash/overview', t: 'Plant overview', icon: 'home' }, { k: 'dash/maintenance', t: 'Asset maintenance', icon: 'wrench', badge: 2 }, { k: 'dash/cost', t: 'Cost conversion', icon: 'rupee' }, { k: 'dash/quality', t: 'Quality · AI vision', icon: 'eye', badge: 1 }, { k: 'dash/energy', t: 'Energy & utilities', icon: 'bolt' }] },
-  { k: 'reports', t: 'Reports', icon: 'folder' },
+  { group: 'Dashboards', dyn: true },
+  { k: 'artefactory', t: 'Artefactory', icon: 'folder' },
+  { k: 'logs', t: 'Logs', icon: 'logs' },
 ];
 let current = 'kpis';
-const state = { asset: 'HB-04', ontoSel: 'HB-04', ontoOpen: new Set(['ENT', 'HSR', 'MCH', 'MCH-SL2']), station: 'VI-01', costView: 'kg' };
+const state = { pins: loadPins(), asset: 'HB-04', ontoSel: 'HB-04', ontoOpen: new Set(['ENT', 'HSR', 'MCH', 'MCH-SL2']), station: 'VI-01', costView: 'kg' };
 
 /* ---------- Shell ---------- */
+function navHTML() {
+  const link = i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}</a>`;
+  return NAV.map(n => {
+    if (n.dyn) {
+      const items = state.pins.map(k => ALLDASH().find(d => d.k === k)).filter(Boolean);
+      return `<div class="nav-group"><div class="nav-label">Dashboards<button class="nav-add" id="pinBtn" title="Add or remove shortcuts">＋</button></div><div class="nav-sub">${items.map(i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}${i.custom ? '<span class="nav-pin" title="Custom dashboard">●</span>' : ''}</a>`).join('')}</div></div>`;
+    }
+    return n.group
+      ? `<div class="nav-group"><div class="nav-label">${n.group}<span class="nav-note">${n.note}</span></div><div class="nav-sub">${n.items.map(link).join('')}</div></div>`
+      : link(n);
+  }).join('');
+}
+function renderNav() { $('#nav').innerHTML = navHTML(); $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current)); }
+
 function shell() {
   const link = i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}</a>`;
-  const nav = NAV.map(n => n.group
-    ? `<div class="nav-group"><div class="nav-label">${n.group}<span class="nav-note">${n.note}</span></div><div class="nav-sub">${n.items.map(link).join('')}</div></div>`
-    : link(n)).join('');
   $('#app').innerHTML = `
   <aside class="sidebar">
     <div class="brand">
@@ -67,7 +82,7 @@ function shell() {
       <div style="min-width:0;flex:1"><div class="u-name">${CONFIG.user.name}</div><div class="u-role">${CONFIG.user.role} · ${CONFIG.plant}</div></div>
       <span class="u-dot" title="Signed in with SSO"></span>
     </div>
-    <nav class="nav">${nav}</nav>
+    <nav class="nav" id="nav">${navHTML()}</nav>
     <div class="sidebar-foot">
       <div style="display:flex;align-items:center;gap:6px"><span class="dot pulse"></span> 18,628 tags live · 42 M points/day</div>
       <div class="powered">AI agents powered by <b>Faclon Labs</b></div>
@@ -477,9 +492,12 @@ const RENDER = {
   copilot: [() => Copilot.page(), () => Copilot.mount()], autopilot: [pageAutopilot, () => {}], reports: [pageReports, drawReports],
   'dash/overview': [pageOverview, drawOverview], 'dash/maintenance': [pageMaintenance, drawAssetDetail], 'dash/cost': [pageCost, drawCost],
   'dash/quality': [pageQuality, drawQuality], 'dash/energy': [pageEnergy, drawEnergy],
+  artefactory: [pageArtefactory, drawArtefactory], logs: [pageLogs, drawLogs],
 };
 function render() {
-  const k = (location.hash || '#kpis').slice(1);
+  let k = (location.hash || '#kpis').slice(1);
+  if (k === 'reports') k = 'artefactory';
+  if (k.startsWith('d/') && ARTEFACTS.find(a => a.id === k.slice(2))) { RENDER[k] = [() => pageCustomDash(k.slice(2)), () => drawCustomDash(k.slice(2))]; }
   current = RENDER[k] ? k : 'kpis';
   $('.app').classList.toggle('nav-open', false);
   $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current));
@@ -502,20 +520,21 @@ function toast(msg) {
 
 function bind() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
+    const t = e.target.closest('[data-art],[data-art-open],[data-artscope],[data-artf],[data-arttab],[data-artver],[data-restore],[data-slide],[data-pin],#pinBtn,#modalClose,[data-logsrc],[data-loglvl],[data-logrow],#logLive,[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
     if (!t) return;
     if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
     if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
     if (t.dataset.ask) { Copilot.ask(t.dataset.ask); return; }
+    if (artClick(t)) return;
     if (t.dataset.kpi) { state.kpi = t.dataset.kpi; $$('tr[data-kpi]').forEach(r => r.classList.toggle('sel', r.dataset.kpi === state.kpi)); drawKpis(); return; }
     if (t.dataset.aptab) { state.apTab = t.dataset.aptab; render(); return; }
     if (t.dataset.sched || t.dataset.wf) { t.classList.toggle('on'); const on = t.classList.contains('on'); const o = t.dataset.sched ? SCHEDULES.find(x => x.id === t.dataset.sched) : WORKFLOWS.find(x => x.id === t.dataset.wf); o.on = on; toast(`${o.name} ${on ? 'turned on' : 'paused'}`); return; }
     if (t.dataset.report) { state.report = t.dataset.report; $$('[data-report]').forEach(b => b.classList.toggle('on', b.dataset.report === state.report)); drawReports(); return; }
     if (t.dataset.repf) { state.repFilter = t.dataset.repf; const l = REPORTS.filter(r => t.dataset.repf === 'All' || r.type === t.dataset.repf); if (!l.find(r => r.id === state.report)) state.report = l[0].id; render(); return; }
-    if (t.dataset.sheet) { state.sheet.i = +t.dataset.sheet; drawReports(); return; }
+    if (t.dataset.sheet) { state.sheet.i = +t.dataset.sheet; current === 'artefactory' ? drawArtDetail() : drawReports(); return; }
     if (t.dataset.cell) { $$('.xl td.sel').forEach(x => x.classList.toggle('sel', false)); t.classList.add('sel'); $('#xlRef').textContent = t.dataset.cell; $('#xlVal').textContent = t.dataset.v || ''; return; }
     if (t.dataset.download) { downloadReport(t.dataset.download); return; }
-    if (t.dataset.gotoReport) { state.report = t.dataset.gotoReport; location.hash = '#reports'; return; }
+    if (t.dataset.gotoReport) { const a = ARTEFACTS.find(x => x.rep === t.dataset.gotoReport); if (a) { state.art = a.id; state.artScope = a.scope; } location.hash = '#artefactory'; return; }
     if (t.dataset.asset) { state.asset = t.dataset.asset; $$('tr[data-asset]').forEach(r => r.classList.toggle('sel', r.dataset.asset === state.asset)); drawAssetDetail(); return; }
     if (t.dataset.gotoAsset) { const id = t.dataset.gotoAsset; state.ontoSel = id; pathOf(id).forEach(p => state.ontoOpen.add(p.id)); location.hash = '#ontology'; return; }
     if (t.dataset.node) {
@@ -559,7 +578,7 @@ function setTheme(t) {
   try { localStorage.setItem('pwc-theme', t); } catch (e) {}
 }
 
-const LIVE = { oee: [71.8, 0.15, 1, '%'], prod: [48260, 0, 0, 'pcs', 38], insp: [184320, 0, 0, '', 42], def: [2941, 0, 0, '', 1], kwh: [48620, 0, 0, 'kWh', 22], kva: [3864, 40, 0, 'kVA'], runs: [412, 0, 0, '', 0.3] };
+const LIVE = { logs: [48212, 0, 0, '', 6], oee: [71.8, 0.15, 1, '%'], prod: [48260, 0, 0, 'pcs', 38], insp: [184320, 0, 0, '', 42], def: [2941, 0, 0, '', 1], kwh: [48620, 0, 0, 'kWh', 22], kva: [3864, 40, 0, 'kVA'], runs: [412, 0, 0, '', 0.3] };
 function liveTick() {
   const now = new Date();
   const c = $('#clock'); if (c) c.textContent = now.toTimeString().slice(0, 8);
