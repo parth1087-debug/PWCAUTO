@@ -424,3 +424,130 @@ const AGENT_RUNS = [
   { t: '11:40:51', agent: 'Maintenance Planner Agent', trigger: 'Health change · MBF-01', tools: 'SAP PM · MES plan', out: 'WO 4100 8809 scheduled', state: 'Done' },
   { t: '11:02:19', agent: 'Asset Health Agent', trigger: 'User · V. Menon (Copilot)', tools: 'Historian · Ontology', out: 'Furnace health summary', state: 'Done' },
 ];
+
+/* ==========================================================================
+   Plant KPIs against the pre-deployment baseline
+   Baseline: 90 days before go-live (Jun–Aug 2026). Go-live: 1 Sep 2026.
+   better: 'up' = higher is better, 'down' = lower is better. value: ₹ lakh/yr realised.
+   ========================================================================== */
+const BASELINE = { period: 'Jun – Aug 2026 (90 days)', golive: '1 Sep 2026', weeksBase: 13, weeksLive: 12 };
+const KPIS = [
+  { g: 'Asset maintenance', id: 'avail', name: 'Asset availability (critical)', unit: '%', base: 93.1, cur: 96.2, tgt: 97.0, better: 'up', value: 0, owner: 'J. Thomas', dec: 1 },
+  { g: 'Asset maintenance', id: 'mtbf', name: 'MTBF, critical assets', unit: 'h', base: 104, cur: 142, tgt: 160, better: 'up', value: 0, owner: 'J. Thomas', dec: 0 },
+  { g: 'Asset maintenance', id: 'mttr', name: 'MTTR', unit: 'h', base: 2.6, cur: 1.8, tgt: 1.5, better: 'down', value: 0, owner: 'J. Thomas', dec: 1 },
+  { g: 'Asset maintenance', id: 'udt', name: 'Unplanned downtime', unit: 'h/month', base: 46, cur: 18.5, tgt: 15, better: 'down', value: 96, owner: 'J. Thomas', dec: 1 },
+  { g: 'Asset maintenance', id: 'pdm', name: 'Predictive share of work orders', unit: '%', base: 8, cur: 34, tgt: 50, better: 'up', value: 0, owner: 'J. Thomas', dec: 0 },
+  { g: 'Asset maintenance', id: 'mcost', name: 'Maintenance cost', unit: '₹/kg', base: 4.1, cur: 3.8, tgt: 3.5, better: 'down', value: 38, owner: 'J. Thomas', dec: 2 },
+  { g: 'Productivity & cost conversion', id: 'oee', name: 'Plant OEE', unit: '%', base: 66.2, cur: 71.8, tgt: 78.0, better: 'up', value: 118, owner: 'S. Iyer', dec: 1 },
+  { g: 'Productivity & cost conversion', id: 'conv', name: 'Conversion cost', unit: '₹/kg', base: 40.9, cur: 38.4, tgt: 35.0, better: 'down', value: 0, owner: 'Plant controller', dec: 1, note: 'Roll-up of the rows below' },
+  { g: 'Productivity & cost conversion', id: 'chg', name: 'Changeover time, sprocket lines', unit: 'min', base: 58, cur: 47, tgt: 35, better: 'down', value: 0, owner: 'S. Iyer', dec: 0 },
+  { g: 'Productivity & cost conversion', id: 'tool', name: 'Tool cost', unit: '₹/1000 pcs', base: 640, cur: 612, tgt: 520, better: 'down', value: 16, owner: 'S. Iyer', dec: 0 },
+  { g: 'Productivity & cost conversion', id: 'lab', name: 'Labour productivity', unit: 'pcs/man-h', base: 104, cur: 118, tgt: 125, better: 'up', value: 0, owner: 'HR & IE', dec: 0 },
+  { g: 'Quality · AI vision', id: 'fpy', name: 'First pass yield', unit: '%', base: 96.1, cur: 97.6, tgt: 98.5, better: 'up', value: 0, owner: 'N. Shah', dec: 1 },
+  { g: 'Quality · AI vision', id: 'ppm', name: 'Customer PPM (2W OEMs)', unit: 'ppm', base: 84, cur: 38, tgt: 25, better: 'down', value: 12, owner: 'N. Shah', dec: 0 },
+  { g: 'Quality · AI vision', id: 'rej', name: 'Internal rejection', unit: '%', base: 2.9, cur: 1.9, tgt: 1.2, better: 'down', value: 0, owner: 'N. Shah', dec: 1 },
+  { g: 'Quality · AI vision', id: 'cov', name: 'Inspection coverage', unit: '%', base: 12, cur: 100, tgt: 100, better: 'up', value: 0, owner: 'N. Shah', dec: 0, note: 'Sampling before go-live' },
+  { g: 'Quality · AI vision', id: 'copq', name: 'Cost of poor quality', unit: '₹ L/month', base: 11.8, cur: 6.4, tgt: 5.0, better: 'down', value: 64, owner: 'N. Shah', dec: 1 },
+  { g: 'Energy & utilities', id: 'sec', name: 'Specific energy', unit: 'kWh/kg', base: 2.08, cur: 1.92, tgt: 1.80, better: 'down', value: 58, owner: 'G. Nair', dec: 2 },
+  { g: 'Energy & utilities', id: 'air', name: 'Compressed air specific power', unit: 'kW/m³/min', base: 7.2, cur: 6.5, tgt: 6.0, better: 'down', value: 21, owner: 'G. Nair', dec: 1 },
+  { g: 'Energy & utilities', id: 'md', name: 'Max demand', unit: 'kVA', base: 4180, cur: 3864, tgt: 3800, better: 'down', value: 9, owner: 'G. Nair', dec: 0 },
+  { g: 'Energy & utilities', id: 'stby', name: 'Standby energy share', unit: '%', base: 11, cur: 7, tgt: 4, better: 'down', value: 0, owner: 'G. Nair', dec: 0 },
+  { g: 'Energy & utilities', id: 'co2', name: 'Carbon intensity', unit: 'kgCO₂e/kg', base: 1.71, cur: 1.57, tgt: 1.45, better: 'down', value: 0, owner: 'ESG lead', dec: 2 },
+];
+const WEEKS = Array.from({ length: BASELINE.weeksBase + BASELINE.weeksLive }, (_, i) => 'W' + (23 + i));
+function kpiSeries(k) {
+  const r = rng(k.id.length * 97 + k.id.charCodeAt(0));
+  const nb = BASELINE.weeksBase, nl = BASELINE.weeksLive, span = Math.abs(k.cur - k.base) || Math.abs(k.base) * 0.05;
+  const out = [];
+  for (let i = 0; i < nb; i++) out.push(k.base + (r() - 0.5) * span * 0.35);
+  for (let i = 1; i <= nl; i++) { const f = 1 - Math.pow(1 - i / nl, 1.6); out.push(k.base + (k.cur - k.base) * f + (r() - 0.5) * span * 0.18); }
+  out[out.length - 1] = k.cur;
+  return out.map(v => +v.toFixed(k.dec + 1));
+}
+
+/* ---------- Copilot chat history (Bruce sessions) ---------- */
+const HISTORY = [
+  { id: 's1', group: 'Today', when: '14:52', title: 'HB-04 spindle vibration rising', agent: 'Asset Health Agent', turns: ['Why is HB-04 vibration rising and what should we do?', { follow: 'wo', label: 'Raise work order' }] },
+  { id: 's2', group: 'Today', when: '14:12', title: 'Sprocket Line 2 OEE drop', agent: 'Cost Conversion Agent', turns: ['Why did OEE on Sprocket Line 2 drop this shift?'] },
+  { id: 's3', group: 'Today', when: '12:05', title: 'Shift A report', agent: 'Shift Report Agent', turns: ['Write the shift report for Shift A'] },
+  { id: 's4', group: 'Yesterday', when: '17:40', title: 'Conversion cost above budget', agent: 'Cost Conversion Agent', turns: ['Why is conversion cost per kg above budget this month?'] },
+  { id: 's5', group: 'Yesterday', when: '13:22', title: 'Compressed air leaks', agent: 'Energy & Utilities Agent', turns: ['How much compressed air are we losing to leaks?', { follow: 'plan2', label: 'Plan compressor sequence for tomorrow' }] },
+  { id: 's6', group: 'Previous 7 days', when: 'Mon', title: 'Tooth crack rejects on 428-42T', agent: 'Vision Quality Agent', turns: ['Why are tooth crack rejects up on 428-42T sprockets?', { follow: 'hold', label: 'Hold suspect lot' }, { follow: '8d', label: 'Draft 8D' }] },
+  { id: 's7', group: 'Previous 7 days', when: 'Sun', title: 'Sunday shutdown plan', agent: 'Maintenance Planner Agent', turns: ['Plan maintenance for this Sunday shutdown'] },
+  { id: 's8', group: 'Previous 7 days', when: 'Sat', title: 'kWh per piece by sprocket line', agent: 'Energy & Utilities Agent', turns: ['Compare kWh per piece for sprockets across lines this week'] },
+  { id: 's9', group: 'Previous 7 days', when: 'Fri', title: 'SQF-01 setpoint change request', agent: 'Energy & Utilities Agent', turns: ['Increase the SQF-01 furnace setpoint to 900 °C'] },
+];
+
+/* ---------- Autopilot: report schedules ---------- */
+const SCHEDULES = [
+  { id: 'r1', name: 'Shift handover report', fmt: 'HTML', agent: 'Shift Report Agent', cadence: 'Every shift end · 06:05, 14:05, 22:05', to: 'Shift in-charges, HODs (14)', ch: 'Email · Teams', next: 'Today 22:05', last: 'Today 14:05', ok: true, on: true },
+  { id: 'r2', name: 'Daily plant performance', fmt: 'HTML', agent: 'Shift Report Agent', cadence: 'Daily · 07:30', to: 'Plant head, HODs (9)', ch: 'Email · WhatsApp', next: 'Tomorrow 07:30', last: 'Today 07:30', ok: true, on: true },
+  { id: 'r3', name: 'OEE & six big losses', fmt: 'Excel', agent: 'Cost Conversion Agent', cadence: 'Daily · 08:00', to: 'Production, IE (6)', ch: 'Email', next: 'Tomorrow 08:00', last: 'Today 08:00', ok: true, on: true },
+  { id: 'r4', name: 'Weekly asset health', fmt: 'HTML', agent: 'Asset Health Agent', cadence: 'Weekly · Mon 09:00', to: 'Maintenance team (11)', ch: 'Email · Teams', next: 'Mon 1 Dec 09:00', last: 'Mon 24 Nov 09:00', ok: true, on: true },
+  { id: 'r5', name: 'Weekly maintenance plan', fmt: 'Excel', agent: 'Maintenance Planner Agent', cadence: 'Weekly · Fri 16:00', to: 'Maintenance planners (4)', ch: 'Email', next: 'Fri 28 Nov 16:00', last: 'Fri 21 Nov 16:00', ok: true, on: true },
+  { id: 'r6', name: 'Vision defect log', fmt: 'Excel', agent: 'Vision Quality Agent', cadence: 'Daily · 06:15', to: 'Quality team (7)', ch: 'Email', next: 'Tomorrow 06:15', last: 'Today 06:15', ok: true, on: true },
+  { id: 'r7', name: 'Energy meter data', fmt: 'Excel', agent: 'Energy & Utilities Agent', cadence: 'Weekly · Mon 07:00', to: 'Energy cell (3)', ch: 'Email', next: 'Mon 1 Dec 07:00', last: 'Mon 24 Nov 07:00', ok: true, on: true },
+  { id: 'r8', name: 'Monthly energy & carbon', fmt: 'HTML', agent: 'Energy & Utilities Agent', cadence: 'Monthly · 2nd day 10:00', to: 'Plant head, ESG lead (5)', ch: 'Email', next: '2 Dec 10:00', last: '2 Nov 10:00', ok: true, on: true },
+  { id: 'r9', name: 'Conversion cost review', fmt: 'HTML', agent: 'Cost Conversion Agent', cadence: 'Monthly · 3rd day 11:00', to: 'CFO office, plant head (4)', ch: 'Email', next: '3 Dec 11:00', last: '3 Nov 11:00', ok: false, on: true },
+  { id: 'r10', name: 'Customer PPM summary (OEM-wise)', fmt: 'Excel', agent: 'Vision Quality Agent', cadence: 'Monthly · 1st day 09:00', to: 'Quality head, sales (3)', ch: 'Email', next: '1 Dec 09:00', last: '1 Nov 09:00', ok: true, on: false },
+];
+
+/* ---------- Autopilot: event-driven workflows ---------- */
+const WORKFLOWS = [
+  { id: 'w1', name: 'Predictive maintenance to work order', on: true, runs: 46, avg: '4 min', saved: '38 h/month',
+    steps: [['trigger', 'Health < 50 or anomaly on a Criticality A asset'], ['agent', 'Asset Health Agent · diagnose fault and remaining life'], ['agent', 'Maintenance Planner · draft WO, reserve spares, find window'], ['approval', 'Maintenance head, if cost > ₹50k'], ['action', 'SAP PM · release WO · notify on Teams']] },
+  { id: 'w2', name: 'Quality containment from vision alerts', on: true, runs: 19, avg: '3 min', saved: '24 h/month',
+    steps: [['trigger', 'Defect rate > 3σ at any vision station'], ['agent', 'Vision Quality Agent · RCA with genealogy and process tags'], ['approval', 'QA in-charge'], ['action', 'SAP QM · lot hold · 8D draft to quality head']] },
+  { id: 'w3', name: 'OEE loss alert to line leader', on: true, runs: 112, avg: '40 s', saved: '30 h/month',
+    steps: [['trigger', 'Line OEE < 65 % for 60 min'], ['agent', 'Cost Conversion Agent · loss tree and top cause'], ['action', 'Teams · line leader and shift in-charge']] },
+  { id: 'w4', name: 'Max demand advisory', on: true, runs: 8, avg: '25 s', saved: '₹9 L/yr',
+    steps: [['trigger', 'Demand forecast > 3,900 kVA in next 15 min'], ['agent', 'Energy & Utilities Agent · rank deferrable loads'], ['approval', 'Shift electrical engineer'], ['action', 'Teams · load shedding advisory (no control-system write)']] },
+  { id: 'w5', name: 'Spares check on new work order', on: true, runs: 64, avg: '30 s', saved: '12 h/month',
+    steps: [['trigger', 'Work order created in SAP PM'], ['agent', 'Maintenance Planner · check MM stock and lead time'], ['approval', 'Stores in-charge, if purchase needed'], ['action', 'SAP MM · reservation or purchase requisition']] },
+  { id: 'w6', name: 'Weekend air leak survey', on: true, runs: 12, avg: '6 min', saved: '₹18.6 L/yr found',
+    steps: [['trigger', 'Every Sunday 02:00 (no production)'], ['agent', 'Energy & Utilities Agent · leak load and pressure decay'], ['action', 'Report to energy cell · leak WO draft']] },
+  { id: 'w7', name: 'Hardness out-of-trend hold', on: false, runs: 0, avg: '—', saved: 'In trial',
+    steps: [['trigger', 'LIMS hardness trend: 7 points falling'], ['agent', 'Vision Quality Agent · link to heat treatment tags'], ['approval', 'Heat treatment in-charge'], ['action', 'MES · route lots to 100 % check']] },
+];
+const AUTORUNS = [
+  { t: 'Today 14:52', name: 'Predictive maintenance to work order', trig: 'HB-04 health 38', res: 'WO 4100 8821 drafted', state: 'Awaiting approval' },
+  { t: 'Today 14:31', name: 'Quality containment from vision alerts', trig: 'VI-01 tooth crack 0.99 %', res: 'Hold QH-2611-07 · 8D draft', state: 'Done' },
+  { t: 'Today 14:05', name: 'Shift handover report', trig: 'Schedule', res: 'Sent to 14', state: 'Done' },
+  { t: 'Today 13:58', name: 'OEE loss alert to line leader', trig: 'Sprocket Line 2 OEE 58 %', res: 'Alert to S. Iyer', state: 'Done' },
+  { t: 'Today 11:40', name: 'Predictive maintenance to work order', trig: 'MBF-01 health 64', res: 'WO 4100 8809 scheduled', state: 'Done' },
+  { t: 'Today 08:00', name: 'OEE & six big losses', trig: 'Schedule', res: 'Excel sent to 6', state: 'Done' },
+  { t: 'Today 07:30', name: 'Daily plant performance', trig: 'Schedule', res: 'Sent to 9', state: 'Done' },
+  { t: 'Yesterday 17:12', name: 'Max demand advisory', trig: 'Forecast 3,940 kVA', res: 'Deferred SB-01 by 20 min', state: 'Done' },
+  { t: '3 Nov 11:00', name: 'Conversion cost review', trig: 'Schedule', res: 'SAP CO period not closed', state: 'Retried' },
+];
+
+/* ---------- MCP Gateway tools (read only config) ---------- */
+const TOOLS = [
+  { conn: 'SAP PM', sys: 'SAP S/4HANA', tools: ['get_equipment', 'list_orders', 'create_notification', 'create_order', 'release_order'], access: 'Read + gated actions', rule: 'Orders > ₹50k: maintenance head', agents: 'Asset Health, Planner' },
+  { conn: 'SAP MM', sys: 'SAP S/4HANA', tools: ['get_stock', 'reserve_material', 'create_purchase_req'], access: 'Read + gated actions', rule: 'Purchase req: stores in-charge', agents: 'Planner' },
+  { conn: 'SAP QM', sys: 'SAP S/4HANA', tools: ['get_inspection_lot', 'create_quality_hold', 'create_8d'], access: 'Read + gated actions', rule: 'Lot hold: QA in-charge', agents: 'Vision Quality' },
+  { conn: 'SAP CO / PP', sys: 'SAP S/4HANA', tools: ['get_cost_centre_actuals', 'get_production_orders', 'get_standard_cost'], access: 'Read only', rule: '—', agents: 'Cost Conversion' },
+  { conn: 'MES', sys: 'MES', tools: ['get_oee', 'get_production', 'get_genealogy', 'get_changeovers', 'get_plan'], access: 'Read only', rule: '—', agents: 'All' },
+  { conn: 'Historian / UDF', sys: 'Faclon UDF', tools: ['read_tags', 'aggregate', 'correlate', 'get_events'], access: 'Read only', rule: '—', agents: 'All' },
+  { conn: 'Ontology', sys: 'Faclon Ontology', tools: ['resolve_object', 'traverse_links', 'get_properties', 'list_actions'], access: 'Read only', rule: 'Changes need SME approval', agents: 'All' },
+  { conn: 'Deepsense models', sys: 'Faclon Deepsense', tools: ['fft_diagnose', 'health_score', 'rul_predict', 'leak_estimate', 'vision_infer'], access: 'Run models', rule: '—', agents: 'Asset Health, Vision, Energy' },
+  { conn: 'Vision stations', sys: 'Edge GPU · 12 cameras', tools: ['get_defect_stats', 'get_images', 'get_station_status'], access: 'Read only', rule: '—', agents: 'Vision Quality' },
+  { conn: 'Energy meters', sys: 'Modbus · 186 meters', tools: ['read_meters', 'get_load_profile', 'tariff_model'], access: 'Read only', rule: '—', agents: 'Energy & Utilities' },
+  { conn: 'Documents', sys: 'SOPs, manuals, RCAs', tools: ['search_documents', 'get_passage'], access: 'Read only', rule: '—', agents: 'All' },
+  { conn: 'Teams · Email · WhatsApp', sys: 'Messaging', tools: ['send_message', 'send_email', 'post_channel'], access: 'Send', rule: 'Only to plant distribution lists', agents: 'All' },
+  { conn: 'Control systems (PLC / SCADA)', sys: 'I/O Connect', tools: ['read_only'], access: 'Write disabled', rule: 'Agents never write to control systems', agents: '—' },
+];
+
+/* ---------- Reports: generated artefacts ---------- */
+const REPORTS = [
+  { id: 'h1', type: 'HTML', name: 'Daily plant performance', period: '25 Nov 2026', agent: 'Shift Report Agent', when: 'Today 07:30', size: '184 KB', sched: 'r2' },
+  { id: 'x1', type: 'Excel', name: 'OEE & six big losses', period: 'Nov 2026 MTD', agent: 'Cost Conversion Agent', when: 'Today 08:00', size: '96 KB', sched: 'r3' },
+  { id: 'h2', type: 'HTML', name: 'Shift A handover', period: '26 Nov · 06:00–14:00', agent: 'Shift Report Agent', when: 'Today 14:05', size: '122 KB', sched: 'r1' },
+  { id: 'h3', type: 'HTML', name: 'RCA · Tooth crack on SPK-428-42T (8D draft)', period: '26 Nov 2026', agent: 'Vision Quality Agent', when: 'Today 14:40', size: '210 KB', sched: '' },
+  { id: 'x2', type: 'Excel', name: 'Vision defect log', period: '25 Nov 2026', agent: 'Vision Quality Agent', when: 'Today 06:15', size: '412 KB', sched: 'r6' },
+  { id: 'h4', type: 'HTML', name: 'Weekly asset health', period: 'Week 48', agent: 'Asset Health Agent', when: 'Mon 24 Nov', size: '256 KB', sched: 'r4' },
+  { id: 'x3', type: 'Excel', name: 'Weekly maintenance plan', period: 'Week 49', agent: 'Maintenance Planner Agent', when: 'Fri 21 Nov', size: '58 KB', sched: 'r5' },
+  { id: 'x4', type: 'Excel', name: 'Energy meter data', period: 'Week 47', agent: 'Energy & Utilities Agent', when: 'Mon 24 Nov', size: '1.8 MB', sched: 'r7' },
+  { id: 'h5', type: 'HTML', name: 'Monthly energy & carbon', period: 'Oct 2026', agent: 'Energy & Utilities Agent', when: '2 Nov', size: '298 KB', sched: 'r8' },
+  { id: 'x5', type: 'Excel', name: 'Conversion cost by part', period: 'Oct 2026', agent: 'Cost Conversion Agent', when: '3 Nov', size: '74 KB', sched: '' },
+];

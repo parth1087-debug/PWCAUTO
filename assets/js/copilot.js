@@ -12,6 +12,9 @@ const Copilot = (() => {
     quality: ['Why are tooth crack rejects up on 428-42T sprockets?', 'Show me the defect trend by shift for VI-01', 'Raise a work order for the HB-04 spindle bearing'],
     energy: ['How much compressed air are we losing to leaks?', 'Compare kWh per piece for sprockets across lines this week', 'Increase the SQF-01 furnace setpoint to 900 °C'],
     ontology: ['What is upstream and downstream of HB-04?', 'What is the health of IH-02 and what should we do?', 'Which assets does compressor AC-02 supply?'],
+    kpis: ['Why did plant OEE change against the baseline?', 'Why did unplanned downtime change against the baseline?', 'Why did specific energy change against the baseline?', 'What needs my attention in the plant right now?'],
+    autopilot: ['Create a weekly report of compressor specific power for the energy cell', 'Write the shift report for Shift A', 'Plan maintenance for this Sunday shutdown'],
+    reports: ['Write the shift report for Shift A', 'Create a weekly report of compressor specific power for the energy cell', 'Why is conversion cost per kg above budget this month?'],
     agents: ['What needs my attention in the plant right now?', 'Write the shift report for Shift A', 'Increase the SQF-01 furnace setpoint to 900 °C'],
   };
 
@@ -156,10 +159,37 @@ const Copilot = (() => {
       } },
   ];
 
-  const ORDER = ['setpoint', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
+  const DRIVERS = {
+    'Asset maintenance': ['Predictive work orders from the Asset Health Agent replaced 38 % of breakdown jobs.', 'Bearing and gearbox faults were found 6 to 14 days ahead on 9 assets.', 'Spares are now reserved before the job, which cut waiting time in repairs.'],
+    'Productivity & cost conversion': ['Micro-stops are now visible by machine. 41 % of them are fixed at source.', 'The OEE loss alert reaches the line leader within 60 minutes.', 'SMED checklists cut the changeover time on Sprocket Line 1. Line 2 still lags.'],
+    'Quality · AI vision': ['Inspection moved from sampling to 100 % on 12 camera stations.', 'Defects are linked to process tags, so causes are fixed, not only parts.', 'Lot holds now take minutes, so fewer suspect parts reach the OEM.'],
+    'Energy & utilities': ['Compressed air leaks are surveyed every Sunday and fixed by work order.', 'Furnace warm-up moved out of the peak tariff window.', 'Idle running in breaks is flagged by the energy agent each shift.'],
+  };
+  INTENTS.push(
+    { id: 'baseline', match: /baseline/i, agent: 'Plant Copilot · KPI agent', cap: 'Automated RCA',
+      steps: [S('udf.kpi', 'Read KPI history · 25 weeks', 420), S('udf.baseline', 'Load locked baseline · Jun–Aug 2026', 300), S('agents.attribute', 'Attribute change to agent actions', 760)],
+      answer: q => {
+        const k = KPIS.find(x => q.toLowerCase().includes(x.name.toLowerCase())) || KPIS[0];
+        const up = k.better === 'up', imp = up ? k.cur - k.base : k.base - k.cur, pct = (imp / Math.abs(k.base) * 100).toFixed(1);
+        return `<p><b>${k.name}</b> is <b>${k.cur} ${k.unit}</b> against a baseline of <b>${k.base} ${k.unit}</b>. That is ${imp > 0 ? 'better' : 'worse'} by <b>${Math.abs(pct)} %</b>. The target is ${k.tgt} ${k.unit}.</p>
+          <div class="box"><div id="cpc-${uid}"></div></div>
+          <p>What moved it since go-live on ${BASELINE.golive}:</p><ul>${DRIVERS[k.g].map(d => `<li>${d}</li>`).join('')}</ul>
+          ${k.value ? `<p>Value realised: <b>₹${k.value} L/yr</b>, validated with the plant controller.</p>` : ''}
+          ${evid(['UDF · KPI history', 'Baseline · signed off', 'Agent action log'])}`;
+      },
+      chart: id => { const q = ([...document.querySelectorAll('.msg.user')].pop() || {}).textContent || ''; const k = KPIS.find(x => q.toLowerCase().includes(x.name.toLowerCase())) || KPIS[0];
+        Charts.line(document.getElementById(id), { labels: WEEKS, series: [{ name: k.name, color: 'var(--c1)', data: kpiSeries(k) }], height: 150, dec: k.dec, thresholds: [{ value: k.base, label: 'Baseline', color: 'var(--c5)' }, { value: k.tgt, label: 'Target', color: 'var(--good)' }], annotations: [{ i: BASELINE.weeksBase, label: 'Go-live' }] }); } },
+    { id: 'schedule', match: /create.*(report|schedule)|schedule.*report|every (week|day|month)/i, agent: 'Shift Report Agent', cap: 'Notes and reports',
+      steps: [S('ontology.query', 'Find compressors AC-01, AC-02, AC-03', 320), S('udf.kpi', 'Define KPI: kW per m³/min', 380), S('iosense.report.draft', 'Draft report layout', 640), S('iosense.schedule.preview', 'Prepare schedule', 300)],
+      answer: () => `<p>Here is the draft. It is not active until you confirm.</p>
+        <div class="box">${table(['Setting', 'Value'], [['Report', 'Weekly compressor specific power'], ['Content', 'kW/m³/min per compressor, trend vs baseline 7.2, leak load, top 3 actions'], ['Format', 'HTML, with Excel of hourly data'], ['Schedule', 'Every Monday 07:00'], ['Recipients', 'Energy cell (3) · G. Nair'], ['Channel', 'Email and Teams']])}</div>
+        ${acts([['schedOn', 'Confirm and schedule', 1], ['notify', 'Send a sample now']])}` }
+  );
+  const ORDER = ['setpoint', 'schedule', 'baseline', 'wo', 'attention', 'qty', 'graph', 'hb04', 'health', 'oee', 'costkg', 'crack', 'trend', 'air', 'kwhpc', 'report', 'plan'];
   INTENTS.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
 
   const FOLLOW = {
+    schedOn: () => ({ agent: 'Shift Report Agent', cap: 'Automate tasks', steps: [S('iosense.schedule.create', 'Create schedule', 360)], answer: () => { if (!SCHEDULES.find(x => x.id === 'r11')) SCHEDULES.push({ id: 'r11', name: 'Weekly compressor specific power', fmt: 'HTML', agent: 'Energy & Utilities Agent', cadence: 'Weekly · Mon 07:00', to: 'Energy cell (3)', ch: 'Email · Teams', next: 'Mon 1 Dec 07:00', last: '—', ok: true, on: true }); return `<p>Scheduled. It runs every Monday at 07:00 and appears in <a href="#autopilot">Autopilot</a>.</p>`; } }),
     wo: () => INTENTS.find(i => i.id === 'wo'),
     hold: () => ({ agent: 'Vision Quality Agent', cap: 'Automate tasks', steps: [S('mes.genealogy', 'Find lots from IH-02 since 14:10', 360), S('sap.qm.hold', 'Create quality hold', 420)], answer: () => `<p>Quality hold <span class="mono">QH-2611-07</span> created in SAP QM for <b>1,140 pcs</b> (lots L-26111-B3 to B5). The parts are blocked for dispatch. QA is notified for 100 % hardness check.</p>` }),
     wo2: () => ({ agent: 'Maintenance Planner Agent', cap: 'Automate tasks', steps: [S('sap.pm.create', 'Create corrective order', 480)], answer: () => `<p>Order <span class="mono">4100 8817</span> is created and assigned to the electrical team. Production moves to IH-01 for 45 min.</p>` }),
@@ -184,84 +214,155 @@ const Copilot = (() => {
       <li><b>Energy:</b> "How much compressed air are we losing to leaks?"</li>
       <li><b>Reports:</b> "Write the shift report for Shift A"</li></ul>` };
 
-  /* ---------- UI ---------- */
-  function init() {
-    document.body.insertAdjacentHTML('beforeend', `<div class="scrim" id="cpScrim"></div>
-    <aside class="copilot" id="copilot" aria-label="Copilot">
-      <div class="cp-head"><span class="agent-mark" style="width:28px;height:28px">${ico('spark', 'style="width:15px;height:15px"')}</span>
-        <div><h3>Plant Copilot</h3><div class="sub">${AGENTS.length} agents on Bruce · grounded in plant ontology</div></div>
-        <div class="right"><button class="icon-btn" id="cpReset" title="New chat">${ico('refresh')}</button><button class="icon-btn" id="cpClose" title="Close">${ico('close')}</button></div></div>
-      <div class="cp-route">Route to <select id="cpAgent"><option>Auto (best agent)</option>${AGENTS.map(a => `<option>${a.name}</option>`).join('')}</select>
-        <span class="right-a" style="display:flex;align-items:center;gap:5px">${ico('shield', 'style="width:12px;height:12px"')} Role: ${CONFIG.user.role}</span></div>
-      <div class="cp-body" id="cpBody"></div>
-      <div class="cp-sugg" id="cpSugg"></div>
-      <div class="cp-input"><textarea id="cpText" placeholder="Ask about any asset, line, cost or report"></textarea><button class="copilot-btn" id="cpSend" title="Send">${ico('send')}</button></div>
-      <div class="cp-foot">Answers use live plant data. Actions that change plant systems need approval.</div>
-    </aside>`);
-    el = $('#copilot'); body = $('#cpBody');
-    reset();
-    $('#cpClose').onclick = close;
-    $('#cpScrim').onclick = close;
-    $('#cpReset').onclick = reset;
+  /* ---------- Sessions ---------- */
+  const sessions = HISTORY.map(h => ({ ...h, turns: h.turns.slice() }));
+  let active = null;          // session object
+  let pending = null;         // question queued before the page mounted
+  let lastRun = null;         // for the session panel
+  const findIntent = q => INTENTS.find(i => i.match.test(q)) || FALLBACK;
+  const isAuto = c => ['Notes and reports', 'Automated planning', 'Automate tasks'].includes(c);
+  const evidenceOf = html => [...html.matchAll(/<span class="chip outline">([^<]+)<\/span>/g)].map(m => m[1]);
+
+  /* ---------- Page UI ---------- */
+  function page() {
+    return `<div class="cp-page">
+      <aside class="cp-hist" id="cpHist"></aside>
+      <section class="cp-main card">
+        <div class="cp-top">
+          <button class="icon-btn cp-hist-btn" id="cpHistBtn" title="Chat history">${ico('layers')}</button>
+          <div style="min-width:0"><div class="cp-title" id="cpTitle">New chat</div>
+            <div class="sub">${AGENTS.length} agents on Bruce · grounded in the plant ontology · acts with your rights (${CONFIG.user.role})</div></div>
+          <div class="right-a split"><span class="muted" style="font-size:11px">Route to</span>
+            <select id="cpAgent" class="cp-sel"><option>Auto (best agent)</option>${AGENTS.map(a => `<option>${a.name}</option>`).join('')}</select></div>
+        </div>
+        <div class="cp-body" id="cpBody"></div>
+        <div class="cp-sugg" id="cpSugg"></div>
+        <div class="cp-input"><textarea id="cpText" placeholder="Ask about any asset, line, cost, quality or energy question"></textarea><button class="copilot-btn" id="cpSend" title="Send">${ico('send')}</button></div>
+        <div class="cp-foot">Answers use live plant data through the MCP Gateway. Actions that change plant systems wait for a named approver.</div>
+      </section>
+      <aside class="cp-side card" id="cpSide"></aside>
+    </div>`;
+  }
+
+  function mount() {
     $('#cpSend').onclick = send;
     $('#cpText').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-    el.addEventListener('click', e => {
-      const s = e.target.closest('[data-sugg]'); if (s) { ask(s.dataset.sugg); return; }
-      const a = e.target.closest('[data-cp-action]');
-      if (a && !busy) { a.disabled = true; const f = FOLLOW[a.dataset.cpAction]; if (f) run(a.textContent, f(), a.textContent); }
+    $('#cpHistBtn').onclick = () => $('#cpHist').classList.toggle('open');
+    renderHist();
+    if (pending) { const q = pending; pending = null; newChat(); ask(q); return; }
+    if (active) replay(active); else newChat();
+  }
+
+  function renderHist() {
+    const groups = [...new Set(sessions.map(s => s.group))];
+    $('#cpHist').innerHTML = `<button class="btn primary" id="cpNew" style="width:100%;justify-content:center">${ico('spark')} New chat</button>
+      <label class="search cp-search">${ico('search', 'style="width:13px;height:13px"')}<input placeholder="Search chats"></label>
+      ${groups.map(g => `<div class="cp-hgroup">${g}</div>${sessions.filter(s => s.group === g).map(s => `
+        <button class="cp-hitem ${active && active.id === s.id ? 'on' : ''}" data-sess="${s.id}"><span class="t">${s.title}</span><span class="m">${s.agent} · ${s.when}</span></button>`).join('')}`).join('')}`;
+    $('#cpNew').onclick = () => { newChat(); $('#cpHist').classList.remove('open'); };
+    $$('[data-sess]').forEach(b => b.onclick = () => { if (busy) return; const s = sessions.find(x => x.id === b.dataset.sess); active = s; replay(s); renderHist(); $('#cpHist').classList.remove('open'); });
+  }
+
+  function newChat() {
+    active = null; lastRun = null;
+    $('#cpTitle').textContent = 'New chat';
+    $('#cpBody').innerHTML = `<div class="cp-empty">${ico('spark', 'style="width:30px;height:30px;color:var(--primary)"')}<h4>Good afternoon, ${CONFIG.user.name.split(' ')[0]}</h4>
+      Ask about any asset, line, cost, quality or energy question.<br>The right agent answers with evidence from plant data, and can raise work orders, holds and reports with approval.</div>`;
+    renderSugg(); renderSide(); renderHist();
+  }
+  function replay(s) {
+    $('#cpTitle').textContent = s.title;
+    $('#cpBody').innerHTML = '';
+    s.turns.forEach(t => {
+      if (typeof t === 'string') run(t, findIntent(t), t, true);
+      else run(t.label, FOLLOW[t.follow](), t.label, true);
     });
+    renderSugg(); scroll();
   }
-  function reset() {
-    body.innerHTML = `<div class="cp-empty">${ico('spark', 'style="width:28px;height:28px;color:var(--primary)"')}<h4>Good afternoon, ${CONFIG.user.name.split(' ')[0]}</h4>Ask about any asset, line, cost, quality or energy question. The right agent answers with evidence from plant data.</div>`;
-    renderSugg();
+  function renderSugg() { $('#cpSugg') && ($('#cpSugg').innerHTML = (SUGGEST[ctx] || SUGGEST.overview).map(q => `<button data-sugg="${q}">${q}</button>`).join('')); }
+
+  function renderSide() {
+    const el = $('#cpSide'); if (!el) return;
+    if (!lastRun) {
+      el.innerHTML = `<div class="card-head"><h3>Session</h3></div><div class="card-body muted" style="font-size:12px">Details of each answer appear here: the agent, the tools it called, the plant data it used and any approvals.</div>
+        <div class="card-head"><h3>Agents available</h3></div><div class="card-body">${AGENTS.map(a => `<div class="cp-agent"><span class="dot pulse"></span>${a.name}<span class="muted right-a">${a.domain.split(' ·')[0]}</span></div>`).join('')}</div>`;
+      return;
+    }
+    const r = lastRun;
+    const approvals = /approval|approver|Awaiting/i.test(r.html) ? '<span class="chip brand">1 waiting · Maintenance head</span>' : /cannot change/i.test(r.html) ? '<span class="chip bad">Blocked by guardrail</span>' : '<span class="chip good">None needed</span>';
+    el.innerHTML = `<div class="card-head"><h3>Session</h3><span class="right-a mono muted">trace ${r.trace}</span></div>
+      <div class="cp-kv"><div><span>Agent</span><b>${r.agent}</b></div><div><span>Capability</span><b>${r.cap}</b></div><div><span>Acting as</span><b>${CONFIG.user.name} · ${CONFIG.user.role}</b></div><div><span>Model</span><b>Frontier LLM + Deepsense models</b></div><div><span>Duration</span><b>${(r.ms / 1000).toFixed(1)} s</b></div></div>
+      <div class="card-head"><h3>Tools called</h3><span class="sub">via MCP Gateway</span></div>
+      <div class="card-body">${r.steps.map(s => `<div class="cp-tool"><span class="tool">${s.tool}</span><span class="muted">${s.ms} ms</span></div>`).join('')}</div>
+      ${r.evid.length ? `<div class="card-head"><h3>Sources</h3></div><div class="card-body"><div class="evid">${r.evid.map(e => `<span class="chip outline">${e}</span>`).join('')}</div></div>` : ''}
+      <div class="card-head"><h3>Approvals</h3></div><div class="card-body">${approvals}</div>
+      <div class="card-body" style="padding-top:0"><div class="split"><span class="muted" style="font-size:11px">Was this useful?</span><button class="btn sm" data-toast="Thanks. Feedback saved to the agent's feedback loop.">Yes</button><button class="btn sm" data-toast="Thanks. An SME will review this answer.">No</button></div></div>`;
   }
-  function renderSugg() { $('#cpSugg').innerHTML = (SUGGEST[ctx] || SUGGEST.overview).map(q => `<button data-sugg="${q}">${q}</button>`).join(''); }
-  function setContext(c) { ctx = c; if (el) renderSugg(); }
-  function open() { el.classList.add('open'); $('#cpScrim').classList.add('on'); setTimeout(() => $('#cpText').focus(), 250); }
-  function close() { el.classList.remove('open'); $('#cpScrim').classList.remove('on'); }
-  function toggle() { el.classList.contains('open') ? close() : open(); }
+
+  function setContext(c) { ctx = c; }
   function send() { const v = $('#cpText').value.trim(); if (!v) return; $('#cpText').value = ''; ask(v); }
 
   function ask(q) {
+    if (!$('#cpBody')) { pending = q; location.hash = '#copilot'; return; }
     if (busy) return;
-    const intent = INTENTS.find(i => i.match.test(q)) || FALLBACK;
-    run(q, intent, q);
+    if (!active) {
+      active = { id: 'n' + Date.now(), group: 'Today', when: new Date().toTimeString().slice(0, 5), title: q.length > 44 ? q.slice(0, 42) + '…' : q, agent: findIntent(q).agent, turns: [] };
+      sessions.unshift(active); $('#cpTitle').textContent = active.title; renderHist();
+    }
+    active.turns.push(q);
+    run(q, findIntent(q), q, false);
   }
 
-  function run(userText, intent, q) {
-    busy = true;
+  function run(userText, intent, q, instant) {
+    const body = $('#cpBody');
+    if (!instant) busy = true;
     const empty = body.querySelector('.cp-empty'); if (empty) empty.remove();
     body.insertAdjacentHTML('beforeend', `<div class="msg user">${userText.replace(/</g, '&lt;')}</div>`);
     const id = ++uid;
     const forced = $('#cpAgent').value;
-    const agent = forced.startsWith('Auto') ? intent.agent : forced;
+    const agent = forced.startsWith('Auto') || instant ? intent.agent : forced;
     const total = intent.steps.reduce((a, s) => a + s.ms, 0);
     body.insertAdjacentHTML('beforeend', `<div class="msg bot" id="m${id}">
-      <div class="route"><span class="agent-mark">${ico('bot')}</span>Routed to <b>${agent}</b> · <span class="cap ${['Notes and reports', 'Automated planning', 'Automate tasks'].includes(intent.cap) ? 'auto' : ''}">${intent.cap}</span></div>
-      <details class="trace" open><summary>${ico('layers', 'style="width:12px;height:12px"')}<span class="tr-sum">Working · ${intent.steps.length} steps</span></summary>
+      <div class="route"><span class="agent-mark">${ico('bot')}</span>Routed to <b>${agent}</b> · <span class="cap ${isAuto(intent.cap) ? 'auto' : ''}">${intent.cap}</span></div>
+      <details class="trace" ${instant ? '' : 'open'}><summary>${ico('layers', 'style="width:12px;height:12px"')}<span class="tr-sum">Working · ${intent.steps.length} steps</span></summary>
       <div class="steps">${intent.steps.map((s, i) => `<div class="step" data-i="${i}"><span class="ic"></span><span><span class="tool">${s.tool}</span> · ${s.label}</span><span class="ms"></span></div>`).join('')}</div></details>
       <div class="answer"><span class="typing"><i></i><i></i><i></i></span></div></div>`);
-    scroll();
     const m = $('#m' + id);
     const steps = $$('.step', m);
+    const finish = () => {
+      $('.tr-sum', m).textContent = `${intent.steps.length} steps · ${(total / 1000).toFixed(1)} s · via MCP Gateway`;
+      uid = id;
+      const html = intent.answer(q || '');
+      $('.answer', m).innerHTML = html;
+      if (intent.chart) intent.chart('cpc-' + id);
+      lastRun = { agent, cap: intent.cap, steps: intent.steps, ms: total, html, evid: evidenceOf(html), trace: 'br-' + (7340 + id) };
+      renderSide();
+    };
+    if (instant) { steps.forEach((s, i) => { s.classList.add('done'); s.querySelector('.ms').textContent = intent.steps[i].ms + ' ms'; }); finish(); return; }
+    scroll();
     let i = 0;
     const next = () => {
       if (i > 0) { steps[i - 1].classList.remove('run'); steps[i - 1].classList.add('done'); steps[i - 1].querySelector('.ms').textContent = intent.steps[i - 1].ms + ' ms'; }
-      if (i >= steps.length) {
-        $('.tr-sum', m).textContent = `${intent.steps.length} steps · ${(total / 1000).toFixed(1)} s · via MCP gateway`;
-        setTimeout(() => { $('details', m).open = false; }, 400);
-        uid = id;
-        $('.answer', m).innerHTML = intent.answer(q || '');
-        if (intent.chart) intent.chart('cpc-' + id);
-        busy = false; scroll(); return;
-      }
+      if (i >= steps.length) { setTimeout(() => { $('details', m).open = false; }, 400); finish(); busy = false; scroll(); return; }
       steps[i].classList.add('run');
       setTimeout(next, intent.steps[i++].ms * 0.9);
       scroll();
     };
     setTimeout(next, 250);
   }
-  function scroll() { body.scrollTop = body.scrollHeight; }
+  function scroll() { const b = $('#cpBody'); if (b) b.scrollTop = b.scrollHeight; }
 
-  return { init, open, close, toggle, ask, setContext };
+  /* clicks inside answers and suggestions */
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.cp-page')) return;
+    const s = e.target.closest('[data-sugg]'); if (s) { ask(s.dataset.sugg); return; }
+    const a = e.target.closest('[data-cp-action]');
+    if (a && !busy) {
+      a.disabled = true;
+      const f = FOLLOW[a.dataset.cpAction];
+      if (f) { if (active) active.turns.push({ follow: a.dataset.cpAction, label: a.textContent }); run(a.textContent, f(), a.textContent, false); }
+    }
+  });
+
+  return { page, mount, ask, setContext };
 })();

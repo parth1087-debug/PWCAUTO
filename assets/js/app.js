@@ -26,37 +26,46 @@ const I = {
   refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"/>',
   download: '<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
   filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  auto: '<path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3"/><circle cx="12" cy="12" r="4"/><path d="m11 10 3 2-3 2z"/>',
+  chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  dash: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  tool: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  folder: '<path d="M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
 };
 const ico = (k, s = '') => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ${s}>${I[k]}</svg>`;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const inr = v => '₹' + v;
 
-const PAGES = {
-  overview: { title: 'Plant overview', icon: 'home', group: 'Operate' },
-  maintenance: { title: 'Asset maintenance', icon: 'wrench', group: 'Operate', badge: 2 },
-  cost: { title: 'Productivity & cost conversion', icon: 'rupee', group: 'Operate' },
-  quality: { title: 'Quality · AI vision', icon: 'eye', group: 'Operate', badge: 1 },
-  energy: { title: 'Energy & utilities', icon: 'bolt', group: 'Operate' },
-  ontology: { title: 'Plant ontology', icon: 'graph', group: 'Platform' },
-  agents: { title: 'AI agents', icon: 'bot', group: 'Platform' },
-};
-let current = 'overview';
+const NAV = [
+  { k: 'kpis', t: 'Plant KPIs', icon: 'target' },
+  { group: 'Configs', note: 'read only', items: [{ k: 'ontology', t: 'Ontology', icon: 'graph' }, { k: 'agents', t: 'Agents', icon: 'bot' }, { k: 'tools', t: 'Tools', icon: 'tool' }] },
+  { k: 'copilot', t: 'Copilot', icon: 'chat' },
+  { k: 'autopilot', t: 'Autopilot', icon: 'auto', badge: 1 },
+  { group: 'Dashboards', note: 'live', items: [{ k: 'dash/overview', t: 'Plant overview', icon: 'home' }, { k: 'dash/maintenance', t: 'Asset maintenance', icon: 'wrench', badge: 2 }, { k: 'dash/cost', t: 'Cost conversion', icon: 'rupee' }, { k: 'dash/quality', t: 'Quality · AI vision', icon: 'eye', badge: 1 }, { k: 'dash/energy', t: 'Energy & utilities', icon: 'bolt' }] },
+  { k: 'reports', t: 'Reports', icon: 'folder' },
+];
+let current = 'kpis';
 const state = { asset: 'HB-04', ontoSel: 'HB-04', ontoOpen: new Set(['ENT', 'HSR', 'MCH', 'MCH-SL2']), station: 'VI-01', costView: 'kg' };
 
 /* ---------- Shell ---------- */
 function shell() {
-  let lastGroup = '';
-  const nav = Object.entries(PAGES).map(([k, p]) => {
-    const g = p.group !== lastGroup ? `<div class="nav-label">${p.group}</div>` : '';
-    lastGroup = p.group;
-    return `${g}<a href="#${k}" data-page="${k}">${ico(p.icon)}<span>${p.title.split(' · ')[0].replace('Productivity & cost conversion', 'Cost conversion')}</span>${p.badge ? `<span class="badge">${p.badge}</span>` : ''}</a>`;
-  }).join('');
+  const link = i => `<a href="#${i.k}" data-page="${i.k}">${ico(i.icon)}<span>${i.t}</span>${i.badge ? `<span class="badge">${i.badge}</span>` : ''}</a>`;
+  const nav = NAV.map(n => n.group
+    ? `<div class="nav-group"><div class="nav-label">${n.group}<span class="nav-note">${n.note}</span></div><div class="nav-sub">${n.items.map(link).join('')}</div></div>`
+    : link(n)).join('');
   $('#app').innerHTML = `
   <aside class="sidebar">
     <div class="brand">
       <div class="wordmark"><i></i><i></i><i></i><i></i>pwc</div>
       <div class="brand-sub"><b>Connected Plant</b>Intelligence</div>
+    </div>
+    <div class="user-card">
+      <div class="avatar">${CONFIG.user.initials}</div>
+      <div style="min-width:0;flex:1"><div class="u-name">${CONFIG.user.name}</div><div class="u-role">${CONFIG.user.role} · ${CONFIG.plant}</div></div>
+      <span class="u-dot" title="Signed in with SSO"></span>
     </div>
     <nav class="nav">${nav}</nav>
     <div class="sidebar-foot">
@@ -76,8 +85,7 @@ function shell() {
       <span class="live-pill"><span class="dot pulse"></span><span id="clock" class="num">14:58:12</span></span>
       <button class="icon-btn" id="themeBtn" title="Switch theme">${ico('moon')}</button>
       <button class="icon-btn" title="Alerts">${ico('bell')}<span class="count">4</span></button>
-      <button class="copilot-btn" id="copilotBtn">${ico('spark')} Copilot</button>
-      <div class="avatar" title="${CONFIG.user.name} · ${CONFIG.user.role}">${CONFIG.user.initials}</div>
+      <button class="copilot-btn" id="copilotBtn">${ico('spark')} Ask Copilot</button>
     </header>
     <main class="content" id="content"></main>
   </div>`;
@@ -365,7 +373,7 @@ function treeHTML(n) {
 function pageOntology() {
   const units = Object.values(ONTO_INDEX).filter(n => n.level === 'Work Unit');
   const tagCount = units.reduce((a, u) => a + (CLASS_TAGS[u.cls] || []).length, 0);
-  return headerBlock('Plant ontology', 'ISA-95 equipment hierarchy with assets, tags, relationships and documents. The shared plant context for every agent.', `<button class="btn">${ico('download')} Export OWL / JSON-LD</button>`) +
+  return headerBlock('Ontology', 'ISA-95 equipment hierarchy with assets, tags, relationships and documents. The shared plant context for every agent.', readOnlyChip() + `<button class="btn">${ico('download')} Export OWL / JSON-LD</button>`) +
     kpiStrip([
       { label: 'Hierarchy levels', value: '6', unit: '', foot: 'ISA-95 role-based model' },
       { label: 'Areas · work centers', value: '8 · 18', unit: '', foot: 'Hosur plant' },
@@ -446,8 +454,8 @@ function pageAgents() {
     ['Control', ['MCP connectors', 'MCP gateway', 'Guardrails', 'Role-based access', 'Audit log']],
     ['Capabilities', ['Data retrieval · dashboards', 'Problem detection · RCA', 'Recommendations', 'Reports · planning', 'Task automation']],
   ];
-  return headerBlock('AI agents', 'Industrial agents running on the Bruce agent runtime, grounded in the plant ontology and reachable from Copilot',
-    `<button class="btn">${ico('shield')} Guardrails</button><button class="btn primary">${ico('bot')} New agent</button>`) +
+  return headerBlock('Agents', 'Industrial agents running on the Bruce agent runtime, grounded in the plant ontology and reachable from Copilot',
+    readOnlyChip() + `<a class="btn" href="#tools">${ico('tool')} View tools</a>`) +
     kpiStrip([
       { label: 'Agents in production', value: AGENTS.length, unit: '', foot: 'on Bruce runtime' },
       { label: 'Runs today', value: '412', unit: '', foot: '61 by users, 351 automatic', live: 'runs' },
@@ -464,15 +472,23 @@ function pageAgents() {
 /* ==========================================================================
    Router, events, live updates
    ========================================================================== */
-const RENDER = { overview: [pageOverview, drawOverview], maintenance: [pageMaintenance, drawAssetDetail], cost: [pageCost, drawCost], quality: [pageQuality, drawQuality], energy: [pageEnergy, drawEnergy], ontology: [pageOntology, drawOntology], agents: [pageAgents, () => {}] };
+const RENDER = {
+  kpis: [pageKpis, drawKpis], ontology: [pageOntology, drawOntology], agents: [pageAgents, () => {}], tools: [pageTools, () => {}],
+  copilot: [() => Copilot.page(), () => Copilot.mount()], autopilot: [pageAutopilot, () => {}], reports: [pageReports, drawReports],
+  'dash/overview': [pageOverview, drawOverview], 'dash/maintenance': [pageMaintenance, drawAssetDetail], 'dash/cost': [pageCost, drawCost],
+  'dash/quality': [pageQuality, drawQuality], 'dash/energy': [pageEnergy, drawEnergy],
+};
 function render() {
-  const k = (location.hash || '#overview').slice(1);
-  current = RENDER[k] ? k : 'overview';
+  const k = (location.hash || '#kpis').slice(1);
+  current = RENDER[k] ? k : 'kpis';
+  $('.app').classList.toggle('nav-open', false);
   $$('.nav a').forEach(a => a.classList.toggle('active', a.dataset.page === current));
   const c = $('#content');
+  c.classList.toggle('flush-page', current === 'copilot');
   c.innerHTML = RENDER[current][0]();
+  c.scrollTop = 0;
+  if (current !== 'copilot') Copilot.setContext(current.replace('dash/', ''));
   RENDER[current][1]();
-  if (typeof Copilot !== 'undefined') Copilot.setContext(current);
 }
 function redraw() { if (RENDER[current]) RENDER[current][1](); }
 
@@ -486,11 +502,20 @@ function toast(msg) {
 
 function bind() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
+    const t = e.target.closest('[data-kpi],[data-aptab],[data-sched],[data-wf],[data-report],[data-repf],[data-sheet],[data-cell],[data-download],[data-goto-report],[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
     if (!t) return;
     if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
     if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
-    if (t.dataset.ask) { Copilot.open(); Copilot.ask(t.dataset.ask); return; }
+    if (t.dataset.ask) { Copilot.ask(t.dataset.ask); return; }
+    if (t.dataset.kpi) { state.kpi = t.dataset.kpi; $$('tr[data-kpi]').forEach(r => r.classList.toggle('sel', r.dataset.kpi === state.kpi)); drawKpis(); return; }
+    if (t.dataset.aptab) { state.apTab = t.dataset.aptab; render(); return; }
+    if (t.dataset.sched || t.dataset.wf) { t.classList.toggle('on'); const on = t.classList.contains('on'); const o = t.dataset.sched ? SCHEDULES.find(x => x.id === t.dataset.sched) : WORKFLOWS.find(x => x.id === t.dataset.wf); o.on = on; toast(`${o.name} ${on ? 'turned on' : 'paused'}`); return; }
+    if (t.dataset.report) { state.report = t.dataset.report; $$('[data-report]').forEach(b => b.classList.toggle('on', b.dataset.report === state.report)); drawReports(); return; }
+    if (t.dataset.repf) { state.repFilter = t.dataset.repf; const l = REPORTS.filter(r => t.dataset.repf === 'All' || r.type === t.dataset.repf); if (!l.find(r => r.id === state.report)) state.report = l[0].id; render(); return; }
+    if (t.dataset.sheet) { state.sheet.i = +t.dataset.sheet; drawReports(); return; }
+    if (t.dataset.cell) { $$('.xl td.sel').forEach(x => x.classList.toggle('sel', false)); t.classList.add('sel'); $('#xlRef').textContent = t.dataset.cell; $('#xlVal').textContent = t.dataset.v || ''; return; }
+    if (t.dataset.download) { downloadReport(t.dataset.download); return; }
+    if (t.dataset.gotoReport) { state.report = t.dataset.gotoReport; location.hash = '#reports'; return; }
     if (t.dataset.asset) { state.asset = t.dataset.asset; $$('tr[data-asset]').forEach(r => r.classList.toggle('sel', r.dataset.asset === state.asset)); drawAssetDetail(); return; }
     if (t.dataset.gotoAsset) { const id = t.dataset.gotoAsset; state.ontoSel = id; pathOf(id).forEach(p => state.ontoOpen.add(p.id)); location.hash = '#ontology'; return; }
     if (t.dataset.node) {
@@ -508,20 +533,19 @@ function bind() {
     if (t.dataset.toast) { toast(t.dataset.toast); t.disabled = true; t.textContent = 'Done'; return; }
     if (t.hasAttribute('data-approve')) { t.outerHTML = '<span class="chip good">Approved</span>'; toast('WO 4100 8821 released in SAP PM. Planner notified.'); return; }
     if (t.id === 'themeBtn') { setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); return; }
-    if (t.id === 'copilotBtn') { Copilot.toggle(); return; }
+    if (t.id === 'copilotBtn') { location.hash = '#copilot'; return; }
     if (t.id === 'expandAll') { Object.keys(ONTO_INDEX).forEach(k => state.ontoOpen.add(k)); $('#tree').innerHTML = treeHTML(ONTOLOGY); return; }
     if (t.matches('.seg button') && !t.dataset.station) { $$('button', t.parentElement).forEach(b => b.classList.toggle('on', b === t)); }
   });
   document.addEventListener('keydown', e => {
     if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); $('#globalSearch').focus(); }
-    if (e.key === 'Escape') Copilot.close();
   });
   $('#globalSearch').addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     const q = e.target.value.trim().toUpperCase();
     const hit = Object.values(ONTO_INDEX).find(n => n.id.toUpperCase() === q || n.name.toUpperCase().includes(q));
     if (hit) { state.ontoSel = hit.id; pathOf(hit.id).forEach(p => state.ontoOpen.add(p.id)); location.hash = '#ontology'; if (current === 'ontology') render(); }
-    else { Copilot.open(); Copilot.ask(e.target.value); }
+    else { Copilot.ask(e.target.value); }
     e.target.value = '';
   });
   window.addEventListener('hashchange', render);
@@ -551,7 +575,6 @@ document.addEventListener('DOMContentLoaded', () => {
   try { t = localStorage.getItem('pwc-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) {}
   shell();
   setTheme(t);
-  Copilot.init();
   bind();
   render();
   setInterval(liveTick, 2000);

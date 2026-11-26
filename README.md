@@ -15,29 +15,29 @@ To host it, serve the folder with any static server, for example `python3 -m htt
 
 Edit `CONFIG` at the top of `assets/js/data.js` (customer, plant, user name and role).
 
-## Pages
+## Structure
 
-| Page | What it shows |
+| Sidebar | What it shows |
 |---|---|
-| Plant overview | Live status of all 37 assets in 8 areas, 10 connected systems, KPIs and agent insights |
-| Asset maintenance | Health score, remaining life, vibration trend with ISO 10816 zones, agent RCA, SAP PM work orders |
-| Cost conversion | Budget-to-actual cost bridge per kg, cost by element, OEE by line, six big losses, cost per part |
-| Quality · AI vision | Live camera inspection, defect Pareto, hardness SPC, defect linked back to process |
-| Energy & utilities | Load vs contract demand with ToD windows, weekly heatmap, compressors and furnaces, savings |
-| Plant ontology | ISA-95 hierarchy (Enterprise → Site → Area → Work Center → Work Unit → Tag), relationships, live tags |
-| AI agents | 6 agents on the Bruce runtime: capabilities, skills, MCP connectors, autonomy, activity and approvals |
-
-The **Copilot** button opens a chat that routes each question to an agent and shows its tool trace.
+| User | Signed-in user, role and plant |
+| Plant KPIs | 21 KPIs against the locked pre-go-live baseline (Jun–Aug 2026), with target, progress, trend and ₹ value realised |
+| Configs (read only) | **Ontology** (ISA-95 model, links, live tags), **Agents** (6 agents on Bruce), **Tools** (MCP Gateway connectors and approval rules) |
+| Copilot | Chat history, chat screen with tool trace, and a session panel (agent, tools called, sources, approvals) |
+| Autopilot | Report schedules, event-driven workflows (trigger → agent → approval → action) and run history |
+| Dashboards | Live dashboards: plant overview, asset maintenance, cost conversion, quality · AI vision, energy & utilities |
+| Reports | HTML and Excel artefacts written by the agents, with in-app preview and download |
 
 ## Demo script (about 10 minutes)
 
-1. **Overview.** Point at the plant map and the connected systems. Open the HB-04 insight in Copilot.
-2. **Maintenance.** Ask "Why is HB-04 vibration rising and what should we do?". Select **Raise work order**. On **AI agents**, select **Approve**.
-3. **Cost.** Ask "Why did OEE on Sprocket Line 2 drop this shift?", then "Why is conversion cost per kg above budget this month?".
-4. **Quality.** Show live inspection. Ask "Why are tooth crack rejects up on 428-42T sprockets?". Select **Hold suspect lot** and **Draft 8D**.
-5. **Energy.** Ask "How much compressed air are we losing to leaks?" and "Compare kWh per piece for sprockets across lines this week".
-6. **Automation.** Ask "Write the shift report for Shift A" and "Plan maintenance for this Sunday shutdown".
-7. **Guardrails.** Ask "Increase the SQF-01 furnace setpoint to 900 °C". The agent refuses and offers a change request.
-8. **Ontology.** Select an asset on the overview map to open it in the ISA-95 model.
+1. **Plant KPIs.** Show value realised against the baseline. Select a KPI row, then **Ask Copilot** why it changed.
+2. **Dashboards › Plant overview.** Point at the plant map and the connected systems. Open the HB-04 insight in Copilot.
+3. **Maintenance.** Ask "Why is HB-04 vibration rising and what should we do?". Select **Raise work order**. On **AI agents**, select **Approve**.
+4. **Cost.** Ask "Why did OEE on Sprocket Line 2 drop this shift?", then "Why is conversion cost per kg above budget this month?".
+5. **Quality.** Show live inspection. Ask "Why are tooth crack rejects up on 428-42T sprockets?". Select **Hold suspect lot** and **Draft 8D**.
+6. **Energy.** Ask "How much compressed air are we losing to leaks?" and "Compare kWh per piece for sprockets across lines this week".
+7. **Autopilot.** Show report schedules and workflows. Select **New schedule by chat** and confirm it, then see it in the schedule list.
+8. **Reports.** Open an HTML report and an Excel workbook (select a cell to see its formula). Download one.
+9. **Guardrails.** Ask "Increase the SQF-01 furnace setpoint to 900 °C". The agent refuses and offers a change request.
+10. **Configs.** Show the ontology, agents and tools as read only, managed by Faclon.
 
 Dark mode: the moon/sun button in the top bar. Press `/` to search for an asset ID (for example `IH-02`).
