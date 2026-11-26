@@ -64,8 +64,10 @@ function shell() {
       <div class="powered">AI agents powered by <b>Faclon Labs</b></div>
     </div>
   </aside>
+  <div class="nav-scrim" id="navScrim"></div>
   <div class="main">
     <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" title="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <div class="crumbs"><span>${CONFIG.customer}</span><span>/</span>
         <span class="select">${ico('plant')}<b>${CONFIG.plant}</b>${ico('chev')}</span></div>
       <span class="select">${CONFIG.shift} · 14:00–22:00 ${ico('chev')}</span>
@@ -484,8 +486,10 @@ function toast(msg) {
 
 function bind() {
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,.seg button');
+    const t = e.target.closest('[data-ask],[data-asset],[data-goto-asset],[data-node],[data-station],[data-toast],[data-approve],#themeBtn,#copilotBtn,#expandAll,#menuBtn,#navScrim,.nav a,.seg button');
     if (!t) return;
+    if (t.id === 'menuBtn') { $('.app').classList.toggle('nav-open'); return; }
+    if (t.id === 'navScrim' || t.matches('.nav a')) { $('.app').classList.remove('nav-open'); if (t.id === 'navScrim') return; }
     if (t.dataset.ask) { Copilot.open(); Copilot.ask(t.dataset.ask); return; }
     if (t.dataset.asset) { state.asset = t.dataset.asset; $$('tr[data-asset]').forEach(r => r.classList.toggle('sel', r.dataset.asset === state.asset)); drawAssetDetail(); return; }
     if (t.dataset.gotoAsset) { const id = t.dataset.gotoAsset; state.ontoSel = id; pathOf(id).forEach(p => state.ontoOpen.add(p.id)); location.hash = '#ontology'; return; }

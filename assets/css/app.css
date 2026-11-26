@@ -457,9 +457,48 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 0; }
   .agents { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .search { width: 200px; }
 }
+.menu-btn { display: none; }
+.nav-scrim { display: none; }
 @media (max-width: 960px) {
   .app { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+  .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; z-index: 46; transform: translateX(-105%); transition: transform .22s ease; }
+  .app.nav-open .sidebar { transform: none; }
+  .app.nav-open .nav-scrim { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 45; }
+  .menu-btn { display: grid; }
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar .crumbs > span:not(.select), .topbar > .select, .live-pill, .topbar .icon-btn[title="Alerts"] { display: none; }
+  .content { padding: 16px 14px 32px; }
+  .page-head { flex-wrap: wrap; align-items: flex-start; }
+  .page-head .actions { margin-left: 0; flex-wrap: wrap; }
+  .page-head h1 { font-size: 22px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .kpi { border-right: 1px solid var(--border) !important; border-bottom: 1px solid var(--border); }
+  .kpi:nth-child(2n) { border-right: 0 !important; }
+  .kpi .value { font-size: 20px; }
+  .card-body.flush, .card-body:has(> table) { overflow-x: auto; }
+  .card-body.flush > .tbl { min-width: 560px; }
+  .card-head { flex-wrap: wrap; }
+  .facts, .props { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .stack { grid-template-columns: 1fr; }
+  .stack .col { border-right: 0; border-bottom: 1px solid var(--border); }
+  .stack .col::after { display: none; }
+  .isa-levels { flex-wrap: wrap; }
+  .isa-level { flex: 1 1 30%; margin-left: 0; border-radius: 0 !important; }
+  .agents { grid-template-columns: 1fr; }
+  .cam { margin: 12px 16px 0; }
+  .systems { grid-template-columns: 1fr; }
+  .sys:nth-child(odd) { border-right: 0; }
+  .tree { max-height: 360px; }
+  .copilot { width: 100vw; }
+  .cp-sugg { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .cp-sugg button { white-space: nowrap; flex: none; }
+  .detail-head { flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+  .plant-map { grid-template-columns: 1fr 1fr; }
+  .copilot-btn { padding: 8px 10px; }
+}
+@media (max-width: 960px) {
   .g-2, .g-3, .g-4, .g-21, .g-12, .g-32, .onto, .vision { grid-template-columns: 1fr; }
   .span-2 { grid-column: auto; }
   .search { display: none; }
