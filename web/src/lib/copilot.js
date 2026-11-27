@@ -178,7 +178,7 @@ export function runQuery(question, ctx) {
 
 /** Is the question asking to create something in the Artefactory? */
 export function createIntent(q) {
-  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|html|web ?page|one.?pager|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
+  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|capex|tariff|plan|briefing|review|trend|html|web ?page|one.?pager|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
 }
 
 /** Turn a request into an artefact { type, name, spec, label, what }. Uses the plant model to pick assets, KPIs and forms. */
@@ -186,6 +186,15 @@ export function buildArtefact(q, { demo, db, asset, kpi }) {
   const s = q.toLowerCase();
   const date = fmtDate(db.anchor);
   const spot = asset || db.assetById[demo.maintenance?.spotlight] || db.assets[0];
+  /* Energy & utilities decision boards */
+  if (demo.id === 'ems') {
+    if (/capex|invest|audit|ecm|payback|conservation measure/.test(s)) return { type: 'dash', name: 'Capex recommendations · energy audit', spec: { view: 'capex', section: 'decision', group: 'Invest' }, label: 'decision board', focus: 'capex', what: 'It ranks energy conservation measures with savings, capex, payback, IRR, CO₂ and the evidence from your meters, like an energy auditor would.' };
+    if (/tariff|contract demand|\bcd\b|tod|time of day|power factor incentive|open access|green tariff/.test(s)) return { type: 'dash', name: 'Tariff and contract demand advisory', spec: { view: 'tariff', section: 'decision', group: 'Plan' }, label: 'decision board', focus: 'tariff', what: 'It recommends the contract demand, ToD load shifts and PF actions with the ₹ saving and the risk.' };
+    if (/supply|dispatch|forecast|day.ahead|plan(ning)? (for )?(tomorrow|energy)|peak shav|load shift/.test(s)) return { type: 'dash', name: 'Energy supply and demand plan', spec: { view: 'supply-plan', section: 'decision', group: 'Plan' }, label: 'decision board', focus: 'supply', what: 'It forecasts the next 48 hours and recommends dispatch, load shifting and peak shaving to stay under contract demand.' };
+    if (/trend|explor|compare tags/.test(s)) return { type: 'dash', name: 'Trend explorer', spec: { view: 'trends', section: 'monitoring', group: 'Live dashboards' }, label: 'monitoring board', focus: 'trends', what: 'Pick assets and tags to compare with their limits over the selected period.' };
+    if (/brief|daily report|morning/.test(s)) return { type: 'html', name: 'Daily energy briefing', spec: { kind: 'ems-brief', section: 'decision', group: 'Briefings and reports' }, label: 'HTML report', focus: 'briefing', what: 'It tells what happened yesterday and which decisions are needed today, with ₹ impact.' };
+    if (/review|monthly|management review/.test(s)) return { type: 'html', name: 'Monthly energy review', spec: { kind: 'ems-review', section: 'decision', group: 'Briefings and reports' }, label: 'HTML report', focus: 'review', what: 'It is an ISO 50001-style management review: EnPIs, significant energy uses, cost, anomalies, actions and decisions requested.' };
+  }
   /* process / SCADA views: match a mimic of this plant by its words */
   const mims = MIMICS[demo.id] || [];
   if (mims.length && (/scada|mimic|process view|p&id|sld|single.?line|network|circuit|diagram|layout|schematic|hmi/.test(s) || (/twin|view/.test(s) && !asset))) {
