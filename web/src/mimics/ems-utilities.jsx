@@ -376,7 +376,7 @@ function ChwCircuit({ c }) {
         <Val a={a} t="flow" x={x + 26} y={540} w={92} label="Flow" />
         <Val a={a} t="dp" x={x + 26} y={582} w={92} label="Head" />
         <Val a={a} t="kw" x={x + 26} y={624} w={92} label="Power" />
-        <text x={x} y={574} textAnchor="middle" className="m-id">{a}</text>
+        <text x={x} y={634} textAnchor="middle" className="m-id">{a}</text>
       </g>; })}
       <Pipe d="M52 506 V506" kind="water" w={6} />
       {/* decoupler */}
@@ -387,18 +387,18 @@ function ChwCircuit({ c }) {
       <Val a="VFD-03" t="freq" x={988} y={578} w={86} label="Speed" />
       <Val a="VFD-03" t="kw" x={988} y={620} w={86} label="Power" />
       {/* loads */}
-      <Pipe d="M1024 480 H1090 V660" kind="chw" w={6} speed={1} flow={p2on} />
+      <Pipe d="M1024 480 H1090 V652" kind="chw" w={6} speed={1} flow={p2on} />
       <Pipe d="M1244 470 V680 H1000" kind="water" w={6} speed={1} />
-      {[['VFD-01', 'AHU-1', 470], ['VFD-02', 'AHU-2', 548]].map(([a, l, y]) => <g key={a}>
+      {[['VFD-01', 'AHU-1', 462], ['VFD-02', 'AHU-2', 532]].map(([a, l, y]) => <g key={a}>
         <Pipe d={`M1090 ${y + 24} H1110`} kind="chw" w={4} />
         <Pipe d={`M1206 ${y + 24} H1244`} kind="water" w={4} />
         <Equip a={a} x={1110} y={y} w={96} h={48} noId><AHU x={1110} y={y} on={(useLive(a, 'freq', c).v || 0) > 5} /></Equip>
         <Lbl x={1110} y={y - 4} size={10} muted>{l} · {a}</Lbl>
       </g>)}
-      <Val a="VFD-01" t="freq" x={1110} y={622} w={64} label="AHU-1" />
-      <Val a="VFD-02" t="freq" x={1180} y={622} w={60} label="AHU-2" />
-      <Pipe d="M1090 660 H1244" kind="chw" w={4} />
-      <g className="m-shape"><rect x={1130} y={648} width={76} height={24} rx="12" className="m-body" /><rect x={1130} y={648} width={76} height={24} rx="12" className="m-edge" /><path d="M1140 660 l8 -7 l8 14 l8 -14 l8 14 l8 -14 l8 14 l8 -7" className="m-glyph" /></g>
+      <Val a="VFD-01" t="freq" x={1110} y={592} w={64} label="AHU-1 fan" />
+      <Val a="VFD-02" t="freq" x={1178} y={592} w={62} label="AHU-2 fan" />
+      <Pipe d="M1090 652 H1244" kind="chw" w={4} />
+      <g className="m-shape"><rect x={1130} y={640} width={76} height={24} rx="12" className="m-body" /><rect x={1130} y={640} width={76} height={24} rx="12" className="m-edge" /><path d="M1140 652 l8 -7 l8 14 l8 -14 l8 14 l8 -14 l8 14 l8 -7" className="m-glyph" /></g>
       <Lbl x={1168} y={698} anchor="middle" muted size={10}>Process cooling loads</Lbl>
     </Mimic>
   );
@@ -433,12 +433,12 @@ function SteamNetwork({ c }) {
       <Equip a="BLR-02" x={340} y={200} w={270} h={90} label="Biomass boiler · 10 TPH"><ShellBoiler x={340} y={200} w={270} on={b2} biomass /></Equip>
       <Lbl x={346} y={154} muted size={9.5}>Briquette hopper</Lbl>
       {[['BLR-01', 54, 'gas_flow', 'Gas flow'], ['BLR-02', 344, 'fuel_feed', 'Briquette feed']].map(([a, x, ft, fl]) => <g key={a}>
-        <Val a={a} t="steam_flow" x={x} y={330} w={92} label="Steam flow" />
-        <Val a={a} t="pressure" x={x + 96} y={330} w={92} label="Drum pressure" />
-        <Val a={a} t="efficiency" x={x + 192} y={330} w={84} label="Efficiency" />
-        <Val a={a} t="stack_o2" x={x} y={372} w={92} label="Stack O₂" />
-        <Val a={a} t="stack_temp" x={x + 96} y={372} w={92} label="Stack temp" />
-        <Val a={a} t={ft} x={x + 192} y={372} w={84} label={fl} />
+        <Val a={a} t="steam_flow" x={x} y={330} w={90} label="Steam flow" />
+        <Val a={a} t="pressure" x={x + 94} y={330} w={90} label="Drum pressure" />
+        <Val a={a} t="efficiency" x={x + 188} y={330} w={90} label="Efficiency" />
+        <Val a={a} t="stack_o2" x={x} y={372} w={90} label="Stack O₂" />
+        <Val a={a} t="stack_temp" x={x + 94} y={372} w={90} label="Stack temp" />
+        <Val a={a} t={ft} x={x + 188} y={372} w={90} label={fl} dec={ft === 'gas_flow' ? 0 : 2} />
       </g>)}
       {/* feed water to boilers */}
       <Pipe d="M380 590 H40 V250 H50" kind="water" w={4} speed={0.8} />
@@ -487,7 +487,7 @@ function SteamNetwork({ c }) {
       <Val a="STZ-02" t="failed_traps" x={686} y={414} w={110} label="Failed traps" dec={0} />
       {/* condensate return */}
       <Pipe d="M1066 420 H1050 V500 H930 M930 430 V500 H760 V560" kind="condensate" w={5} speed={0.8} />
-      <Lbl x={1000} y={494} muted size={10}>Condensate return</Lbl>
+      <Lbl x={940} y={494} muted size={10}>Condensate return</Lbl>
       <Equip a="CRS-01" x={700} y={560} w={120} h={70} label="Condensate recovery">
         <Tank x={700} y={560} w={70} h={70} level={tl != null ? tl / 100 : null} />
         <Pump x={796} y={616} r={12} on />
@@ -507,7 +507,7 @@ function SteamNetwork({ c }) {
       </g>
       <Lbl x={510} y={522} anchor="middle" muted size={10}>Feed water tank · deaerator head</Lbl>
       <Pipe d="M300 544 H460 V560" kind="water" w={3} />
-      <Lbl x={300} y={536} muted size={9.5}>RO make-up</Lbl>
+      <Lbl x={300} y={532} muted size={9.5}>RO make-up</Lbl>
       <Pipe d="M420 596 H404" kind="water" w={4} />
       <Pump x={392} y={596} r={12} dir={180} on={b1 || b2} />
       <Lbl x={392} y={634} anchor="middle" muted size={9.5}>Feed pumps</Lbl>
@@ -595,7 +595,7 @@ function GasNetwork({ c }) {
       <Val a="BLR-01" t="steam_flow" x={1156} y={204} w={104} label="Steam flow" />
       <Pipe d="M1010 360 H1028 V296 H1095 V308" kind="gas" w={5} flow={tOn} />
       <Equip a="TFH-01" x={1050} y={330} w={90} h={120} label="Thermic fluid heater" sub="1.0 Mkcal/h" noId><TFHeater x={1050} y={330} on={tOn} /></Equip>
-      <Pipe d="M1140 370 H1150" kind="oil" w={4} /><Pipe d="M1140 430 H1150" kind="oil" w={4} /><text x={1060} y={290} textAnchor="end" className="m-id">TFH-01</text>
+      <Pipe d="M1140 370 H1150" kind="oil" w={4} /><Pipe d="M1140 430 H1150" kind="oil" w={4} /><text x={1044} y={322} textAnchor="end" className="m-id">TFH-01</text>
       <Val a="TFH-01" t="gas_flow" x={1156} y={318} w={104} label="Gas flow" />
       <Val a="TFH-01" t="tf_out" x={1156} y={360} w={104} label="Fluid outlet" />
       <Val a="TFH-01" t="stack_o2" x={1156} y={402} w={104} label="Stack O₂" />

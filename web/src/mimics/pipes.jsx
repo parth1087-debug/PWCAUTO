@@ -280,7 +280,7 @@ function ImmCell({ c }) {
       <Lbl x={762} y={196} anchor="middle" size={10} muted>Injection unit</Lbl>
       <Lbl x={428} y={276} anchor="middle" size={10} muted>Nozzle</Lbl>
 
-      <Val a={A} t="cool_time" x={400} y={66} w={130} label="Hold + cooling time" />
+      <Val a={A} t="cool_time" x={520} y={64} w={130} label="Hold + cooling time" />
       <Val a={A} t="inj_time" x={460} y={150} w={110} label="Injection time" />
       <Val a={A} t="kwh_shot" x={460} y={284} w={110} label="Energy per shot" />
       <Val a={A} t="cycle_time" x={720} y={64} w={140} big label="Cycle time" />

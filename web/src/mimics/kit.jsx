@@ -23,7 +23,11 @@ export function stateOf(def, v) {
   if (!def || v == null) return 'good';
   const hi = def.hi, lo = def.lo;
   if ((hi != null && v > hi) || (lo != null && lo !== 0 && v < lo)) return 'bad';
-  if ((hi != null && v > hi - Math.abs(hi) * 0.06) || (lo != null && lo !== 0 && v < lo + Math.abs(lo) * 0.04)) return 'warn';
+  /* near-limit band: the last 25 % of the way from the normal value to the limit */
+  const b = def.base;
+  const hiBand = hi != null ? (b != null && b < hi ? (hi - b) * 0.25 : Math.abs(hi) * 0.06) : 0;
+  const loBand = lo != null ? (b != null && b > lo ? (b - lo) * 0.25 : Math.abs(lo) * 0.04) : 0;
+  if ((hi != null && v > hi - hiBand) || (lo != null && lo !== 0 && v < lo + loBand)) return 'warn';
   return 'good';
 }
 

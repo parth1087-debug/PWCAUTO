@@ -212,7 +212,7 @@ function BlastFurnace({ c }) {
       <Val a="BF-01" t="o2_enrich" x={428} y={306} w={88} label="O₂ enrichment" />
       <Val a="BF-01" t="hm_rate" x={336} y={350} w={88} label="Hot metal" />
       {/* charging conveyor */}
-      <Conveyor x={404} y={172} len={196} angle={-23} on={run} />
+      <Conveyor x={404} y={172} len={212} angle={-23} on={run} />
       <Lbl x={344} y={204} muted size={10}>Charging conveyor · coke, sinter, pellets</Lbl>
       {/* furnace */}
       <Pipe d={`M${cx - 115} 440 A115 11 0 0 1 ${cx + 115} 440`} kind="hot" w={8} flow={false} />
@@ -282,7 +282,7 @@ function DRIKiln({ c }) {
       {Array.from({ length: 9 }).map((_, i) => { const x = kx + 50 + i * 62; return <g key={i}><line x1={x} y1={ky + 2 + i * 1.6} x2={x} y2={ky - 18} className="m-edge" /><Fan x={x} y={ky - 26} r={8} on={run} speed={1.8} /></g>; })}
       <Lbl x={kx + 40} y={ky - 44} muted size={10}>Shell air fans · air tubes into the bed</Lbl>
       {/* thermocouples */}
-      {tcs.map(([t, l], i) => { const x = kx + 40 + i * 130; return <g key={t}><circle cx={x + 18} cy={ky + kd + 6 + i * 3.4} r="3" className="m-lamp good" /><Pipe d={`M${x + 18} ${ky + kd + 9 + i * 3.4} V404`} kind="signal" /><Val a="DRT-01" t={t} x={x} y={404} w={108} label={`${l} bed temp`} /></g>; })}
+      {tcs.map(([t, l], i) => { const x = kx + 30 + i * 122; return <g key={t}><circle cx={x + 18} cy={ky + kd + 6 + i * 3.4} r="3" className="m-lamp good" /><Pipe d={`M${x + 18} ${ky + kd + 9 + i * 3.4} V404`} kind="signal" /><Val a="DRT-01" t={t} x={x} y={404} w={108} label={`${l} bed temp`} /></g>; })}
       <Lbl x={kx} y={464} size={12} bold>DRK-01 · Rotary kiln 4.2 × 72 m</Lbl>
       <Lbl x={kx + 220} y={464} muted size={10}>2.5 % slope · 9 shell air fans · TCs DRT-01</Lbl>
       <Val a="DRK-01" t="speed" x={kx} y={480} w={96} label="Kiln speed" />

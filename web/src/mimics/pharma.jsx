@@ -456,7 +456,7 @@ function OsdLine({ c }) {
       <Pipe pts={[[492, 250], [512, 250]]} kind="material" w={5} speed={0.6} />
       <Pipe pts={[[520, 262], [520, 290], [560, 290]]} kind="material" w={5} speed={0.6} />
       <g className="m-shape"><path d="M508 240 H532 L525 262 H515 Z" fill="url(#m-metal)" /><path d="M508 240 H532 L525 262 H515 Z" className="m-edge" /></g>
-      <Lbl x={520} y={232} size={9.5} muted anchor="middle">Co-mill</Lbl>
+      <Lbl x={533} y={232} size={9.5} muted anchor="end">Co-mill</Lbl>
       {/* blender */}
       <Equip a="BB-01" noId x={556} y={160} w={130} h={180} label="BB-01 · bin blender" sub="1,200 L IBC"><BinBlender cx={606} cy={226} on={bbOn} rpm={bbRpm || 12} /></Equip>
       <Val a="BB-01" t="speed" x={556} y={378} w={130} label="Blender speed" />
