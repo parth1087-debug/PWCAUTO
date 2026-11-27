@@ -38,7 +38,7 @@ function Users() {
       <label className="muted" style={{ fontSize: 12, display: 'block', marginTop: 10 }}>Demo database</label>
       <select className="inp" value={demo} onChange={e => setDemo(e.target.value)} disabled={!user.master}>{DEMO_LIST.map(d => <option key={d.id} value={d.id}>{d.name} · {d.company}</option>)}</select>
       <button className="btn pri" style={{ marginTop: 14 }} onClick={add} disabled={!user.master || !name.trim()}><UserPlus />Add user</button>
-      <p className="muted" style={{ fontSize: 12, marginTop: 14 }}>To add a new industry, add a config in <span className="mono">shared/demos/</span>. It gets its own database, agents and UNS.</p>
+      <p className="muted" style={{ fontSize: 12, marginTop: 14 }}>To add a new industry, add a config in <span className="mono">web/src/shared/demos/</span>. It gets its own database, agents and UNS.</p>
     </Card>
   </div>;
 }

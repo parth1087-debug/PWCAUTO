@@ -4,7 +4,7 @@
  *   bruce/uns/<demo>.json      ISA-95 Unified Namespace tree (enterprise/site/area/work center/work unit/tag)
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { DEMOS, createDB } from '../shared/index.js';
+import { DEMOS, createDB } from '../web/src/shared/index.js';
 
 const dir = new URL('.', import.meta.url).pathname;
 mkdirSync(dir + 'agents', { recursive: true }); mkdirSync(dir + 'uns', { recursive: true });

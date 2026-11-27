@@ -1,4 +1,4 @@
-import { DEMOS, DEMO_LIST, createDB, createTools, messagesFor, logsFor, POLICIES, ENTERPRISE_CONNECTORS } from '@shared/index.js';
+import { DEMOS, DEMO_LIST, createDB, createTools, messagesFor, logsFor, POLICIES, ENTERPRISE_CONNECTORS } from '../shared/index.js';
 export { DEMOS, DEMO_LIST, POLICIES, ENTERPRISE_CONNECTORS };
 
 const H = 36e5, D = 864e5;

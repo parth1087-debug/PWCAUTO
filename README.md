@@ -11,7 +11,7 @@ Timestamps are anchored to "now", so the newest point is always the current hour
 | Folder | What it is |
 |---|---|
 | `web/` | The app: React + Vite, white minimal design, dark mode optional |
-| `shared/` | Data engine, industry demo configs, UNS, and the tools used by both the app and the MCP server |
+| `web/src/shared/` | Data engine, industry demo configs, UNS, and the tools used by both the app and the MCP server |
 | `mcp/` | `plantdb` MCP server: one connector for the app's databases (stdio or HTTP) |
 | `bruce/` | Bruce agent definitions and UNS export per demo, and a script to push agents to a Bruce gateway |
 | `legacy/` | The earlier static HTML version |
@@ -43,7 +43,7 @@ Sign in with **pwc** / **Demo@2026**. Change it in `web/src/config.js`. This log
 - Switch users from the user menu at the top of the sidebar. There is one login for all of them.
 - The **Artefactory** is common to all users. Each artefact is tied to the demo whose data it shows.
 
-To add an industry, copy a file in `shared/demos/`, change the plant, assets, tags, KPIs, events and agents, and list it in `shared/index.js`. It gets its own database, UNS, agents, dashboards and MCP access.
+To add an industry, copy a file in `web/src/shared/demos/`, change the plant, assets, tags, KPIs, events and agents, and list it in `web/src/shared/index.js`. It gets its own database, UNS, agents, dashboards and MCP access.
 
 ## Sidebar
 

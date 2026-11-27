@@ -18,7 +18,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import http from 'node:http';
-import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../shared/index.js';
+import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../web/src/shared/index.js';
 
 const allowed = (process.env.PLANTDB_DEMOS || Object.keys(DEMOS).join(',')).split(',').map(s => s.trim()).filter(id => DEMOS[id]);
 const anchor = process.env.PLANTDB_ANCHOR || null;
