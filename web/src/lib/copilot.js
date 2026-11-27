@@ -1,6 +1,8 @@
 /* Copilot engine: routes a question to a Bruce agent, calls plant tools, and builds the answer from real data. */
 import { POLICIES, fmtNum, fmtDate, fmtRel } from './data.js';
 import { MIMICS } from '../shared/mimics.js';
+import { ONTOLOGY, REL_LABEL, relationsOf, trace } from '../shared/ontology/index.js';
+import { DEPLOYED } from '../shared/deployed.js';
 
 const D = 864e5;
 const rnd = (a, b) => Math.round(a + Math.random() * (b - a));
@@ -57,6 +59,21 @@ export function runQuery(question, ctx) {
     const p = id ? POLICIES.find(x => x.id === id.toUpperCase()) : null;
     if (p) return res('Plant Copilot · Foundry', 'Data retrieval', [{ type: 'text', md: `**${p.id} · ${p.name}** (${p.mode}). ${p.stmt}` }, { type: 'kv', rows: [['Applies to', p.scope], ['Approver', p.approver], ['Enforced by', p.by]] }, { type: 'code', text: p.code }]);
     return res('Plant Copilot · Foundry', 'Data retrieval', [{ type: 'text', md: `There are **${POLICIES.length} policies**. The ones that stop or hold agent actions:` }, { type: 'table', head: ['Policy', 'Effect', 'Approver'], rows: POLICIES.filter(x => ['Block', 'Approval', 'Draft only'].includes(x.mode)).map(x => [`${x.id} · ${x.name}`, x.mode, x.approver]) }, { type: 'actions', items: [{ label: 'Open Policies', act: { type: 'nav', to: 'context/policies' } }] }]);
+  }
+
+  /* ontology: upstream sources, downstream impact and causes of an asset */
+  if (asset && ONTOLOGY[demo.id] && has(q, /feed|supply|supplies|upstream|downstream|impact|affect|connected|depends?|isolat|shut ?down|trip|relation|ontology|what (is|are) on/)) {
+    const r = relationsOf(demo.id, asset.id); const up = trace(demo.id, asset.id, 'up'); const down = trace(demo.id, asset.id, 'down');
+    ext('uns_graph.trace_lineage', { node: asset.id, direction: 'both' }, 420);
+    const nm = id => `**${id}** ${db.assetById[id]?.name || ''}`;
+    const causes = [...r.up, ...r.down].filter(x => x.rel === 'causes');
+    return res('Plant Copilot · UNS', 'Ontology', [
+      { type: 'text', md: `**${asset.id} · ${asset.name}** has ${up.length} upstream source${up.length === 1 ? '' : 's'} and ${down.length} downstream consumer${down.length === 1 ? '' : 's'} in the plant ontology.` },
+      ...(r.up.length ? [{ type: 'table', head: ['Upstream', 'Relation', 'Note'], rows: r.up.map(x => [`${x.asset} · ${db.assetById[x.asset]?.name || ''}`, x.rel === 'causes' ? 'affects this' : `${REL_LABEL[x.rel]} this`, x.note || '—']) }] : []),
+      ...(down.length ? [{ type: 'text', md: `If ${asset.id} stops or is isolated, this is affected: ${down.slice(0, 14).map(x => nm(x.asset)).join(', ')}${down.length > 14 ? '…' : ''}.` }] : []),
+      ...(causes.length ? [{ type: 'list', items: causes.map(x => `Confirmed by an open RCA: ${x.note}`) }] : []),
+      { type: 'evidence', items: [`UNS ${DEPLOYED[demo.id]?.uns?.workspace || 'ontology'}`, 'rel_feeds · rel_supplies · rel_causes'] },
+      { type: 'actions', items: [{ label: 'Open in Context', act: { type: 'nav', to: `context/uns/${encodeURIComponent(db.unsPath(asset))}` }, pri: true }, { label: 'Asset twin', act: { type: 'nav', to: `artefactory/${demo.id}-twin/${asset.id}` } }] }]);
   }
 
   /* 3. create an artefact: dashboard (KPI, twin, real-time, setpoints, custom), form, sheet, presentation or document */

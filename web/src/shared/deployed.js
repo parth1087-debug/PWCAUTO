@@ -23,6 +23,15 @@ export const DEPLOYED = {
       'cement.energy': '6b0924fdbee99942f628d5c3', 'cement.shift-report': '6b0924febee99942f628d5c7',
     },
   },
+  ems: {
+    uns: { workspace: 'ws_qFAh35wBgB', name: 'Faclon demo · Energy & utilities', nodes: 292, edges: 75 },
+    copilot: '6b099042bee99942f628ddd9', // Plant Copilot on Claude; needs the Forge secret BRUCE_KEY_EMS to go live
+    agents: {
+      'ems.energy-optimizer': '6b099076bee99942f628ddde', 'ems.power-quality': '6b099076bee99942f628dde2',
+      'ems.utility-health': '6b099076bee99942f628dde6', 'ems.demand-tariff': '6b099077bee99942f628ddea',
+      'ems.thermal': '6b099077bee99942f628ddee', 'ems.daily-report': '6b099077bee99942f628ddf2',
+    },
+  },
   steel: {
     uns: { workspace: 'ws_TGBJVxMdCC', name: 'Faclon demo · Steel', nodes: 45, edges: 10 },
     copilot: '6b093961bee99942f628db1f', // Plant Copilot: the agent the app's Copilot talks to through the Bruce agent API

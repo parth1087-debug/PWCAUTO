@@ -6,6 +6,7 @@ import { Trend } from '../components/charts.jsx';
 import { POLICIES, ENTERPRISE_CONNECTORS, fmtNum, fmtTime } from '../lib/data.js';
 import { DEPLOYED, UNS_BASE, PLANTDB_URL } from '../shared/index.js';
 import { assetSources, sourceSummary } from '../shared/sources.js';
+import { ONTOLOGY, REL_LABEL, relationsOf, trace } from '../shared/ontology/index.js';
 
 const TABS = [{ id: 'uns', label: 'UNS ontology' }, { id: 'sources', label: 'Data sources' }, { id: 'skills', label: 'Skills' }, { id: 'docs', label: 'Docs' }, { id: 'connectors', label: 'Connectors' }, { id: 'policies', label: 'Policies' }];
 
@@ -58,6 +59,7 @@ function Uns({ param }) {
           {isAsset && <><dl className="kv" style={{ marginBottom: 12 }}><dt>Class</dt><dd>{health.cls}</dd><dt>Criticality</dt><dd>{health.crit}</dd><dt>Health</dt><dd><HealthBar v={health.health} /></dd><dt>Life left</dt><dd>{health.rulDays} days</dd><dt>Finding</dt><dd>{health.finding || '—'}</dd></dl>
             <table className="t"><thead><tr><th>Tag</th><th className="r">Latest</th><th>Unit</th></tr></thead><tbody>{node.children.map(t => <tr key={t.name} className="click" onClick={() => go(`${path}/${t.name}`)}><td><span className="mono">{t.name}</span> <span className="muted">· {t.label}</span></td><td className="r num">{fmtNum(ctx.db.latest(t.asset, t.tag))}</td><td className="muted">{t.unit}</td></tr>)}</tbody></table></>}
           {!isTag && !isAsset && <table className="t"><tbody>{(node.children || []).map(k => <tr key={k.name} className="click" onClick={() => go(`${path}/${k.name}`)}><td className="b">{k.label}</td><td className="muted">{k.level}</td><td className="mono muted">{k.name}</td></tr>)}</tbody></table>}
+          {isAsset && <Relations a={node.asset} go={go} />}
           {(isAsset || isTag) && <Binding a={node.asset} tag={isTag ? node.tag : null} />}
           <div className="muted" style={{ fontSize: 11.5, marginTop: 12 }}>MCP: <span className="mono">plantdb.{isTag ? 'get_tag_history' : 'uns_browse'}({'{'} demo: "{ctx.demo.id}", path: "{path}" {'}'})</span></div>
         </Card>
@@ -194,4 +196,30 @@ function Sources({ sel }) {
       </Card>
     </div>
   </>;
+}
+
+/** Ontology relations of one asset: what it gets from, what it gives to, and confirmed causes. */
+function Relations({ a, go }) {
+  const { ctx } = useApp();
+  if (!ONTOLOGY[ctx.demo.id]) return null;
+  const r = relationsOf(ctx.demo.id, a); if (!r.up.length && !r.down.length) return null;
+  const up = trace(ctx.demo.id, a, 'up'), down = trace(ctx.demo.id, a, 'down');
+  const name = id => ctx.db.assetById[id]?.name || id;
+  const open = id => go(ctx.db.unsPath(ctx.db.assetById[id]));
+  const st = id => { const h = ctx.db.health(id); return h.state === 'Alarm' ? 'bad' : h.state === 'Watch' ? 'warn' : 'good'; };
+  const Chip = ({ id }) => <button className="rel-chip" onClick={() => open(id)} title={name(id)}><span className={`dot-s ${st(id)}`} /><b className="mono">{id}</b></button>;
+  const Row = ({ x, dir }) => <tr className="click" onClick={() => open(x.asset)}><td style={{ width: 22 }}><span className={`dot-s ${st(x.asset)}`} /></td><td><b className="mono" style={{ fontSize: 12 }}>{x.asset}</b> <span className="muted">{name(x.asset)}</span></td>
+    <td><Tag c={x.rel === 'causes' ? 'bad' : 'line'}>{dir === 'up' ? (x.rel === 'causes' ? 'affects this' : `${REL_LABEL[x.rel]} this`) : REL_LABEL[x.rel]}</Tag></td><td className="muted" style={{ fontSize: 12 }}>{x.note}</td></tr>;
+  return <div style={{ marginTop: 16 }}>
+    <div className="row" style={{ marginBottom: 6 }}><b style={{ fontSize: 12.5 }}>Relationships</b><span className="muted" style={{ fontSize: 12 }}>· ontology on top of the ISA-95 tree</span></div>
+    <div className="rel-flow">
+      <div><div className="lin-h">Upstream · {up.length}</div><div className="chips">{up.slice(0, 10).map(x => <Chip key={x.asset} id={x.asset} />)}{!up.length && <span className="muted">source</span>}</div></div>
+      <div className="rel-me"><span className={`dot-s ${st(a)}`} /><b className="mono">{a}</b></div>
+      <div><div className="lin-h">Downstream · {down.length}</div><div className="chips">{down.slice(0, 12).map(x => <Chip key={x.asset} id={x.asset} />)}{!down.length && <span className="muted">end use</span>}</div></div>
+    </div>
+    <div className="scroll-x"><table className="t"><tbody>
+      {r.up.map(x => <Row key={'u' + x.asset + x.rel} x={x} dir="up" />)}
+      {r.down.map(x => <Row key={'d' + x.asset + x.rel} x={x} dir="down" />)}
+    </tbody></table></div>
+  </div>;
 }

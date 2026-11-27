@@ -15,6 +15,7 @@ import { DEMOS, createDB, createTools } from '../web/src/shared/index.js';
 import { createArtefact } from './store.mjs';
 import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
 import { MIMICS } from '../web/src/shared/mimics.js';
+import { ONTOLOGY, relationsOf, trace } from '../web/src/shared/ontology/index.js';
 
 const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|html|web ?page|one.?pager|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
 
@@ -37,6 +38,7 @@ const DEFAULTS = {
   auto: { id: '6b093960bee99942f628db17', name: 'Faclon Auto · Plant Copilot' },
   cement: { id: '6b093961bee99942f628db1b', name: 'Faclon Cement · Plant Copilot' },
   steel: { id: '6b093961bee99942f628db1f', name: 'Faclon Steel · Plant Copilot' },
+  ems: { id: '6b099042bee99942f628ddd9', name: 'Faclon Energy · Plant Copilot' },
 };
 export const COPILOTS = Object.fromEntries(Object.entries(DEFAULTS).map(([demo, a]) => [demo, {
   id: process.env[`BRUCE_AGENT_${demo.toUpperCase()}`] || a.id,
@@ -77,6 +79,11 @@ function compact(v) {
  * Live plant data for the question, read from plantdb before the agent runs.
  * Bruce skips person-scoped connectors for agent-key calls, so the app attaches the data itself.
  */
+export function ontologyFor(demoId, asset) {
+  const r = relationsOf(demoId, asset);
+  return { asset, direct: { upstream: r.up, downstream: r.down }, upstream_chain: trace(demoId, asset, 'up').map(x => `${x.asset} ${x.rel} ${x.via}`), downstream_chain: trace(demoId, asset, 'down').map(x => `${x.via} ${x.rel} ${x.asset}`),
+    causes: (ONTOLOGY[demoId] || []).filter(x => x[1] === 'causes' && (x[0] === asset || x[2] === asset)).map(x => `${x[0]} affects ${x[2]}: ${x[3]}`) };
+}
 export function prefetch(demoId, q, anchor) {
   const demo = DEMOS[demoId];
   const db = createDB(demo, { anchor: anchor || null });
@@ -98,12 +105,15 @@ export function prefetch(demoId, q, anchor) {
   if (/attention|approval|alert|pending|today|now|messages?|inbox/.test(s)) add('list_messages', {});
   if (/manual|sop|procedure|document|rca|torque|spec|control plan|how (do|to)/.test(s)) add('search_docs', { q: q.slice(0, 120) });
   if (!calls.length) { add('get_kpis', { days: 30 }); add('get_asset_health', {}); }
-  return calls.slice(0, 4).map(c => {
+  const out = calls.slice(0, 4).map(c => {
     const t0 = Date.now();
     let result, ok = true;
     try { result = t[c.name]({ ...c.input }); if (result?.error) ok = false; } catch (e) { result = { error: e.message }; ok = false; }
     return { ...c, ok, result, ms: Math.max(1, Date.now() - t0) };
   });
+  /* ontology: for each asset named, what it connects to (upstream sources, downstream consumers, causes) */
+  if (ONTOLOGY[demoId]) assets.forEach(a => out.push({ name: 'get_ontology', input: { asset: a.id }, ok: true, ms: 1, result: ontologyFor(demoId, a.id) }));
+  return out;
 }
 
 /**
