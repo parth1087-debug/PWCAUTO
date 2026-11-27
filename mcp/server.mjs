@@ -49,9 +49,17 @@ function buildServer() {
 
 const httpIdx = process.argv.indexOf('--http');
 if (httpIdx > -1) {
-  const port = Number(process.argv[httpIdx + 1] || 8787);
+  const port = Number(process.argv[httpIdx + 1] || process.env.PORT || 8787);
+  const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version', 'Access-Control-Expose-Headers': 'Mcp-Session-Id' };
   http.createServer(async (req, res) => {
+    Object.entries(cors).forEach(([k, v]) => res.setHeader(k, v));
+    if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
+    if (req.url === '/' || req.url === '/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ name: 'plantdb', status: 'ok', mcp: '/mcp', demos: allowed, anchor: anchor || 'now' }));
+      return;
+    }
     if (!req.url.startsWith('/mcp')) { res.writeHead(404).end(); return; }
+    if (req.method !== 'POST') { res.writeHead(405, { Allow: 'POST' }).end('Use POST (stateless Streamable HTTP)'); return; }
     if (process.env.PLANTDB_TOKEN && req.headers.authorization !== `Bearer ${process.env.PLANTDB_TOKEN}`) { res.writeHead(401).end('Unauthorized'); return; }
     let body = '';
     req.on('data', c => (body += c));
