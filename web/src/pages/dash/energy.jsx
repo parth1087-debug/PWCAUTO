@@ -214,7 +214,7 @@ function ExportBoard({ c, R, m }) {
       </Card>
       <Card title="Sites vs P50" sub={`MWh exported · ${R.label}`} flush>
         <div className="en-tbl sm"><table className="t"><thead><tr><th>Site</th><th className="r">Export</th><th className="r">vs P50</th><th className="r">Shortfall</th></tr></thead>
-          <tbody>{m.areas.map(a => { const mwh = (e.act * a.share) / 100; const short = Math.max(0, mwh / a.vsPlan - mwh); return <tr key={a.name}><td><b>{a.name}</b><div className="muted" style={{ fontSize: 11 }}>{a.share} % of portfolio</div></td><td className="r num">{fmtNum(mwh)} MWh</td>
+          <tbody>{m.areas.map((a0, _, all) => { const norm = all.reduce((t, x) => t + (x.share / 100) * x.vsPlan, 0) || 1; const a = { ...a0, vsPlan: (a0.vsPlan * e.attain) / norm }; const mwh = (e.act * a.share) / 100; const short = Math.max(0, mwh / a.vsPlan - mwh); return <tr key={a.name}><td><b>{a.name}</b><div className="muted" style={{ fontSize: 11 }}>{a.share} % of portfolio</div></td><td className="r num">{fmtNum(mwh)} MWh</td>
             <td className="r num" style={{ color: a.vsPlan < 0.97 ? 'var(--bad)' : a.vsPlan < 1 ? 'var(--warn)' : 'var(--good)' }}>{pct(a.vsPlan, 1)}</td><td className="r num">{short > 0 ? inr((short * 1000 * m.tariff.rate) / 1e5) : '—'}</td></tr>; })}</tbody></table></div>
       </Card>
     </div>

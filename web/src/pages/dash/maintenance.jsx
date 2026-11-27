@@ -57,14 +57,14 @@ export default function Maintenance({ c, R, sel }) {
       <MKpi label="Downtime avoided" value={n.avoidedL} fmt={inr} prev={pv.avoidedL} better="up" note={`${fmtNum(n.avoidedH, 0)} h · ${n.pdm} fault${n.pdm === 1 ? '' : 's'} caught early`} spark={wk.map(w => w.avoidedL)} />
     </div>
 
-    <div className="grid g32">
+    <div className="grid g21">
       <Card title="Failure forecast" sub={`worst risk first · risk = cost of failure × probability in 30 days · select an asset`} flush
         actions={<button className="btn sm" onClick={() => setAll(!all)}>{all ? 'Show at-risk only' : `Show all ${fc.length}`}</button>}
         csv={{ name: 'failure-forecast', rows: () => fc.map(x => ({ asset: x.id, name: x.name, criticality: x.crit, health: x.health, life_left_days: x.rulDays, p_fail_30d: +x.p30.toFixed(2), cost_of_failure_lakh: x.consL, risk_lakh: x.riskL, action: ACTION[x.action][1], finding: x.finding || '' })) }}>
         <div className="scroll-x" style={{ maxHeight: 470, overflowY: 'auto' }}><table className="t"><thead><tr><th>Asset</th><th>Health</th><th className="r">Life left</th><th className="r">P(fail) 30 d</th><th className="r">Risk</th><th>Next step</th></tr></thead><tbody>
           {rows.map(x => <tr key={x.id} className={`click ${x.id === at.id ? 'on' : ''}`} onClick={() => go(x.id)}>
             <td><div className="b">{x.id} <Tag c="line">{x.crit}</Tag></div><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 230 }}>{x.finding || x.name}</div></td>
-            <td><HealthBar v={x.health} w={64} /></td>
+            <td><HealthBar v={x.health} w={52} /></td>
             <td className="r num" style={{ color: x.rulDays < 15 ? 'var(--bad)' : undefined, fontWeight: x.rulDays < 15 ? 600 : 400 }}>{x.rulDays} d<div className="muted" style={{ fontSize: 11, fontWeight: 400 }}>{when(x.failAt)}</div></td>
             <td className="r num">{pct(x.p30)}</td>
             <td className="r num" style={{ whiteSpace: 'nowrap' }}><b>{inr(x.riskL, true)}</b><div className="muted" style={{ fontSize: 11 }}>of {inr(x.consL, true)}</div></td>
@@ -92,28 +92,35 @@ export default function Maintenance({ c, R, sel }) {
       </Card>
     </div>
 
-    <div className="grid g32 mt">
-      <Card title={`Next window: ${win.name}`} sub={`${winLabel} · ${win.hours} h · ${win.crew} technicians`} flush
-        csv={{ name: 'window-plan', rows: () => plan.jobs.map(j => ({ asset: j.asset, job: j.what, hours: j.hours, crew: j.crew, crew_hours: j.crewH, spare: j.spare ? j.spare.name : '', spare_status: SPARE(j.spare)[1], cost_lakh: j.costL, risk_lakh: j.riskL, plan: FIT[j.fit][1] })) }}>
-        <div style={{ padding: '10px 16px 12px' }}><Capacity used={plan.used} cap={plan.cap} /></div>
-        {plan.jobs.length ? <div className="scroll-x"><table className="t"><thead><tr><th>Job</th><th className="r">Crew-h</th><th>Spare</th><th className="r">Cost</th><th className="r">Risk removed</th><th>Plan</th></tr></thead><tbody>
-          {plan.jobs.map((j, i) => <tr key={j.asset + i} className="click" onClick={() => go(j.asset)}>
-            <td><div className="b">{j.asset} <Tag c="line">{j.crit}</Tag></div><div className="muted" style={{ fontSize: 11.5, maxWidth: 300 }}>{j.what}</div></td>
-            <td className="r num">{j.crewH}<div className="muted" style={{ fontSize: 11 }}>{j.hours} h × {j.crew}</div></td>
-            <td>{j.spare ? <><div style={{ fontSize: 12 }}>{j.spare.name}</div><Tag c={SPARE(j.spare)[0]}>{SPARE(j.spare)[1]}</Tag></> : <span className="muted">—</span>}</td>
-            <td className="r num">{inr(j.costL, true)}</td>
-            <td className="r num">{j.riskL ? inr(j.riskL, true) : '—'}</td>
-            <td><Tag c={FIT[j.fit][0]}>{FIT[j.fit][1]}</Tag></td>
-          </tr>)}
-        </tbody></table></div> : <Empty>No jobs need the window. All assets healthy.</Empty>}
-        {(before.length > 0 || later.length > 0 || waitSpare.length > 0) && <div className="muted" style={{ fontSize: 12, padding: '10px 16px' }}>
-          {before.length > 0 && <div><b style={{ color: 'var(--bad)' }}>Cannot wait:</b> {before.map(j => `${j.asset} (${j.rulDays} d of life)`).join(', ')} — plan a controlled stop before the window.</div>}
-          {waitSpare.length > 0 && <div><b>Expedite spares:</b> {waitSpare.map(j => `${j.spare.name} for ${j.asset}`).join('; ')}.</div>}
-          {later.length > 0 && <div><b>Over capacity:</b> {later.map(j => j.asset).join(', ')} move to the following window.</div>}
-        </div>}
-      </Card>
+    <Card title={`Next window: ${win.name}`} sub={`${winLabel} · ${win.hours} h · ${win.crew} technicians`} flush className="mt"
+      csv={{ name: 'window-plan', rows: () => plan.jobs.map(j => ({ asset: j.asset, job: j.what, hours: j.hours, crew: j.crew, crew_hours: j.crewH, spare: j.spare ? j.spare.name : '', spare_status: SPARE(j.spare)[1], cost_lakh: j.costL, risk_lakh: j.riskL, plan: FIT[j.fit][1] })) }}>
+      <div style={{ padding: '10px 16px 12px' }}><Capacity used={plan.used} cap={plan.cap} /></div>
+      {plan.jobs.length ? <div className="scroll-x"><table className="t"><thead><tr><th>Job</th><th className="r">Crew-h</th><th>Spare</th><th className="r">Cost</th><th className="r">Risk removed</th><th>Plan</th></tr></thead><tbody>
+        {plan.jobs.map((j, i) => <tr key={j.asset + i} className="click" onClick={() => go(j.asset)}>
+          <td style={{ minWidth: 200 }}><div className="b" style={{ whiteSpace: 'nowrap' }}>{j.asset} <Tag c="line">{j.crit}</Tag></div><div className="muted" style={{ fontSize: 11.5, maxWidth: 320 }}>{j.what}</div></td>
+          <td className="r num">{j.crewH}<div className="muted" style={{ fontSize: 11 }}>{j.hours} h × {j.crew}</div></td>
+          <td>{j.spare ? <><div style={{ fontSize: 12 }}>{j.spare.name}</div><Tag c={SPARE(j.spare)[0]}>{SPARE(j.spare)[1]}</Tag></> : <span className="muted">—</span>}</td>
+          <td className="r num" style={{ whiteSpace: 'nowrap' }}>{inr(j.costL, true)}</td>
+          <td className="r num" style={{ whiteSpace: 'nowrap' }}>{j.riskL ? inr(j.riskL, true) : '—'}</td>
+          <td><Tag c={FIT[j.fit][0]}>{FIT[j.fit][1]}</Tag></td>
+        </tr>)}
+      </tbody></table></div> : <Empty>No jobs need the window. All assets healthy.</Empty>}
+      {(before.length > 0 || later.length > 0 || waitSpare.length > 0) && <div className="muted" style={{ fontSize: 12, padding: '10px 16px' }}>
+        {before.length > 0 && <div><b style={{ color: 'var(--bad)' }}>Cannot wait:</b> {before.map(j => `${j.asset} (${j.rulDays} d of life)`).join(', ')} — plan a controlled stop before the window.</div>}
+        {waitSpare.length > 0 && <div><b>Expedite spares:</b> {waitSpare.map(j => `${j.spare.name} for ${j.asset}`).join('; ')}.</div>}
+        {later.length > 0 && <div><b>Over capacity:</b> {later.map(j => j.asset).join(', ')} move to the following window.</div>}
+      </div>}
+    </Card>
+
+    <div className="grid g2 mt">
       <Card title="Risk matrix" sub="criticality × probability of failure in 30 days · select an asset">
         <RiskMatrix items={fc} sel={at.id} onPick={go} />
+      </Card>
+      <Card title="Breakdown downtime by cause" sub={`${R.label || R.days + ' d'} · hours and ₹ lost · Pareto`}
+        csv={{ name: 'downtime-by-cause', rows: () => cz.map(x => ({ cause: x.cause, breakdowns: x.n, hours: x.h, loss_lakh: x.lossL, cumulative_pct: x.cum })) }}>
+        {cz.length ? <><ParetoBars rows={cz.map(x => ({ name: x.cause, value: x.h }))} unit="h" extra={r => inr(cz.find(x => x.cause === r.name).lossL, true)} />
+          <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Top {cz.findIndex(x => x.cum >= 75) + 1 || cz.length} of {cz.length} causes give {cz[Math.max(0, cz.findIndex(x => x.cum >= 75))]?.cum ?? 100} % of breakdown hours.</div></>
+          : <Empty>No breakdowns in this period.</Empty>}
       </Card>
     </div>
 
@@ -126,19 +133,11 @@ export default function Maintenance({ c, R, sel }) {
       </div>
     </Card>
 
-    <div className="grid g2 mt">
-      <Card title="Breakdown downtime by cause" sub={`${R.label || R.days + ' d'} · hours and ₹ lost · Pareto`}
-        csv={{ name: 'downtime-by-cause', rows: () => cz.map(x => ({ cause: x.cause, breakdowns: x.n, hours: x.h, loss_lakh: x.lossL, cumulative_pct: x.cum })) }}>
-        {cz.length ? <><ParetoBars rows={cz.map(x => ({ name: x.cause, value: x.h }))} unit="h" extra={r => inr(cz.find(x => x.cause === r.name).lossL, true)} />
-          <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Top {cz.findIndex(x => x.cum >= 75) + 1 || cz.length} of {cz.length} causes give {cz[Math.max(0, cz.findIndex(x => x.cum >= 75))]?.cum ?? 100} % of breakdown hours.</div></>
-          : <Empty>No breakdowns in this period.</Empty>}
-      </Card>
-      <Card title="Bad actors" sub={`assets with the highest breakdown cost · ${R.label || R.days + ' d'}`} flush>
-        {bad.length ? <div className="scroll-x"><table className="t"><thead><tr><th>Asset</th><th className="r">Failures</th><th className="r">Down</th><th className="r">Loss</th><th>Main cause</th></tr></thead><tbody>
-          {bad.map(b => <tr key={b.asset} className="click" onClick={() => go(b.asset)}><td><b>{b.asset}</b><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 200 }}>{b.name}</div></td><td className="r num">{b.n}</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{fmtNum(b.h, 1)} h</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{inr(b.lossL, true)}</td><td className="muted">{b.top}</td></tr>)}
-        </tbody></table></div> : <Empty>No breakdowns in this period.</Empty>}
-      </Card>
-    </div>
+    <Card title="Bad actors" sub={`assets with the highest breakdown cost · ${R.label || R.days + ' d'}`} flush className="mt">
+      {bad.length ? <div className="scroll-x"><table className="t"><thead><tr><th>Asset</th><th className="r">Failures</th><th className="r">Down</th><th className="r">Loss</th><th>Main cause</th></tr></thead><tbody>
+        {bad.map(b => <tr key={b.asset} className="click" onClick={() => go(b.asset)}><td><b>{b.asset}</b><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 200 }}>{b.name}</div></td><td className="r num">{b.n}</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{fmtNum(b.h, 1)} h</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{inr(b.lossL, true)}</td><td className="muted">{b.top}</td></tr>)}
+      </tbody></table></div> : <Empty>No breakdowns in this period.</Empty>}
+    </Card>
 
     <Card title="MTBF and MTTR by asset class" sub={`last ${cls[0]?.days || 90} days (at least 90 so every class has enough run time) · worst loss first`} flush className="mt"
       actions={cls.length > 10 && <button className="btn sm" onClick={() => setAllCls(!allCls)}>{allCls ? 'Top 10' : `Show all ${cls.length}`}</button>}

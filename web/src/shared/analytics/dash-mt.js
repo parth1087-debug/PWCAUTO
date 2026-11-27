@@ -47,6 +47,18 @@ const P = {
 const DEF = { majorL: 5, failMult: 3.5, lossPerH: 1, mtbf: [300, 420], mttr: [4, 3], pm: [78, 90, 95], repairL: 0.8, crew: 6, pmMult: 1, window: { name: 'Next planned stop', inDays: 7, hours: 12 }, causes: [['Mechanical', 3], ['Electrical', 2], ['Instrumentation', 2], ['Process', 1]] };
 
 export const profile = demo => P[demo.id] || DEF;
+
+/* utility and electrical classes fail in their own ways, whatever the industry */
+const CLASS_CAUSES = [
+  [/chiller|brine/i, [['Refrigerant leak', 2], ['Compressor fault', 3], ['Condenser fouling', 3]]],
+  [/compressor|dryer|air receiver/i, [['Valve or unloader fault', 3], ['Air-end bearing', 2], ['Cooler fouling', 2]]],
+  [/boiler|steam|prds|trap|condensate/i, [['Burner or fuel trip', 3], ['Feed pump trip', 2], ['Tube or trap leak', 2]]],
+  [/incomer|transformer|busbar|switchboard|coupler|\bbus\b|apfc|filter ·|harmonic|ups/i, [['Breaker or relay trip', 3], ['Cable termination fault', 2], ['Insulation or cooling fault', 2]]],
+  [/\bahu\b|air handling|hvac/i, [['Filter choke', 3], ['Fan belt or bearing', 3], ['VFD fault', 2]]],
+  [/cooling tower/i, [['Fan gearbox', 3], ['Fill fouling', 2], ['Pump trip', 2]]],
+  [/nitrogen|\bro\b|etp|dm plant|water/i, [['Membrane or resin fouling', 3], ['Pump trip', 2], ['Instrument fault', 2]]],
+];
+const causesFor = (demo, a) => { const lab = demo.classes[a.cls].label; const m = CLASS_CAUSES.find(([re]) => re.test(lab)); return m ? m[1] : profile(demo).causes; };
 const kpi = (demo, id) => demo.kpis.find(k => k.id === id && k.group === 'maintenance');
 
 /* ---------- money and number helpers ---------- */
@@ -121,7 +133,7 @@ export function workOrders(db) {
         if (t > db.anchor) break;
         const n = (r() + r() + r() - 1.5) * 0.9;
         const downH = Math.max(0.3, +(mttrAt(db, t) * Math.exp(n)).toFixed(1));
-        const cause = pick(p.causes, (r() + u01(a.cls + 'c')) % 1);
+        const cause = pick(causesFor(db.demo, a), (r() + u01(a.cls + 'c')) % 1);
         out.push({ asset: a.id, cls: a.cls, crit: a.crit, type: 'BD', title: `Breakdown · ${cause.toLowerCase()}`, cause, raised: t, due: t, done: t + downH * H, downH, labourH: +(downH * (1.5 + r())).toFixed(1),
           costL: +(p.repairL * (0.2 + r() * 0.8) * (a.crit === 'A' ? 1 : 0.5)).toFixed(2), lossL: +(downH * lph).toFixed(2) });
       }
@@ -150,7 +162,7 @@ export function workOrders(db) {
         t += -Math.log(1 - r() * 0.999) / Math.max(rate, 1e-9) * H;
         if (t > db.anchor) break;
         const avoidedH = +(mttrAt(db, t) * (2 + r() * 1.5)).toFixed(1);
-        const cause = pick(p.causes, (r() + u01(a.cls + 'c')) % 1);
+        const cause = pick(causesFor(db.demo, a), (r() + u01(a.cls + 'c')) % 1);
         const done = t + (1 + r() * 8) * D;
         out.push({ asset: a.id, cls: a.cls, crit: a.crit, type: 'PdM', title: `Predictive · ${cause.toLowerCase()} found early`, cause, raised: t, due: t + 7 * D, done: done <= db.anchor ? done : null,
           labourH: +(4 + r() * 6).toFixed(1), costL: +(p.repairL * (0.2 + r() * 0.4)).toFixed(2), avoidedH, avoidedL: +(avoidedH * lph + p.repairL * 0.8).toFixed(2) });
@@ -236,10 +248,14 @@ export function badActors(db, from, to, n = 6) {
 }
 
 /* ---------- spares ---------- */
-const SPARE_RULES = [[/igbt|power module/i, 'IGBT power module'], [/fan/i, 'Cooling fan assembly'], [/bearing/i, 'Bearing set (OEM)'], [/lube|lubric|oil/i, 'Lube pump filter and oil cooler kit'], [/refractor|coating|shell/i, 'Refractory bricks and castable'],
+const SPARE_RULES = [[/igbt|power module/i, 'IGBT power module'], [/\btraps?\b/i, 'Steam trap internals'], [/\bedi\b/i, 'EDI stack module'], [/screen pack/i, 'Screen pack set'],
+  [/\baph\b|economiser|soot/i, 'Soot blower lance and seal kit'], [/air leak|leak tag/i, 'Leak repair kit (fittings, FRLs)'], [/mould level/i, 'Mould level sensor'], [/mould|cooling time|cycle time/i, 'Mould cooling hoses and fittings'],
+  [/wall thickness|ovality|ultrasonic/i, 'Ultrasonic probe and couplant kit'], [/strainer|descal|cooling water/i, 'Strainer elements and descaling chemical'],
+  [/damper/i, 'Damper actuator'], [/soiling|robot/i, 'Module cleaning robot spares'], [/pyranometer/i, 'Reference pyranometer (calibrated)'], [/recirc|arc valve|valve passing/i, 'Valve trim set'], [/distributor|packing|reflux|column/i, 'Liquid distributor and packing gasket set'], [/jacket/i, 'Jacket nozzle gaskets and descaling kit'],
+  [/\bfan\b|fans/i, 'Cooling fan assembly'], [/bearing/i, 'Bearing set (OEM)'], [/\blube\b|lubric|\boil (flow|pressure|pump|filter)/i, 'Lube pump filter and oil cooler kit'], [/refractor|coating|shell/i, 'Refractory bricks and castable'],
   [/seal/i, 'Mechanical seal kit'], [/gear/i, 'Gearbox bearing and seal kit'], [/pitch/i, 'Pitch motor and encoder'], [/yaw/i, 'Yaw drive pinion and brake pads'], [/tracker|stow/i, 'Tracker controller card'], [/winding|transformer|xfmr/i, 'Bushing and gasket set'],
   [/filter|dp\b|differential/i, 'Filter element set'], [/heater|zone|barrel/i, 'Heater band and thermocouple set'], [/vacuum|impeller/i, 'Vacuum pump impeller and seal kit'], [/joint|busbar|breaker/i, 'Busbar joint kit (bolts, washers, compound)'],
-  [/trap/i, 'Steam trap internals'], [/quench|nozzle|spray/i, 'Spray nozzle set'], [/punch|die|weight/i, 'Punch and die set'], [/condenser|back.?pressure|tube/i, 'Condenser tube plugs and cleaning balls'], [/belt/i, 'Drive belt set'], [/cyclone|draft|build/i, 'Air blaster valve kit']];
+  [/trap/i, 'Steam trap internals'], [/quench|nozzle|spray/i, 'Spray nozzle set'], [/punch|die|weight/i, 'Punch and die set'], [/condenser|back.?pressure|tube/i, 'Condenser tube plugs and cleaning balls'], [/belt/i, 'Drive belt set'], [/cyclone|\bc4\b|blaster/i, 'Air blaster valve kit']];
 export function spareFor(db, assetId, text) {
   const name = (SPARE_RULES.find(([re]) => re.test(text || '')) || [0, 'Spares kit as per BOM'])[1];
   const u = u01(db.demo.id + assetId + name);
