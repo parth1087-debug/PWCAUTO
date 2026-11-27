@@ -1,0 +1,18 @@
+{
+  "project": "pwc-plantdb-mcp",
+  "family": "docker-service",
+  "name": "pwc-plantdb-mcp",
+  "ask": "PwC Connected Plant demo (sample data only): the plantdb MCP server, one read-only MCP connector for the three demo plant databases (auto components, cement, steel) used by the PwC Bruce agents. One stateless Node 20 container built from the public GitHub repository parth1087-debug/PWCAUTO, branch main, Dockerfile mcp/Dockerfile with the repo root as build context. Listens on container port 8787 (Streamable HTTP at /mcp, health at /). Public over HTTPS on pwc-plantdb.us.iosense.io. No volume, no database. x86_64 in us-east-1, 1 CPU, 512 MB. Restart unless-stopped.",
+  "given": {
+    "git": { "repository": "parth1087-debug/PWCAUTO", "ref": "main", "path": "", "dockerfile": "mcp/Dockerfile", "deploy_on_push": true },
+    "ports": [{ "container": 8787, "protocol": "tcp" }],
+    "exposure": { "public": true, "tls": true, "port": 8787, "hostname": "pwc-plantdb.us.iosense.io", "cidrs": ["0.0.0.0/0"] },
+    "env": { "PLANTDB_DEMOS": "auto,cement,steel" },
+    "sizing": { "cpus": 1, "gpus": 0, "memory_mb": 512 },
+    "placement": { "region": "us-east-1", "provider_id": "prv-aws-us-east-1-0ae94c", "architecture": "x86_64" },
+    "restart": "unless-stopped",
+    "replicas": 1,
+    "network": "default",
+    "volumes": []
+  }
+}
