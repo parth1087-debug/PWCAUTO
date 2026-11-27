@@ -135,24 +135,6 @@ export function DayBars({ data, keys, unit, days, height = 220, target }) {
   </ResponsiveContainer>;
 }
 
-/* category bars (vertical, from zero) with a target line, colour by status */
-export function CatBars({ data, unit, target, height = 220, better = 'up', dec = 1, domainMin = 0 }) {
-  const p = usePalette();
-  return <ResponsiveContainer width="100%" height={height}>
-    <BarChart data={data} margin={{ top: 14, right: 8, left: -8, bottom: 0 }}>
-      <CartesianGrid stroke={p.grid} vertical={false} />
-      <XAxis dataKey="name" stroke={p.axis} tickLine={false} axisLine={false} fontSize={11} interval={0} tick={{ fontSize: 10.5 }} />
-      <YAxis domain={[domainMin, 'auto']} stroke={p.axis} tickLine={false} axisLine={false} width={48} fontSize={11} />
-      <Tooltip content={<Tip unit={unit} dec={dec} />} cursor={{ fill: p.grid }} />
-      {target != null && <ReferenceLine y={target} stroke={p.good} strokeDasharray="4 3" label={{ value: `target ${fmtNum(target, dec)}`, position: 'insideTopRight', fontSize: 10, fill: p.good }} />}
-      <Bar dataKey="v" name="Value" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={40}
-        label={{ position: 'top', fontSize: 10.5, fill: p.axis, formatter: v => fmtNum(v, dec) }}>
-        {data.map((d, i) => <Cell key={i} fill={target == null ? p.bar : (better === 'up' ? d.v >= target : d.v <= target) ? p.bar : p.warn} />)}
-      </Bar>
-    </BarChart>
-  </ResponsiveContainer>;
-}
-
 /* power curve: warranted vs measured */
 export function CurveChart({ data, height = 240 }) {
   const p = usePalette();
