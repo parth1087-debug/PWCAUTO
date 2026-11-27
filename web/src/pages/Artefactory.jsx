@@ -4,7 +4,8 @@ import { useApp } from '../App.jsx';
 import { PageHead, Tabs, Tag, Empty, Av, Seg } from '../components/ui.jsx';
 import { ReportDoc, WorkbookView, DeckView, DocView } from '../components/Docs.jsx';
 import { CustomDashBody, DashBody } from './Dashboards.jsx';
-import { TwinView, RealtimeView, SetpointView, CustomBoard, FormView } from '../components/Boards.jsx';
+import { TwinView, RealtimeView, SetpointView, CustomBoard, FormView, RcaView } from '../components/Boards.jsx';
+import { MimicView } from '../mimics/index.jsx';
 import { workbookSheets, downloadWorkbook, downloadHTML } from '../lib/artefacts.js';
 import { TYPES } from '../shared/artefacts.js';
 import { artIcon } from '../App.jsx';
@@ -16,8 +17,8 @@ const TINT = {
   dash: { tint: '#e6ebfa', ink: '#2F55D4' }, xlsx: { tint: '#ecfdf3', ink: '#067647' }, pptx: { tint: '#fff1ea', ink: '#c4320a' },
   docx: { tint: '#eaf6fd', ink: '#0369a1' }, form: { tint: '#f1edfd', ink: '#6941c6' },
 };
-const VIEW_TINT = { twin: { tint: '#e8f6f8', ink: '#0e7490' }, realtime: { tint: '#eafaf1', ink: '#008542' }, setpoints: { tint: '#fff6e5', ink: '#b45309' } };
-const VIEW_LABEL = { twin: 'Asset twin', realtime: 'Real-time', setpoints: 'Setpoints', kpis: 'KPIs', custom: 'Custom' };
+const VIEW_TINT = { mimic: { tint: '#eef0f3', ink: '#40566d' }, rca: { tint: '#fdf0ef', ink: '#b42318' }, twin: { tint: '#e8f6f8', ink: '#0e7490' }, realtime: { tint: '#eafaf1', ink: '#008542' }, setpoints: { tint: '#fff6e5', ink: '#b45309' } };
+const VIEW_LABEL = { mimic: 'Process view', rca: 'RCA', twin: 'Asset twin', realtime: 'Real-time', setpoints: 'Setpoints', kpis: 'KPIs', custom: 'Custom' };
 const look = a => ({ icon: artIcon(a), ...((a.type === 'dash' && VIEW_TINT[a.spec?.view]) || TINT[a.type] || TINT.docx) });
 const kindLabel = a => (a.type === 'dash' && VIEW_LABEL[a.spec?.view] ? `${TYPES.dash.label} · ${VIEW_LABEL[a.spec.view]}` : TYPES[a.type]?.label || a.type);
 export const openInNewTab = id => window.open(`${location.pathname}#/view/${id}`, '_blank', 'noopener');
@@ -146,6 +147,8 @@ export function ArtefactBody({ a, c, sel }) {
   if (v === 'twin') return <TwinView c={c} asset={sel || a.spec.asset} />;
   if (v === 'realtime') return <RealtimeView c={c} assets={a.spec.assets} />;
   if (v === 'setpoints') return <SetpointView c={c} />;
+  if (v === 'mimic') return <MimicView c={c} id={a.spec.mimic} />;
+  if (v === 'rca') return <RcaView c={c} />;
   if (v === 'custom') return <CustomBoard c={c} widgets={a.spec.widgets} />;
   if (v) return <DashBody view={v} sel={sel} c={c} />;
   return <CustomDashBody a={a} />;

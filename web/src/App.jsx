@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc } from 'lucide-react';
+import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc, Workflow, SearchCheck } from 'lucide-react';
 import { LOGIN, DEFAULT_USERS } from './config.js';
 import { usePersist, uid as newId } from './lib/store.js';
 import { getDB, DEMO_LIST, RANGES, resolveRange, fmtTime, fmtDate } from './lib/data.js';
@@ -22,7 +22,7 @@ const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
 
 /** Icon for an artefact (by dashboard view or type). */
-const VIEW_ICON = { kpis: Target, overview: LayoutDashboard, maintenance: Wrench, cost: IndianRupee, quality: Eye, energy: Gauge, twin: Box, realtime: Activity, setpoints: SlidersHorizontal, custom: LayoutDashboard };
+const VIEW_ICON = { kpis: Target, overview: LayoutDashboard, maintenance: Wrench, cost: IndianRupee, quality: Eye, energy: Gauge, twin: Box, realtime: Activity, setpoints: SlidersHorizontal, mimic: Workflow, rca: SearchCheck, custom: LayoutDashboard };
 const TYPE_ICON = { xlsx: FileSpreadsheet, pptx: Presentation, docx: FileText, form: ClipboardList };
 export const artIcon = a => (a.type === 'dash' ? VIEW_ICON[a.spec?.view] || LayoutDashboard : TYPE_ICON[a.type] || FileText);
 const BUILT_IN = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy'];

@@ -14,8 +14,9 @@
 import { DEMOS, createDB, createTools } from '../web/src/shared/index.js';
 import { createArtefact } from './store.mjs';
 import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
+import { MIMICS } from '../web/src/shared/mimics.js';
 
-const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
+const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
 
 /** Save every ```artefact {json}``` block in the answer to the Artefactory. */
 function saveArtefacts(text, demo, emit) {
@@ -127,7 +128,7 @@ export async function runBruce(req, emit, signal) {
     live,
     '</plant_data>',
     !req.session_id && req.context ? `\nThe user is looking at: ${req.context}` : '',
-    CREATE.test(req.message) ? `\n<artefact_format note="The user wants an artefact saved in the Artefactory. Add exactly one fenced block with the language tag artefact holding JSON {type, name, spec}. The app saves it to the plant database and shows an Open button; the block itself is hidden. Use only asset ids, tag keys, KPI ids and form ids from the plant data. Then say in one or two sentences what it shows.">\n${ARTEFACT_HELP}\nForm ids in this plant: ${(DEMOS[req.demo].forms || []).map(f => f.id).join(', ')}. KPI ids: ${DEMOS[req.demo].kpis.map(k => k.id).join(', ')}.\n</artefact_format>` : '',
+    CREATE.test(req.message) ? `\n<artefact_format note="The user wants an artefact saved in the Artefactory. Add exactly one fenced block with the language tag artefact holding JSON {type, name, spec}. The app saves it to the plant database and shows an Open button; the block itself is hidden. Use only asset ids, tag keys, KPI ids and form ids from the plant data. Then say in one or two sentences what it shows.">\n${ARTEFACT_HELP}\nForm ids in this plant: ${(DEMOS[req.demo].forms || []).map(f => f.id).join(', ')}. KPI ids: ${DEMOS[req.demo].kpis.map(k => k.id).join(', ')}. Mimic ids (process views): ${(MIMICS[req.demo] || []).map(m => `${m.id} (${m.name})`).join('; ') || 'none'}.\n</artefact_format>` : '',
   ].join('\n');
   const r = await fetch(`${API}/agents/v1/agents/${a.id}/chat`, {
     method: 'POST',

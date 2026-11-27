@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { runAgent, errorText, liveEnabled, MODEL } from './agent.mjs';
 import { runBruce, bruceDemos, COPILOTS } from './bruce.mjs';
 import * as store from './store.mjs';
+import { MIMICS } from '../web/src/shared/mimics.js';
 import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
 import { assetSources, sourceSummary } from '../web/src/shared/sources.js';
 import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../web/src/shared/index.js';
@@ -72,6 +73,8 @@ function buildServer() {
     async ({ id }) => json(store.listSubmissions(id)));
   server.registerTool('get_setpoints', { title: 'Setpoint recommendations', description: 'Setpoint recommendations with current value, recommended value, expected gain, evidence and approval status.', inputSchema: { demo: demoArg } },
     async ({ demo }) => json(store.setpointsFor(demo)));
+  server.registerTool('get_mimics', { title: 'Process and asset views', description: 'Interactive SCADA-style process and asset views (mimics) available for the plant: id, name, display level (L1 area, L2 unit, L3 equipment) and what they show. Create one in the Artefactory with create_artefact type dashboard, spec { view: "mimic", mimic: "<id>" }.', inputSchema: { demo: demoArg } },
+    async ({ demo }) => json(MIMICS[demo] || []));
   server.registerTool('get_data_sources', { title: 'Data sources', description: 'Source systems feeding the plant model, or for one asset: each tag\'s source system, protocol address and historian path, plus ERP, CMMS and MES records.', inputSchema: { demo: demoArg, asset: z.string().optional() } },
     async ({ demo, asset }) => { const { db } = dbFor(demo); return json(asset ? (assetSources(db, asset) || { error: 'Unknown asset' }) : sourceSummary(db)); });
 

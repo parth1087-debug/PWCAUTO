@@ -10,10 +10,12 @@ export const TYPES = {
   docx: { label: 'Document', plural: 'Documents', ext: 'DOCX' },
   form: { label: 'Form', plural: 'Forms', ext: 'FORM' },
 };
-export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'custom'];
+export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'mimic', 'rca', 'custom'];
 export const WIDGETS = ['kpis', 'kpi_trend', 'tag_trend', 'asset_health', 'losses', 'energy', 'alerts', 'setpoints', 'live', 'text'];
 const DEFAULT_NAMES = { kpis: 'KPI scorecard', overview: 'Plant overview', maintenance: 'Maintenance', cost: 'Cost conversion', quality: 'Quality', energy: 'Energy & utilities' };
 export const dashName = (demo, view) => (demo.dashNames && demo.dashNames[view]) || DEFAULT_NAMES[view];
+
+import { MIMICS } from './mimics.js';
 
 const M = 60e3;
 const V = (v, by, minsAgo, note, now) => ({ v, by, when: now - minsAgo * M, note });
@@ -39,6 +41,8 @@ export function seedFor(demo, now = Date.now()) {
     A('deck', 'pptx', 'Monthly operations review', { kind: 'monthly' }, [V(5, 'Master', 230, 'Edited decisions slide', now), V(4, 'Copilot for Master', 260, 'Refreshed with month-to-date data', now)]),
     A('daily', 'docx', 'Daily performance report', { kind: 'report' }, [V(58, 'Report Agent', 95, 'Scheduled run', now), V(57, 'Report Agent', 95 + 1440, 'Scheduled run', now)]),
     A('value', 'docx', 'Value realisation note', { kind: 'note' }, [V(3, 'Plant controller', 1700, 'Finance validation added', now), V(2, 'Master', 6000, 'Added energy section', now)]),
+    A('rca', 'dash', 'Anomalies · RCA and recommendations', { view: 'rca' }, [V(6, 'Asset Health Agent', 12, 'New anomaly added with evidence', now), V(5, 'Faclon', 60 * 24 * 5, 'Grouped by asset and status', now)]),
+    ...(MIMICS[demo.id] || []).map((m, i) => A('mimic-' + m.id, 'dash', m.name, { view: 'mimic', mimic: m.id, ...(i === 0 ? { shortcut: 10 } : {}) }, [V(3 + i, 'Faclon', 60 * (20 + i * 7), 'Live bindings checked against the UNS', now), V(1, 'Faclon', 60 * 24 * (12 + i), 'Drawn from the plant P&ID and SLD', now)])),
     ...(demo.forms || []).map((f, i) => A('form-' + f.id, 'form', f.name, { form: f.id }, [V(2 + i, 'Faclon', 60 * 24 * (4 + i * 3), 'Fields reviewed with the plant', now)])),
   ];
   return list;
@@ -49,6 +53,11 @@ export const EXTRA = {
   auto: [{ key: 'd-head', name: 'Plant head daily view', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['oee', 'fpy', 'sec', 'udt'] }, { type: 'kpi_trend', id: 'oee' }, { type: 'alerts' }, { type: 'losses' }] } },
     { key: 'd-sl2', name: 'Sprocket Line 2 war room', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['oee', 'chg'] }, { type: 'tag_trend', asset: 'HB-04', tag: 'spindle_vibration' }, { type: 'live', assets: ['HB-03', 'HB-04'] }, { type: 'losses' }] } }],
   cement: [{ key: 'd-kiln', name: 'Kiln command view', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['krf', 'heat', 'fcao', 'udt'] }, { type: 'live', assets: ['KL-01', 'PH-01', 'ID-01', 'CL-01'] }, { type: 'alerts' }, { type: 'setpoints' }] } }],
+  ems: [
+    { key: 'd-spec', name: 'Specific power and efficiency', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['sec', 'air', 'kwtr', 'blreff', 'dgsfc', 'cond'] }, { type: 'kpi_trend', id: 'air' }, { type: 'kpi_trend', id: 'kwtr' }, { type: 'tag_trend', asset: 'AC-03', tag: 'spec_power' }, { type: 'tag_trend', asset: 'CH-02', tag: 'kw_tr' }, { type: 'kpi_trend', id: 'sec' }, { type: 'setpoints' }] } },
+    { key: 'd-demand', name: 'Demand, PF and tariff', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['md', 'pf', 'cost', 're'] }, { type: 'energy' }, { type: 'tag_trend', asset: 'GRID-01', tag: 'pf' }, { type: 'tag_trend', asset: 'SOL-01', tag: 'ac_kw' }, { type: 'live', assets: ['GRID-01', 'TR-01', 'TR-02', 'SOL-01'] }, { type: 'alerts' }] } },
+    { key: 'd-transformers', name: 'Transformers and DG sets', spec: { view: 'custom', widgets: [{ type: 'live', assets: ['TR-01', 'TR-02', 'DG-01', 'DG-02'] }, { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'TR-01', tag: 'oil_temp' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }, { type: 'asset_health' }, { type: 'kpi_trend', id: 'dgsfc' }] } },
+  ],
   steel: [{ key: 'd-mill', name: 'Mill war room', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['yield', 'util', 'cobbles', 'udt'] }, { type: 'live', assets: ['RS-01', 'IS-01', 'FS-01', 'RHF-01'] }, { type: 'losses' }, { type: 'alerts' }] } }],
 };
 
@@ -94,6 +103,6 @@ export function normaliseArtefact(input, demo) {
 
 /** The artefact spec format, for tool descriptions and agent instructions. */
 export const ARTEFACT_HELP = `type: dashboard | sheet | presentation | document | form.
-dashboard spec: { view: "kpis"|"overview"|"maintenance"|"cost"|"quality"|"energy" } for a built-in board, { view: "twin", asset: "<ASSET-ID>" }, { view: "realtime", assets: ["<ASSET-ID>", …] }, { view: "setpoints" }, or { view: "custom", widgets: [ … ] } with widgets: {type:"kpis", ids:[kpi ids]}, {type:"kpi_trend", id}, {type:"tag_trend", asset, tag}, {type:"asset_health"}, {type:"losses"}, {type:"energy"}, {type:"alerts"}, {type:"setpoints"}, {type:"live", assets:[ids]}, {type:"text", md}.
+dashboard spec: { view: "kpis"|"overview"|"maintenance"|"cost"|"quality"|"energy"|"rca" } for a built-in board, { view: "mimic", mimic: "<mimic id from get_mimics>" } for a process or asset view, { view: "twin", asset: "<ASSET-ID>" }, { view: "realtime", assets: ["<ASSET-ID>", …] }, { view: "setpoints" }, or { view: "custom", widgets: [ … ] } with widgets: {type:"kpis", ids:[kpi ids]}, {type:"kpi_trend", id}, {type:"tag_trend", asset, tag}, {type:"asset_health"}, {type:"losses"}, {type:"energy"}, {type:"alerts"}, {type:"setpoints"}, {type:"live", assets:[ids]}, {type:"text", md}.
 sheet spec: { kind: "daily"|"energy" }. presentation spec: { kind: "monthly" }. document spec: { kind: "report"|"note" }.
 form spec: { form: { name, sections: [ { title, fields: [ { id, label, type: text|textarea|number|select|radio|checkbox|checklist|date|datetime|time|rating|signature|asset, options?, unit?, required? } ] } ] } }.`;

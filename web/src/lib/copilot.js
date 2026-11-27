@@ -1,5 +1,6 @@
 /* Copilot engine: routes a question to a Bruce agent, calls plant tools, and builds the answer from real data. */
 import { POLICIES, fmtNum, fmtDate, fmtRel } from './data.js';
+import { MIMICS } from '../shared/mimics.js';
 
 const D = 864e5;
 const rnd = (a, b) => Math.round(a + Math.random() * (b - a));
@@ -177,7 +178,7 @@ export function runQuery(question, ctx) {
 
 /** Is the question asking to create something in the Artefactory? */
 export function createIntent(q) {
-  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
+  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
 }
 
 /** Turn a request into an artefact { type, name, spec, label, what }. Uses the plant model to pick assets, KPIs and forms. */
@@ -185,6 +186,15 @@ export function buildArtefact(q, { demo, db, asset, kpi }) {
   const s = q.toLowerCase();
   const date = fmtDate(db.anchor);
   const spot = asset || db.assetById[demo.maintenance?.spotlight] || db.assets[0];
+  /* process / SCADA views: match a mimic of this plant by its words */
+  const mims = MIMICS[demo.id] || [];
+  if (mims.length && (/scada|mimic|process view|p&id|sld|single.?line|network|circuit|diagram|layout|schematic|hmi/.test(s) || (/twin|view/.test(s) && !asset))) {
+    const words = s.split(/[^a-z0-9]+/).filter(w => w.length > 2);
+    const score = m => words.filter(w => (m.id + ' ' + m.name + ' ' + m.desc).toLowerCase().includes(w)).length;
+    const m = mims.slice().sort((x, y) => score(y) - score(x))[0];
+    return { type: 'dash', name: m.name, spec: { view: 'mimic', mimic: m.id }, label: 'process view', focus: m.name, what: `It is an interactive ${m.level} view: ${m.desc} Values refresh every 10 seconds; click any equipment to inspect it or open its twin.` };
+  }
+  if (/rca|root cause|anomal/.test(s)) return { type: 'dash', name: 'Anomalies · RCA and recommendations', spec: { view: 'rca' }, label: 'RCA board', focus: 'anomalies', what: 'It lists every open anomaly with its trend, root cause, evidence, confidence and recommended action.' };
   if (/twin/.test(s)) return { type: 'dash', name: `${spot.id} · ${spot.name} twin`, spec: { view: 'twin', asset: spot.id }, label: 'asset twin', focus: spot.id, calls: [['get_asset_health', { asset: spot.id }], ['get_data_sources', { asset: spot.id }]],
     what: `It shows live tags every 10 seconds, the 14-day trend, the agent diagnosis, the source system and address of every tag, and the ERP, CMMS and MES records.` };
   if (/real.?time|live|monitor|control room|war room/.test(s)) {

@@ -19,11 +19,12 @@ let timer = null;
 
 function load() {
   try { db = { ...db, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch { /* first start */ }
-  const missing = Object.keys(DEMOS).filter(d => !db.seeded.includes(d));
-  if (missing.length) {
-    const seeds = seedAll(Object.fromEntries(missing.map(d => [d, DEMOS[d]])));
-    db.artefacts.push(...seeds.filter(s => !db.artefacts.find(a => a.id === s.id)));
-    db.seeded.push(...missing);
+  /* seed by artefact id: new catalogue items reach existing databases; an item removed by a user is never re-added */
+  db.seededIds = db.seededIds || db.artefacts.map(a => a.id);
+  const fresh = seedAll(DEMOS).filter(x => !db.seededIds.includes(x.id) && !db.artefacts.find(a => a.id === x.id));
+  if (fresh.length || Object.keys(DEMOS).some(d => !db.seeded.includes(d))) {
+    db.artefacts.push(...fresh); db.seededIds.push(...fresh.map(x => x.id));
+    db.seeded = [...new Set([...db.seeded, ...Object.keys(DEMOS)])];
     flush();
   }
 }

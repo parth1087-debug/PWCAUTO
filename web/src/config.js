@@ -11,4 +11,6 @@ export const DEFAULT_USERS = [
   { id: 'pharma-formulation', name: 'Pharma formulation', role: 'Demo · Aarogya Pharmaceuticals', demos: ['pharma-formulation'], color: '#0e8a7d' },
   { id: 'solar', name: 'Solar', role: 'Demo · Suryodaya Renewables', demos: ['solar'], color: '#c98a00' },
   { id: 'wind', name: 'Wind', role: 'Demo · Pavan Wind Energy', demos: ['wind'], color: '#2f7fb8' },
+  { id: 'pipes', name: 'Pipes', role: 'Demo · Prince Pipes and Fittings', demos: ['pipes'], color: '#1f8a5b' },
+  { id: 'ems', name: 'Energy & utilities', role: 'Demo · Meridian Industrial Park', demos: ['ems'], color: '#6b4fd8' },
 ];
