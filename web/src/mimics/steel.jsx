@@ -78,9 +78,7 @@ function BallingDisc({ x, y, r = 50, on }) {
       <ellipse cx={x} cy={y} rx={r} ry={r * 0.34} fill="url(#m-metal)" className="m-body" />
       <ellipse cx={x} cy={y} rx={r} ry={r * 0.34} className="m-edge" />
       <ellipse cx={x} cy={y - 4} rx={r * 0.86} ry={r * 0.26} className="m-glyph" />
-      <g className="m-spin" style={{ transformOrigin: `${x}px ${y - 4}px`, animationDuration: '6s' }}>
-        {[0, 1, 2, 3, 4, 5].map(i => <circle key={i} cx={x + Math.cos(i) * r * 0.5} cy={y - 4 + Math.sin(i) * r * 0.14} r="3.5" className="m-edge" style={{ fill: 'var(--m-mat)' }} />)}
-      </g>
+      {[-0.55, -0.3, -0.05, 0.2, 0.45, -0.4, -0.15, 0.1].map((f, i) => <circle key={i} cx={x + f * r} cy={y + (i < 5 ? 2 : -6)} r="3.5" className="m-edge" style={{ fill: 'var(--m-mat)' }} />)}
     </g>
     <line x1={x} y1={y} x2={x + 6} y2={y + r * 0.95} className="m-edge" />
     <path d={`M${x - 26} ${y + r + 8} L${x + 6} ${y + r * 0.95} L${x + 38} ${y + r + 8} Z`} className="m-body" /><path d={`M${x - 26} ${y + r + 8} L${x + 6} ${y + r * 0.95} L${x + 38} ${y + r + 8} Z`} className="m-edge" />

@@ -275,7 +275,7 @@ function AirNetwork({ c }) {
       <g className="m-shape"><rect x={776} y={290} width={26} height={20} rx="3" className="m-body" /><rect x={776} y={290} width={26} height={20} rx="3" className="m-edge" /><text x={789} y={304} textAnchor="middle" className="m-sub" style={{ fontSize: 8 }}>FT</text></g>
       <Val a="AR-01" t="flow" x={740} y={226} w={110} label="Total air flow" />
       {/* ring main */}
-      <Zone x={790} y={44} w={470} h={640} label="Distribution · ring main" />
+      <Zone x={790} y={44} w={470} h={640} label="Ring main" />
       <Pipe d="M830 140 H1240 V560 H830 Z" kind="air" w={8} speed={0.9} />
       {users.map(([x, l]) => <g key={l}><Pipe d={`M${x} 140 V96`} kind="air" w={4} speed={0.8} /><AirUser x={x} y={70} label="" /><Lbl x={x} y={62} anchor="middle" muted size={10}>{l}</Lbl></g>)}
       {[[900, 'Utility & packing'], [1040, 'Machine shop'], [1180, 'Paint line (idle Sundays)']].map(([x, l]) => <g key={l}><Pipe d={`M${x} 560 V600`} kind="air" w={4} speed={0.8} /><AirUser x={x} y={600} /><Lbl x={x} y={644} anchor="middle" muted size={10}>{l}</Lbl></g>)}
@@ -486,7 +486,7 @@ function SteamNetwork({ c }) {
       <Val a="STZ-02" t="steam_loss" x={686} y={372} w={110} label="Steam loss" />
       <Val a="STZ-02" t="failed_traps" x={686} y={414} w={110} label="Failed traps" dec={0} />
       {/* condensate return */}
-      <Pipe d="M1066 420 H1050 V500 H930 M930 430 V500 H760 V560" kind="condensate" w={5} speed={0.8} />
+      <Pipe d="M1066 420 H1050 V500 H760 V560 M850 420 H836 V500" kind="condensate" w={5} speed={0.8} />
       <Lbl x={940} y={494} muted size={10}>Condensate return</Lbl>
       <Equip a="CRS-01" x={700} y={560} w={120} h={70} label="Condensate recovery">
         <Tank x={700} y={560} w={70} h={70} level={tl != null ? tl / 100 : null} />
@@ -507,7 +507,7 @@ function SteamNetwork({ c }) {
       </g>
       <Lbl x={510} y={522} anchor="middle" muted size={10}>Feed water tank · deaerator head</Lbl>
       <Pipe d="M300 544 H460 V560" kind="water" w={3} />
-      <Lbl x={300} y={532} muted size={9.5}>RO make-up</Lbl>
+      <Lbl x={334} y={536} muted size={9.5}>RO make-up</Lbl>
       <Pipe d="M420 596 H404" kind="water" w={4} />
       <Pump x={392} y={596} r={12} dir={180} on={b1 || b2} />
       <Lbl x={392} y={634} anchor="middle" muted size={9.5}>Feed pumps</Lbl>
@@ -595,7 +595,7 @@ function GasNetwork({ c }) {
       <Val a="BLR-01" t="steam_flow" x={1156} y={204} w={104} label="Steam flow" />
       <Pipe d="M1010 360 H1028 V296 H1095 V308" kind="gas" w={5} flow={tOn} />
       <Equip a="TFH-01" x={1050} y={330} w={90} h={120} label="Thermic fluid heater" sub="1.0 Mkcal/h" noId><TFHeater x={1050} y={330} on={tOn} /></Equip>
-      <Pipe d="M1140 370 H1150" kind="oil" w={4} /><Pipe d="M1140 430 H1150" kind="oil" w={4} /><text x={1044} y={322} textAnchor="end" className="m-id">TFH-01</text>
+      <Pipe d="M1140 370 H1150" kind="oil" w={4} /><Pipe d="M1140 430 H1150" kind="oil" w={4} /><text x={1113} y={324} className="m-id">TFH-01</text>
       <Val a="TFH-01" t="gas_flow" x={1156} y={318} w={104} label="Gas flow" />
       <Val a="TFH-01" t="tf_out" x={1156} y={360} w={104} label="Fluid outlet" />
       <Val a="TFH-01" t="stack_o2" x={1156} y={402} w={104} label="Stack O₂" />
