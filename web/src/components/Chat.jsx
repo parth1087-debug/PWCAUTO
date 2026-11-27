@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, Bot, ChevronRight, ThumbsUp, ThumbsDown, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { runQuery } from '../lib/copilot.js';
-import { liveStatus, staysLocal, pickAgent, streamChat, visualFor, actionsFor } from '../lib/live.js';
+import { liveStatus, liveFor, staysLocal, pickAgent, streamChat, visualFor, actionsFor } from '../lib/live.js';
 import Markdown from './Markdown.jsx';
 import { Trend, Bars } from './charts.jsx';
 import { fmtNum } from '../lib/data.js';
@@ -59,7 +59,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     if (app.prefs.live !== false && !staysLocal(q)) {
       setPending({ q, r: { agent: 'Connecting to agents…', cap: 'Live', steps: [], blocks: [], live: true, text: '' }, shown: 0 });
       const st = await liveStatus();
-      if (st.live && await sendLive(q)) return;
+      if (liveFor(st, app.ctx.demo.id) && await sendLive(q)) return;
       setPending(null);
     }
     sendLocal(q);
@@ -77,10 +77,13 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     show();
     const history = [...turns.slice(-5).flatMap(t => [{ role: 'user', content: t.q }, { role: 'assistant', content: answerText(t.r) || '(answer shown as a chart)' }]), { role: 'user', content: q }];
     const ctxText = context ? `${context.kind}: ${context.title}` : '';
+    const session_id = [...turns].reverse().find(t => t.r?.live && t.r.sessionId)?.r.sessionId;
     abort.current = new AbortController();
     try {
-      await streamChat({ demo: demo.id, agent: agent.id, messages: history, context: ctxText, anchor: app.anchor || null }, ev => {
-        if (ev.type === 'meta') { r = { ...r, agent: ev.agent.name, model: ev.model, cap: `Live · ${ev.model}` }; show(); }
+      await streamChat({ demo: demo.id, agent: agent.id, messages: history, context: ctxText, anchor: app.anchor || null, ...(session_id ? { session_id } : {}) }, ev => {
+        if (ev.type === 'meta') { r = { ...r, agent: ev.agent.name, model: ev.model, provider: ev.provider || 'claude', cap: ev.provider === 'bruce' ? 'Live on Bruce' : `Live · ${ev.model}` }; show(); }
+        else if (ev.type === 'session') { r = { ...r, sessionId: ev.session_id }; }
+        else if (ev.type === 'final') { r = { ...r, text: ev.text }; show(); }
         else if (ev.type === 'tool_start') { r.steps.push({ id: ev.id, tool: `plantdb.${ev.name}`, args: ev.input, ms: null }); show(); }
         else if (ev.type === 'tool_end') {
           const st = r.steps.find(x => x.id === ev.id); if (st) { st.ms = Math.max(1, ev.ms); st.ok = ev.ok; }
@@ -150,7 +153,7 @@ function Turn({ t, running, onAct }) {
       <div className="msg-b">
         <div className="route"><Bot size={14} />Routed to <b>{r.agent}</b> · {r.cap}{r.live && <span className="tag good" style={{ marginLeft: 6, fontSize: 10.5 }}>Live</span>}</div>
         {(r.steps.length > 0 || !r.live) && <details className="trace" open={running}>
-          <summary><Layers size={12} />{running ? (r.live ? `Working · ${doneSteps} of ${r.steps.length} tool calls done` : `Working · step ${Math.min(t.shown + 1, r.steps.length)} of ${r.steps.length}`) : `${r.steps.length} tool calls · ${(total / 1000).toFixed(1)} s · ${r.live ? 'live via plantdb MCP' : 'via MCP gateway'}`}<ChevronRight size={12} style={{ marginLeft: 'auto' }} /></summary>
+          <summary><Layers size={12} />{running ? (r.live ? `Working · ${doneSteps} of ${r.steps.length} tool calls done` : `Working · step ${Math.min(t.shown + 1, r.steps.length)} of ${r.steps.length}`) : `${r.steps.length} tool calls · ${(total / 1000).toFixed(1)} s · ${r.live ? (r.provider === 'bruce' ? 'live on Bruce' : 'live via plantdb MCP') : 'via MCP gateway'}`}<ChevronRight size={12} style={{ marginLeft: 'auto' }} /></summary>
           {r.steps.map((s, i) => { const done = r.live ? s.ms != null : (!running || i < t.shown); return <div key={i} className={`step ${done ? 'done' : (r.live || i === t.shown) ? 'run' : ''}`}><span className="ic" /><span className="tl ellipsis">{s.tool}{Object.keys(s.args || {}).length ? <span className="muted"> {JSON.stringify(s.args)}</span> : ''}</span><span className="ms">{done ? s.ms + ' ms' : ''}</span></div>; })}
         </details>}
         {running && r.live && r.text ? <div className="ans"><Markdown text={r.text} /></div> : running ? <span className="typing"><i /><i /><i /></span> : <div className="ans">{r.live && <Markdown text={r.text} />}<Blocks blocks={r.blocks} onAct={onAct} />

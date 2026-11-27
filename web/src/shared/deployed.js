@@ -7,6 +7,7 @@ export const PLANTDB_URL = 'https://pwc-plantdb.us.iosense.io/mcp';
 export const DEPLOYED = {
   auto: {
     uns: { workspace: 'ws_ZsvYBbez4H', name: 'PwC demo · Auto components', nodes: 94, edges: 27 },
+    copilot: '6b093960bee99942f628db17', // Plant Copilot: the agent the app's Copilot talks to through the Bruce agent API
     agents: {
       'auto.asset-health': '6b09249bbee99942f628d582', 'auto.maintenance-planner': '6b0924c7bee99942f628d587',
       'auto.cost-conversion': '6b0924c8bee99942f628d58b', 'auto.quality': '6b0924c8bee99942f628d58f',
@@ -15,6 +16,7 @@ export const DEPLOYED = {
   },
   cement: {
     uns: { workspace: 'ws_MKjfM9LH3n', name: 'PwC demo · Cement', nodes: 62, edges: 15 },
+    copilot: '6b093961bee99942f628db1b', // Plant Copilot: the agent the app's Copilot talks to through the Bruce agent API
     agents: {
       'cement.process': '6b0924cbbee99942f628d59b', 'cement.asset-health': '6b0924ccbee99942f628d59f',
       'cement.maintenance-planner': '6b0924ccbee99942f628d5a4', 'cement.quality': '6b0924fcbee99942f628d5bf',
@@ -23,6 +25,7 @@ export const DEPLOYED = {
   },
   steel: {
     uns: { workspace: 'ws_TGBJVxMdCC', name: 'PwC demo · Steel', nodes: 45, edges: 10 },
+    copilot: '6b093961bee99942f628db1f', // Plant Copilot: the agent the app's Copilot talks to through the Bruce agent API
     agents: {
       'steel.asset-health': '6b0924febee99942f628d5cb', 'steel.maintenance-planner': '6b0924ffbee99942f628d5cf',
       'steel.yield': '6b092500bee99942f628d5d3', 'steel.quality': '6b092501bee99942f628d5d7',

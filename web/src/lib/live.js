@@ -1,4 +1,4 @@
-/* Live agents: runs the demo's Bruce agents on Claude through the hosted plantdb server, and streams the run. */
+/* Live agents: the app's server relays each question to the demo's Bruce Plant Copilot agent (or runs the agents on Claude), and streams the run. */
 import { PLANTDB_URL } from '../shared/index.js';
 import { fmtNum } from './data.js';
 
@@ -7,7 +7,7 @@ const override = (() => { try { return localStorage.getItem('pwc-cpi.liveBase');
 export const LIVE_BASE = (override || PLANTDB_URL).replace(/\/mcp$/, '').replace(/\/$/, '');
 
 let statusCache = null;
-/** { live: boolean, model: string | null } — cached for 60 s. */
+/** { live, liveDemos, provider: {demo: 'bruce'|'claude'}, agents, model } — cached for 60 s. */
 export async function liveStatus(force = false) {
   if (!force && statusCache && Date.now() - statusCache.at < 60e3) return statusCache.v;
   try {
@@ -16,10 +16,13 @@ export async function liveStatus(force = false) {
     statusCache = { at: Date.now(), v };
     return v;
   } catch {
-    statusCache = { at: Date.now(), v: { live: false, model: null } };
+    statusCache = { at: Date.now(), v: { live: false, liveDemos: [], model: null } };
     return statusCache.v;
   }
 }
+
+/** Whether live answers are available for this demo. */
+export const liveFor = (st, demoId) => !!st?.live && (st.liveDemos ? st.liveDemos.includes(demoId) : true);
 
 /** Questions that create things in the app stay on the in-app engine (it writes to the Artefactory). */
 export function staysLocal(q) {

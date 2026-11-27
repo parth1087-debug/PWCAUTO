@@ -12,7 +12,8 @@
  *   PLANTDB_DEMOS=auto,cement       limit which demo databases this connector can read
  *   PLANTDB_ANCHOR=2026-11-26T10:00 fix the "now" used for timestamps
  *   PLANTDB_TOKEN=secret            require "Authorization: Bearer secret" in HTTP mode
- *   ANTHROPIC_API_KEY=...           enables /api/chat (live agents on Claude), see agent.mjs
+ *   BRUCE_KEY_AUTO=agv2_...         enables /api/chat through the demo's Bruce Plant Copilot agent, see bruce.mjs
+ *   ANTHROPIC_API_KEY=...           fallback runtime: the agents on Claude directly, see agent.mjs
  *   DEMO_KEY=...                    if set, /api/chat requires the header "X-Demo-Key"
  *   CHAT_LIMIT=30                   chat requests per IP per 10 minutes
  */
@@ -22,6 +23,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { z } from 'zod';
 import http from 'node:http';
 import { runAgent, errorText, liveEnabled, MODEL } from './agent.mjs';
+import { runBruce, bruceDemos, COPILOTS } from './bruce.mjs';
 import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../web/src/shared/index.js';
 
 const allowed = (process.env.PLANTDB_DEMOS || Object.keys(DEMOS).join(',')).split(',').map(s => s.trim()).filter(id => DEMOS[id]);
@@ -71,7 +73,7 @@ function readJson(req, max = 64e3) {
 async function chat(req, res) {
   const fail = (code, message) => res.writeHead(code, { 'Content-Type': 'application/json' }).end(JSON.stringify({ error: message }));
   if (req.method !== 'POST') return fail(405, 'Use POST');
-  if (!liveEnabled()) return fail(503, 'Live agents are not configured on this server (no model API key).');
+  if (!liveEnabled() && !bruceDemos().length) return fail(503, 'Live agents are not configured on this server (no Bruce agent key or model API key).');
   if (process.env.DEMO_KEY && req.headers['x-demo-key'] !== process.env.DEMO_KEY) return fail(401, 'Unauthorized');
   const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   if (limited(ip)) return fail(429, 'Too many questions in a short time. Wait a few minutes.');
@@ -82,6 +84,8 @@ async function chat(req, res) {
   while (clean.length && clean[0].role !== 'user') clean.shift();
   if (!clean.length || clean[clean.length - 1].role !== 'user') return fail(400, 'The last message must be from the user.');
   if (!allowed.includes(body.demo)) return fail(400, 'Unknown demo');
+  const viaBruce = bruceDemos().includes(body.demo);
+  if (!viaBruce && !liveEnabled()) return fail(503, `Live agents are not configured for the ${body.demo} demo.`);
 
   res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
   const ctrl = new AbortController();
@@ -89,7 +93,13 @@ async function chat(req, res) {
   const emit = ev => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(ev)}\n\n`); };
   const ping = setInterval(() => { if (!res.writableEnded) res.write(': ping\n\n'); }, 15e3);
   try {
-    await runAgent({ demo: body.demo, agent: body.agent, messages: clean, context: typeof body.context === 'string' ? body.context.slice(0, 500) : '', anchor: typeof body.anchor === 'string' ? body.anchor : null }, emit, ctrl.signal);
+    const context = typeof body.context === 'string' ? body.context.slice(0, 500) : '';
+    if (viaBruce) {
+      const session_id = typeof body.session_id === 'string' && /^[A-Za-z0-9_-]{6,64}$/.test(body.session_id) ? body.session_id : undefined;
+      await runBruce({ demo: body.demo, message: clean[clean.length - 1].content, session_id, context, debug: body.debug === true }, emit, ctrl.signal);
+    } else {
+      await runAgent({ demo: body.demo, agent: body.agent, messages: clean, context, anchor: typeof body.anchor === 'string' ? body.anchor : null }, emit, ctrl.signal);
+    }
   } catch (err) {
     if (!ctrl.signal.aborted) { console.error('chat error:', err?.status || '', err?.message); emit({ type: 'error', message: errorText(err) }); }
   } finally {
@@ -110,7 +120,14 @@ if (httpIdx > -1) {
       return;
     }
     if (req.url === '/api/status') {
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ live: liveEnabled(), model: liveEnabled() ? MODEL : null, demos: allowed }));
+      const viaBruce = bruceDemos().filter(d => allowed.includes(d));
+      const liveDemos = liveEnabled() ? allowed : viaBruce;
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({
+        live: liveDemos.length > 0, liveDemos, demos: allowed,
+        provider: Object.fromEntries(liveDemos.map(d => [d, viaBruce.includes(d) ? 'bruce' : 'claude'])),
+        agents: Object.fromEntries(viaBruce.map(d => [d, { id: COPILOTS[d].id, name: COPILOTS[d].name }])),
+        model: liveEnabled() ? MODEL : null,
+      }));
       return;
     }
     if (req.url === '/api/chat') { chat(req, res); return; }

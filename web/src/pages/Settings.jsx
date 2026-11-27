@@ -50,10 +50,10 @@ function LiveCard() {
   const [st, setSt] = useState(null);
   useEffect(() => { liveStatus(true).then(setSt); }, []);
   const on = prefs.live !== false;
-  return <Card title="Live agents" sub="Copilot answers from the agents running on Claude, with the plantdb tools" actions={<Toggle on={on} label="Live agents" onChange={v => { setPrefs(p => ({ ...p, live: v })); toast(v ? 'Live agents on' : 'Using the in-app engine'); }} />}>
+  return <Card title="Live agents" sub="Copilot answers from the Bruce Plant Copilot agents, through the Bruce agent API" actions={<Toggle on={on} label="Live agents" onChange={v => { setPrefs(p => ({ ...p, live: v })); toast(v ? 'Live agents on' : 'Using the in-app engine'); }} />}>
     <dl className="kv">
-      <dt>Status</dt><dd>{st == null ? 'Checking…' : st.live ? <Tag c="good">Online</Tag> : <Tag c="warn">Not configured</Tag>}</dd>
-      <dt>Model</dt><dd className="mono">{st?.model || '—'}</dd>
+      <dt>Status</dt><dd>{st == null ? 'Checking…' : st.live ? <><Tag c="good">Online</Tag> <span className="muted">{(st.liveDemos || []).join(', ')}</span></> : <Tag c="warn">Not configured</Tag>}</dd>
+      <dt>Agents</dt><dd>{st?.agents && Object.keys(st.agents).length ? Object.values(st.agents).map(a => a.name).join(' · ') : st?.model ? `Claude · ${st.model}` : '—'}</dd>
       <dt>Server</dt><dd className="mono">{LIVE_BASE}/api/chat</dd>
       <dt>Fallback</dt><dd>In-app engine, when live is off or not reachable</dd>
     </dl>
