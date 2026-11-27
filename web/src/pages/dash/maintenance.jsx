@@ -54,7 +54,7 @@ export default function Maintenance({ c, R, sel }) {
       <MKpi label="MTTR" value={n.mttr} dec={1} unit="h" prev={pv.mttr} better="down" target={T.mttr} note={`mean repair time, ${n.relDays > R.days ? `rolling ${n.relDays} d` : 'period'}`} spark={wk.map(w => w.mttr).filter(v => v != null)} />
       <MKpi label="Breakdowns" value={n.breakdowns} unit={`in ${R.label || R.days + ' d'}`} prev={pv.breakdowns} better="down" note={`${fmtNum(n.downH, 0)} h down · ${inr(n.lossL)} lost`} spark={wk.map(w => w.breakdowns)} />
       <MKpi label="Backlog" value={n.backlogWk} dec={1} unit="crew-weeks" prev={pv.backlogWk} better="down" target={T.backlog} note={`${n.openWO} open WOs · ${n.overduePM} PM overdue`} spark={wk.map(w => w.backlog)} />
-      <MKpi label="Downtime avoided" value={n.avoidedL} fmt={inr} prev={pv.avoidedL} better="up" note={`${fmtNum(n.avoidedH, 0)} h · ${n.pdm} faults caught early`} spark={wk.map(w => w.avoidedL)} />
+      <MKpi label="Downtime avoided" value={n.avoidedL} fmt={inr} prev={pv.avoidedL} better="up" note={`${fmtNum(n.avoidedH, 0)} h · ${n.pdm} fault${n.pdm === 1 ? '' : 's'} caught early`} spark={wk.map(w => w.avoidedL)} />
     </div>
 
     <div className="grid g32">
@@ -135,7 +135,7 @@ export default function Maintenance({ c, R, sel }) {
       </Card>
       <Card title="Bad actors" sub={`assets with the highest breakdown cost · ${R.label || R.days + ' d'}`} flush>
         {bad.length ? <div className="scroll-x"><table className="t"><thead><tr><th>Asset</th><th className="r">Failures</th><th className="r">Down</th><th className="r">Loss</th><th>Main cause</th></tr></thead><tbody>
-          {bad.map(b => <tr key={b.asset} className="click" onClick={() => go(b.asset)}><td><b>{b.asset}</b><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 200 }}>{b.name}</div></td><td className="r num">{b.n}</td><td className="r num">{fmtNum(b.h, 1)} h</td><td className="r num">{inr(b.lossL, true)}</td><td className="muted">{b.top}</td></tr>)}
+          {bad.map(b => <tr key={b.asset} className="click" onClick={() => go(b.asset)}><td><b>{b.asset}</b><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 200 }}>{b.name}</div></td><td className="r num">{b.n}</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{fmtNum(b.h, 1)} h</td><td className="r num" style={{ whiteSpace: 'nowrap' }}>{inr(b.lossL, true)}</td><td className="muted">{b.top}</td></tr>)}
         </tbody></table></div> : <Empty>No breakdowns in this period.</Empty>}
       </Card>
     </div>

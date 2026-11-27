@@ -129,17 +129,17 @@ function Pareto({ data, unit, inrNote, limit = 7 }) {
   const money = String(unit).startsWith('₹');
   return (
     <div>
-      <table className="t">
+      <div style={{ overflowX: 'auto' }}><table className="t">
         <thead><tr><th>Cause</th><th style={{ width: '38%', maxWidth: 260 }} />{!money && <th className="r">{unit === 'h' ? 'Hours' : unit || 'Count'}</th>}<th className="r">Cum.</th>{data.items.some(x => x.inr) && <th className="r">₹ value</th>}</tr></thead>
         <tbody>{items.map((x, i) => (
           <tr key={x.name}>
             <td><span className="ellipsis" style={{ display: 'block', maxWidth: 220 }} title={x.name}>{x.name}</span></td>
-            <td><div style={{ height: 8, background: 'var(--bg-3)', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${(x.value / mx) * 100}%`, height: '100%', borderRadius: 4, background: i <= vital ? 'var(--brand)' : 'var(--line-2)' }} /></div></td>
+            <td><div style={{ height: 8, minWidth: 48, background: 'var(--bg-3)', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${(x.value / mx) * 100}%`, height: '100%', borderRadius: 4, background: i <= vital ? 'var(--brand)' : 'var(--line-2)' }} /></div></td>
             {!money && <td className="r num" style={{ whiteSpace: 'nowrap' }}>{fmtNum(x.value, Number.isInteger(x.value) || x.value >= 10 ? 0 : 1)}</td>}
             <td className="r num muted" style={{ whiteSpace: 'nowrap' }}>{Math.round(x.cum)} %</td>
             {data.items.some(y => y.inr) && <td className="r num" style={{ whiteSpace: 'nowrap' }}>{x.inr != null ? fmtINR(x.inr) : '—'}</td>}
           </tr>))}</tbody>
-      </table>
+      </table></div>
       {inrNote && <div className="muted" style={{ fontSize: 11.5, padding: '8px 14px' }}>{inrNote}</div>}
     </div>
   );
@@ -234,7 +234,7 @@ function Widget({ w, c, R, app }) {
       const met = vs.filter(v => v.onTarget).length;
       return (
         <Card style={fill} title={`${met} of ${vs.length} KPIs at target · furthest behind: ${vs[0].name} (${Math.max(0, vs[0].pct)} %)`} sub={`Progress from baseline (0 %) to target (100 %), ${periodText(R)}`} flush>
-          <table className="t"><thead><tr><th>KPI</th><th style={{ width: '40%' }}>Progress to target</th><th className="r">Now</th><th className="r">Target</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>KPI</th><th style={{ width: '40%' }}>Progress to target</th><th className="r">Now</th><th className="r">Target</th></tr></thead>
             <tbody>{vs.map(v => (
               <tr key={v.id} className="click" onClick={() => app.nav(`artefactory/${demo.id}-kpis/${v.id}`)}>
                 <td><span className="ellipsis" style={{ display: 'block', maxWidth: 190 }} title={v.name}>{v.name}</span></td>
@@ -243,7 +243,7 @@ function Widget({ w, c, R, app }) {
                   <span className="num muted" style={{ width: 40, textAlign: 'right', fontSize: 11.5 }}>{Math.max(0, v.pct)} %</span></div></td>
                 <td className="r num">{fmtNum(v.value, v.dec)} <span className="muted">{v.unit}</span></td>
                 <td className="r num muted">{fmtNum(v.target, v.dec)}</td>
-              </tr>))}</tbody></table>
+              </tr>))}</tbody></table></div>
         </Card>
       );
     }
@@ -308,14 +308,14 @@ function Widget({ w, c, R, app }) {
       const bad = rows.filter(x => x.state !== 'Normal');
       return (
         <Card style={fill} flush title={bad.length ? `${plural(bad.length, 'asset')} ${bad.length === 1 ? 'needs' : 'need'} action · lowest ${rows[0].id} at ${rows[0].health}` : `All ${rows.length} assets healthy`} sub="Lowest health first · remaining useful life · next action from the diagnosis">
-          <table className="t"><thead><tr><th>Asset</th><th>Health</th><th className="r">Life left</th><th className="hide-sm">Next action</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Asset</th><th>Health</th><th className="r">Life left</th><th className="hide-sm">Next action</th></tr></thead>
             <tbody>{rows.map(x => { const act = nextAction(demo, x.id); return (
               <tr key={x.id} className="click" onClick={() => app.nav(`artefactory/${demo.id}-twin/${x.id}`)}>
                 <td><b className="mono" style={{ fontSize: 12 }}>{x.id}</b> <span className="muted">{x.crit}</span><div className="muted ellipsis" style={{ fontSize: 11.5, maxWidth: 170 }}>{x.name}</div></td>
                 <td><HealthBar v={x.health} w={70} /></td>
                 <td className="r num" style={{ color: x.rulDays < 30 ? 'var(--bad)' : undefined, fontWeight: x.rulDays < 30 ? 600 : 400 }}>{x.rulDays != null ? `${x.rulDays} d` : '—'}</td>
                 <td className="hide-sm" style={{ fontSize: 12, maxWidth: 260 }}>{act ? <span title={act} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{act}</span> : <span className="muted">Routine PM</span>}</td>
-              </tr>); })}</tbody></table>
+              </tr>); })}</tbody></table></div>
         </Card>
       );
     }
@@ -387,14 +387,14 @@ function Widget({ w, c, R, app }) {
       const val = open.reduce((s, x) => s + (gainLakh(demo, x.gain) || 0), 0);
       return (
         <Card style={fill} flush title={`${plural(open.length, 'setpoint change')} open${val ? ` · ${fmtINR(val)}/yr` : ''}`} sub="Current → recommended · value and confidence from the Process Agent">
-          <table className="t"><thead><tr><th>Setpoint</th><th className="r">Change</th><th className="hide-sm">Gain</th><th className="r">Conf.</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Setpoint</th><th className="r">Change</th><th className="hide-sm">Gain</th><th className="r">Conf.</th></tr></thead>
             <tbody>{sp.map(s => (
               <tr key={s.asset + s.tag} className="click" onClick={() => app.nav(`artefactory/${demo.id}-setpoints`)}>
                 <td><b className="mono" style={{ fontSize: 12 }}>{s.asset}</b> <span className="muted">{s.name}</span>{s.status !== 'proposed' && <> <Tag c={s.status === 'applied' ? 'good' : 'info'}>{s.status}</Tag></>}</td>
                 <td className="r num" style={{ whiteSpace: 'nowrap' }}>{fv(s.current)} → <b style={{ color: 'var(--brand)' }}>{fv(s.recommended)}</b> <span className="muted">{s.unit}</span></td>
                 <td className="hide-sm" style={{ fontSize: 12 }}>{s.gain}</td>
                 <td className="r num muted">{Math.round((s.confidence || 0) * 100)} %</td>
-              </tr>))}</tbody></table>
+              </tr>))}</tbody></table></div>
         </Card>
       );
     }
@@ -410,14 +410,14 @@ function Widget({ w, c, R, app }) {
       const out = rows.filter(x => x.st === 'bad').length, near = rows.filter(x => x.st === 'warn').length;
       return (
         <Card style={fill} flush title={out ? `${out} of ${rows.length} live values outside limits` : near ? `${near} of ${rows.length} live values near a limit` : `All ${rows.filter(x => x.st !== 'none').length} limited values normal`} actions={<LiveBadge />}>
-          <table className="t"><thead><tr><th>Asset · value</th><th className="r">Now</th><th className="r hide-sm">Limit</th><th className="r">State</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Asset · value</th><th className="r">Now</th><th className="r hide-sm">Limit</th><th className="r">State</th></tr></thead>
             <tbody>{rows.map(x => (
               <tr key={x.id + x.def.key}>
                 <td><b className="mono" style={{ fontSize: 12 }}>{x.id}</b> <span className="muted">{x.def.name}</span></td>
                 <td className="r num" style={{ fontWeight: 600, whiteSpace: 'nowrap', color: x.st === 'good' || x.st === 'none' ? undefined : `var(--${x.st})` }}>{fmtNum(x.v)} <small className="muted" style={{ fontWeight: 400 }}>{x.def.unit}</small></td>
                 <td className="r num muted hide-sm" style={{ whiteSpace: 'nowrap' }}>{limShort(x.def)}</td>
                 <td className="r">{x.st === 'none' ? <span className="muted" style={{ fontSize: 11.5 }}>no limit</span> : <Tag c={x.st}>{STATE[x.st]}</Tag>}</td>
-              </tr>))}</tbody></table>
+              </tr>))}</tbody></table></div>
         </Card>
       );
     }
@@ -437,19 +437,19 @@ function Widget({ w, c, R, app }) {
           const top = shown.slice(0, 3).reduce((t, x) => t + x.avg, 0);
           return (
             <Card style={fill} flush title={`${d0.name}: top 3 take ${Math.round((top / tot) * 100)} % of ${fmtNum(tot)} ${d0.unit} across ${rows.length} assets`} sub={`${periodText(R)} · average, highest first · no alarm limit on this value`}>
-              <table className="t"><thead><tr><th>Asset</th><th className="r">Now</th><th className="r">Avg</th><th className="r hide-sm">Max</th><th style={{ width: '24%' }} className="hide-sm">Share of total</th></tr></thead>
+              <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Asset</th><th className="r">Now</th><th className="r">Avg</th><th className="r hide-sm">Max</th><th style={{ width: '24%' }} className="hide-sm">Share of total</th></tr></thead>
                 <tbody>{shown.map(x => (
                   <tr key={x.id} className="click" onClick={() => app.nav(`artefactory/${demo.id}-twin/${x.id}`)}>
                     <td><b className="mono" style={{ fontSize: 12 }}>{x.id}</b> <span className="muted hide-sm">{db.assetById[x.id].name}</span></td>
                     <td className="r num" style={{ fontWeight: 600 }}>{fv(x.latest)}</td><td className="r num">{fv(x.avg)}</td><td className="r num hide-sm">{fv(x.max)}</td>
                     <td className="hide-sm"><div className="row" style={{ gap: 6 }}><div className="grow" style={{ height: 8, background: 'var(--bg-3)', borderRadius: 4 }}><div style={{ width: `${(x.avg / shown[0].avg) * 100}%`, height: '100%', borderRadius: 4, background: 'var(--brand)' }} /></div><span className="num muted" style={{ fontSize: 11.5, width: 36, textAlign: 'right' }}>{Math.round((x.avg / tot) * 100)} %</span></div></td>
-                  </tr>))}</tbody></table>
+                  </tr>))}</tbody></table></div>
             </Card>
           );
         }
         return (
           <Card style={fill} flush title={`${d0.name}: ${outN ? `${plural(outN, 'asset')} went outside limits` : `all ${rows.length} assets inside limits`}`} sub={`${periodText(R)} · worst first · ${d0.unit}`}>
-            <table className="t"><thead><tr><th>Asset</th><th className="r">Now</th><th className="r">Avg</th><th className="r hide-sm">Max</th><th className="r hide-sm">Limit</th><th className="r">Hours out</th></tr></thead>
+            <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Asset</th><th className="r">Now</th><th className="r">Avg</th><th className="r hide-sm">Max</th><th className="r hide-sm">Limit</th><th className="r">Hours out</th></tr></thead>
               <tbody>{rows.slice(0, w.limit || 6).map(x => (
                 <tr key={x.id} className="click" onClick={() => app.nav(`artefactory/${demo.id}-twin/${x.id}`)}>
                   <td><b className="mono" style={{ fontSize: 12 }}>{x.id}</b> <span className="muted hide-sm">{db.assetById[x.id].name}</span></td>
@@ -457,7 +457,7 @@ function Widget({ w, c, R, app }) {
                   <td className="r num">{fv(x.avg)}</td><td className="r num hide-sm">{fv(x.max)}</td>
                   <td className="r num muted hide-sm" style={{ whiteSpace: 'nowrap' }}>{limShort(x.def)}</td>
                   <td className="r num" style={{ color: x.hoursOut ? 'var(--bad)' : undefined }}>{x.hoursOut}</td>
-                </tr>))}</tbody></table>
+                </tr>))}</tbody></table></div>
           </Card>
         );
       }
@@ -467,13 +467,13 @@ function Widget({ w, c, R, app }) {
         const stake = vs.reduce((s, v) => s + v.atStake, 0);
         return (
           <Card style={fill} flush title={`KPI scorecard · ${vs.filter(v => v.onTarget).length} of ${vs.length} on target${stake > 0.5 ? ` · ${fmtINR(stake)}/yr still open` : ''}`} sub={`${periodText(R)} · largest ₹ gap first`}>
-            <table className="t"><thead><tr><th>KPI</th><th className="r">Now</th><th className="r">Target</th><th className="r">Gap</th><th className="r hide-sm">₹/yr at stake</th><th className="hide-sm">Owner</th><th className="r">Status</th></tr></thead>
+            <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>KPI</th><th className="r">Now</th><th className="r">Target</th><th className="r">Gap</th><th className="r hide-sm">₹/yr at stake</th><th className="hide-sm">Owner</th><th className="r">Status</th></tr></thead>
               <tbody>{vs.map(v => (
                 <tr key={v.id} className="click" onClick={() => app.nav(`artefactory/${demo.id}-kpis/${v.id}`)}>
                   <td>{v.name} <span className="muted">{v.unit}</span></td><td className="r num">{fmtNum(v.value, v.dec)}</td><td className="r num muted">{fmtNum(v.target, v.dec)}</td>
                   <td className="r num">{v.onTarget ? '—' : fmtNum(Math.abs(v.gap), v.dec)}</td><td className="r num hide-sm">{v.atStake > 0.5 ? fmtINR(v.atStake) : '—'}</td>
                   <td className="muted hide-sm">{v.owner}</td><td className="r"><Tag c={STATUS_CLS[v.status]}>{v.status}</Tag></td>
-                </tr>))}</tbody></table>
+                </tr>))}</tbody></table></div>
           </Card>
         );
       }
@@ -484,12 +484,12 @@ function Widget({ w, c, R, app }) {
       const hl = w.highlight ? String(w.highlight).toLowerCase() : null;
       return (
         <Card style={fill} flush title={`Worst ${unitName}: ${rows[0].name} at ${fmtNum(rows[0].oee, 1)} % · ${fmtNum(rows[0].gap, 1)} pts behind the best`} sub={`${gen ? 'Availability × performance × grid/quality factor' : 'Availability × performance × quality = OEE'} · worst first · top loss is the next action`}>
-          <table className="t"><thead><tr><th>{unitName[0].toUpperCase() + unitName.slice(1)}</th><th className="r">Avail.</th><th className="r">Perf.</th><th className="r hide-sm">{gen ? 'Grid / Q' : 'Quality'}</th><th className="r">{gen ? 'Index' : 'OEE'}</th><th className="hide-sm">Top loss</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>{unitName[0].toUpperCase() + unitName.slice(1)}</th><th className="r">Avail.</th><th className="r">Perf.</th><th className="r hide-sm">{gen ? 'Grid / Q' : 'Quality'}</th><th className="r">{gen ? 'Index' : 'OEE'}</th><th className="hide-sm">Top loss</th></tr></thead>
             <tbody>{rows.map(x => (
               <tr key={x.name} style={hl && x.name.toLowerCase().includes(hl) ? { background: 'var(--brand-soft)' } : undefined}>
                 <td>{x.name}</td><td className="r num">{fmtNum(x.a, 1)}</td><td className="r num">{fmtNum(x.p, 1)}</td><td className="r num hide-sm">{fmtNum(x.q, 1)}</td>
                 <td className="r num" style={{ fontWeight: 600 }}>{fmtNum(x.oee, 1)} %</td><td className="hide-sm" style={{ fontSize: 12 }}>{x.loss}</td>
-              </tr>))}</tbody></table>
+              </tr>))}</tbody></table></div>
         </Card>
       );
     }
@@ -502,7 +502,7 @@ function Widget({ w, c, R, app }) {
       const mxShare = Math.max(...rows.map(r => r.share));
       return (
         <Card style={fill} flush title={`${rows.length} sites · weakest: ${worst.name} (availability ${fmtNum(worst.avail, 1)} %, performance ${fmtNum(worst.perf, 1)} %)`} sub={`${periodText(R)} · portfolio ${fmtNum(P.att, 1)} % of plan · availability and performance from block and feeder data · CUF on ${demo.id === 'solar' ? 'DC' : 'rated'} capacity`}>
-          <table className="t"><thead><tr><th>Site</th><th className="r hide-sm">Capacity</th><th style={{ width: '18%' }} className="hide-sm">Share of energy</th><th className="r">{isGeneration(demo) ? `Energy, ${u}` : `Output, ${u}`}</th><th className="r">Avail.</th><th className="r">Perf.</th><th className="r hide-sm">{gen ? 'CUF' : 'Share'}</th><th className="r">Alerts</th><th className="hide-sm">Weakest unit</th></tr></thead>
+          <div style={{ overflowX: 'auto' }}><table className="t"><thead><tr><th>Site</th><th className="r hide-sm">Capacity</th><th style={{ width: '18%' }} className="hide-sm">Share of energy</th><th className="r">{isGeneration(demo) ? `Energy, ${u}` : `Output, ${u}`}</th><th className="r">Avail.</th><th className="r">Perf.</th><th className="r hide-sm">{gen ? 'CUF' : 'Share'}</th><th className="r">Alerts</th><th className="hide-sm">Weakest unit</th></tr></thead>
             <tbody>{rows.map(s => (
               <tr key={s.slug}>
                 <td><b>{s.name}</b><div className="muted" style={{ fontSize: 11.5 }}>{s.location.split(',').slice(-1)[0].trim()}</div></td>
@@ -514,7 +514,7 @@ function Widget({ w, c, R, app }) {
                 <td className="r num hide-sm">{gen && s.capacity ? `${fmtNum((P.actual * s.share / 100) / (s.capacity * 24 * P.days.length) * 100, 1)} %` : `${s.share} %`}</td>
                 <td className="r">{s.critical ? <Tag c="bad">{s.critical} critical</Tag> : s.alerts ? <Tag c="warn">{s.alerts}</Tag> : <Tag c="good">0</Tag>}</td>
                 <td className="hide-sm" style={{ fontSize: 12 }}>{s.worst ? <><b className="mono">{s.worst.id}</b> <span className="muted">health {s.worst.health}</span></> : '—'}</td>
-              </tr>))}</tbody></table>
+              </tr>))}</tbody></table></div>
         </Card>
       );
     }

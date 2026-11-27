@@ -170,15 +170,15 @@ export function costBuild(db, demo, R, kwh) {
   const c = demo.cost, f = family(demo), k = cfg(demo);
   const actual = sum(c.elements, e => e[1]);
   const gap = actual - c.budget;
-  const bsum = sum(c.bridge, b => b[1]) || 1;
-  const scale = gap / bsum;          /* bridge scaled so drivers explain the whole gap */
+  const bsum = sum(c.bridge, b => b[1]);
+  const resid = gap - bsum;          /* what the plant's variance drivers do not explain: price, mix and other */
   let vol, volLabel;
   if (f === 'res') { vol = k.capacity * R.days / 365; volLabel = `${k.capacity} ${k.capUnit} × ${R.days} days`; }
   else if (f === 'ems') { vol = kwh || 0; volLabel = 'kWh'; }
   else { const v = volume(db, demo, R); vol = v.actual * (k.perUnit || 1); volLabel = demo.production.unit; }
   return { unit: c.unitLabel, budget: c.budget, actual, gap, gapPct: (gap / c.budget) * 100, vol, volLabel,
     elements: c.elements.map(e => ({ name: e[0], value: e[1], share: e[1] / actual })).sort((a, b) => b.value - a.value),
-    drivers: c.bridge.map(b => ({ name: b[0], delta: b[1] * scale })).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)) };
+    drivers: [...c.bridge.map(b => ({ name: b[0], delta: b[1] })), ...(Math.abs(resid) > c.budget * 0.002 ? [{ name: 'Price, mix and other', delta: resid }] : [])].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)) };
 }
 /* ₹ lakh from (₹ per cost unit) × volume in cost units; renewables' unit is already ₹ lakh/MWp/yr */
 export const toLakh = (perUnit, vol, demo) => (family(demo) === 'res' ? perUnit * vol : (perUnit * vol) / 1e5);

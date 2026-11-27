@@ -15,7 +15,7 @@ import { Card, Tag } from '../../components/ui.jsx';
 import { fmtNum } from '../../lib/data.js';
 import { D, KpiRow } from './common.jsx';
 import * as A from '../../shared/analytics/dash-cq.js';
-import { money, nf, decOf, Headline, Tile, Scroll, CellBar, LimitChart, Hist, CatBars, CurveChart } from './cq-ui.jsx';
+import { money, nf, decOf, Headline, Tile, Scroll, CellBar, DivBar, LimitChart, Hist, CurveChart } from './cq-ui.jsx';
 
 const pct = v => `${fmtNum(v * 100, 0)}\u00a0%`;
 
@@ -95,7 +95,7 @@ function SolarQuality({ c, R }) {
   const d = c.demo;
   const pr = d.kpis.find(k => k.id === 'pr');
   const prS = c.db.kpiSummary('pr', R.from, R.to);
-  const blocks = d.cost.lines.map(l => ({ name: l[0].replace(' Block ', ' ').replace('Pavagada', 'Pavagada'), v: l[2] }));
+  const blocks = d.cost.lines.map(l => ({ name: l[0], v: l[2] }));
   const worst = [...blocks].sort((a, b) => a.v - b.v)[0];
   const trend = c.db.kpiDaily('pr').filter(x => x.t >= R.from - D && x.t <= R.to).map(x => ({ t: x.t, v: x.v }));
   const f = A.moduleFindings(d); const fmx = Math.max(...f.map(x => x.mwh));
@@ -105,11 +105,14 @@ function SolarQuality({ c, R }) {
     <KpiRow c={c} ids={['pr', 'soil', 'clean', 'inva']} R={R} />
     <Headline tone={prS.value < pr.target ? 'warn' : 'good'}>
       Portfolio PR is <b className="num">{fmtNum(prS.value, 1)} %</b> vs target {fmtNum(pr.target, 1)} % in {R.label}. <b>{worst.name}</b> is lowest at {fmtNum(worst.v, 1)} % — soiling; clean when the soiling ratio drops below 0.95.
-      {' '}Open thermography findings put <b>{fmtNum(fm, 0)} MWh/yr ({money(fl)}/yr)</b> at risk; fix {f[0].name.toLowerCase()} first.
+      {' '}Open thermography findings put <b>{fmtNum(fm, 0)} MWh/yr ({money(fl)}/yr)</b> at risk; fix <b>{f[0].name}</b> first.
     </Headline>
     <div className="grid g2">
-      <Card title={`Performance ratio by block: ${worst.name} lowest`} sub={`% · temperature-corrected · amber = below target ${fmtNum(pr.target, 1)} %`}>
-        <CatBars data={blocks} unit="%" target={pr.target} height={240} />
+      <Card title={`Performance ratio by block: ${worst.name} lowest`} sub={`% · temperature-corrected · gap to target ${fmtNum(pr.target, 1)} %, worst first`} flush
+        csv={{ name: 'pr-by-block', rows: () => blocks.map(b => ({ block: b.name, pr: b.v, gap_pp: (b.v - pr.target).toFixed(1) })) }}>
+        <Scroll><table className="t"><thead><tr><th>Block</th><th className="r">PR</th><th className="r">vs target</th><th style={{ textAlign: 'center' }}>Gap</th></tr></thead><tbody>
+          {[...blocks].sort((a, b) => a.v - b.v).map(b => { const g = b.v - pr.target; return <tr key={b.name}><td>{b.name}</td><td className="r num">{fmtNum(b.v, 1)} %</td><td className="r num" style={{ color: g < 0 ? 'var(--bad)' : 'var(--good)' }}>{g < 0 ? '−' : '+'}{fmtNum(Math.abs(g), 1)} pp</td><td style={{ textAlign: 'center' }}><DivBar v={-g} max={Math.max(...blocks.map(x => Math.abs(x.v - pr.target)))} /></td></tr>; })}
+        </tbody></table></Scroll>
       </Card>
       <Card title="Portfolio PR vs target" sub="% · daily">
         {trend.length > 1 ? <LimitChart pts={trend} name="PR" unit="%" days={R.days} target={pr.target} height={240} /> : <div className="empty">Select a period of 2 days or more for a trend.</div>}

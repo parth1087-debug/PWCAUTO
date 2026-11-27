@@ -79,7 +79,7 @@ function MfgCost({ c, R }) {
   const ln = A.lineTable(c.db, d, R);
   const tr = A.costTrend(c.db, d, R);
   const dec = cb.actual >= 100 ? 0 : 2;
-  const top = lt.rows[0], line = ln.lines[0], drv = cb.drivers[0];
+  const top = lt.rows[0], line = ln.lines[0], drv = cb.drivers.find(x => Math.sign(x.delta) === Math.sign(cb.gap)) || cb.drivers[0];
   const lmx = Math.max(...lt.rows.map(x => x.lakh));
   return <>
     <KpiRow c={c} ids={ids} R={R} />
@@ -171,11 +171,11 @@ function EmsCost({ c, R }) {
   const ls = A.emsLosses(c.db, d, R, cb.actual);
   const tr = A.costTrend(c.db, d, R);
   const tot = ls.reduce((a, b) => a + b.lakh, 0), mwh = ls.reduce((a, b) => a + b.mwh, 0), lmx = Math.max(...ls.map(x => x.mwh));
-  const drv = cb.drivers[0];
+  const drv = cb.drivers.find(x => Math.sign(x.delta) === Math.sign(cb.gap)) || cb.drivers[0];
   return <>
     <KpiRow c={c} ids={['cost', 'md', 'pf', 'sec']} R={R} />
     <Headline tone={cb.gap > 0 ? 'warn' : 'good'}>
-      Blended energy cost is <b className="num">₹{nf(cb.actual, 2)}/kWh</b> against a budget of ₹{nf(cb.budget, 2)} — <b>{money(A.toLakh(cb.gap, cb.vol, d), true)}</b> on {fmtNum(e.energy_kwh / 1000, 0)} MWh in {R.label}. Biggest driver: <b>{drv.name.toLowerCase()}</b>.
+      Blended energy cost is <b className="num">₹{nf(cb.actual, 2)}/kWh</b> against a budget of ₹{nf(cb.budget, 2)} — <b>{money(A.toLakh(cb.gap, cb.vol, d), true)}</b> on {fmtNum(e.energy_kwh / 1000, 0)} MWh in {R.label}. Biggest driver: <b>{drv.name}</b> ({drv.delta > 0 ? '+' : '−'}₹{nf(Math.abs(drv.delta), 2)}/kWh).
       {' '}Avoidable utility losses: <b>{fmtNum(mwh, 0)} MWh ({money(tot)})</b>, led by {ls[0].name.toLowerCase()}.
     </Headline>
     <div className="grid g2">

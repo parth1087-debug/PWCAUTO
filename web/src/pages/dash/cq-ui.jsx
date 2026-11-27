@@ -104,7 +104,7 @@ export function LimitChart({ pts, name, unit, days, lsl, usl, ucl, lcl, mean, ta
 /* histogram with spec limits */
 export function Hist({ bins, lsl, usl, unit, height = 230 }) {
   const p = usePalette();
-  const span = bins[bins.length - 1].x1 - bins[0].x0; const dec = Math.min(4, decOf(span) + 1);
+  const span = bins[bins.length - 1].x1 - bins[0].x0; const dec = Math.min(4, decOf(span));
   const data = bins.map(b => ({ x: (b.x0 + b.x1) / 2, n: b.n, out: (lsl != null && b.x1 <= lsl) || (usl != null && b.x0 >= usl) }));
   return <ResponsiveContainer width="100%" height={height}>
     <BarChart data={data} margin={{ top: 10, right: 8, left: -14, bottom: 0 }} barCategoryGap={1}>

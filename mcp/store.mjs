@@ -21,7 +21,15 @@ function load() {
   try { db = { ...db, ...JSON.parse(fs.readFileSync(FILE, 'utf8')) }; } catch { /* first start */ }
   /* seed by artefact id: new catalogue items reach existing databases; an item removed by a user is never re-added */
   db.seededIds = db.seededIds || db.artefacts.map(a => a.id);
-  const fresh = seedAll(DEMOS).filter(x => !db.seededIds.includes(x.id) && !db.artefacts.find(a => a.id === x.id));
+  const seeds = seedAll(DEMOS);
+  /* catalogue items nobody has edited (same top version as the seed) follow catalogue updates */
+  let refreshed = 0;
+  for (const x of seeds) {
+    const a = db.artefacts.find(y => y.id === x.id);
+    if (a && !a.archived && a.versions[0]?.v === x.versions[0].v && a.versions[0]?.by === x.versions[0].by && JSON.stringify(a.spec) !== JSON.stringify(x.spec)) { a.spec = x.spec; a.name = x.name; refreshed++; }
+  }
+  if (refreshed) flush();
+  const fresh = seeds.filter(x => !db.seededIds.includes(x.id) && !db.artefacts.find(a => a.id === x.id));
   if (fresh.length || Object.keys(DEMOS).some(d => !db.seeded.includes(d))) {
     db.artefacts.push(...fresh); db.seededIds.push(...fresh.map(x => x.id));
     db.seeded = [...new Set([...db.seeded, ...Object.keys(DEMOS)])];

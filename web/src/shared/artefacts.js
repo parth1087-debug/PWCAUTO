@@ -120,8 +120,8 @@ export const EXTRA = {
     B('d-demand', 'Demand, PF and tariff', [{ type: 'kpis', ids: ['md', 'pf', 'cost', 're'] }, { type: 'gauge', id: 'md' }, { type: 'gauge', asset: 'GRID-01', tag: 'kva' }, { type: 'gauge', asset: 'TR-02', tag: 'wind_temp' },
       { type: 'energy' }, { type: 'tag_trend', asset: 'GRID-01', tag: 'pf' }, { type: 'pareto', source: 'losses' }, { type: 'tag_trend', asset: 'SOL-01', tag: 'ac_kw' }, { type: 'alerts', assets: ['GRID-01', 'TR-01', 'TR-02', 'APFC-01', 'HF-01', 'SOL-01'] }]),
     /* Electrical maintenance: transformers, busbars and DG sets running hot or inefficient. */
-    B('d-transformers', 'Transformers and DG sets', [{ type: 'asset_health', assets: ['TR-01', 'TR-02', 'BB-01', 'BB-02', 'DG-01', 'DG-02', 'UPS-01', 'HF-01'] }, { type: 'live', assets: ['TR-01', 'TR-02', 'BB-01', 'DG-01'] },
-      { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'BB-01', tag: 'joint_y' }, { type: 'tag_trend', asset: 'TR-01', tag: 'oil_temp' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }]),
+    B('d-transformers', 'Transformers and DG sets', [{ type: 'kpis', ids: ['md', 'pf', 'dgsfc'] }, { type: 'asset_health', assets: ['TR-01', 'TR-02', 'BB-01', 'BB-02', 'DG-01', 'DG-02', 'UPS-01', 'HF-01'] }, { type: 'live', assets: ['TR-01', 'TR-02', 'BB-01', 'DG-01'] },
+      { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'BB-01', tag: 'joint_y' }, { type: 'tag_trend', asset: 'TR-02', tag: 'thd_i' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }]),
   ],
   power: [
     /* Performance engineer: where the net heat rate gap comes from (kcal/kWh and ₹), and the setpoint that closes it. */
