@@ -12,7 +12,7 @@ export const TYPES = {
   html: { label: 'HTML page', plural: 'HTML pages', ext: 'HTML' },
 };
 export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'mimic', 'rca', 'custom'];
-export const WIDGETS = ['kpis', 'kpi_trend', 'tag_trend', 'asset_health', 'losses', 'energy', 'alerts', 'setpoints', 'live', 'text'];
+export const WIDGETS = ['kpis', 'kpi_trend', 'tag_trend', 'asset_health', 'losses', 'energy', 'alerts', 'setpoints', 'live', 'text', 'headline', 'kpi_compare', 'gauge', 'pareto', 'table', 'production', 'site_compare'];
 const DEFAULT_NAMES = { kpis: 'KPI scorecard', overview: 'Plant overview', maintenance: 'Maintenance', cost: 'Cost conversion', quality: 'Quality', energy: 'Energy & utilities' };
 export const dashName = (demo, view) => (demo.dashNames && demo.dashNames[view]) || DEFAULT_NAMES[view];
 
@@ -50,21 +50,88 @@ export function seedFor(demo, now = Date.now()) {
   return list;
 }
 
-/** Extra custom dashboards kept from earlier versions (auto, cement, steel). */
+/** Extra custom dashboards, one set per plant. Each board is built for one user and the decisions they make;
+    widget types and options are listed in ARTEFACT_HELP. Only real KPI ids, asset ids and tag keys of each plant. */
+const B = (key, name, widgets) => ({ key, name, spec: { view: 'custom', widgets } });
 export const EXTRA = {
-  auto: [{ key: 'd-head', name: 'Plant head daily view', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['oee', 'fpy', 'sec', 'udt'] }, { type: 'kpi_trend', id: 'oee' }, { type: 'alerts' }, { type: 'losses' }] } },
-    { key: 'd-sl2', name: 'Sprocket Line 2 war room', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['oee', 'chg'] }, { type: 'tag_trend', asset: 'HB-04', tag: 'spindle_vibration' }, { type: 'live', assets: ['HB-03', 'HB-04'] }, { type: 'losses' }] } }],
-  cement: [{ key: 'd-kiln', name: 'Kiln command view', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['krf', 'heat', 'fcao', 'udt'] }, { type: 'live', assets: ['KL-01', 'PH-01', 'ID-01', 'CL-01'] }, { type: 'alerts' }, { type: 'setpoints' }] } }],
+  auto: [
+    /* Plant head: am I on target, what is the gap worth, where do I lose, what must I decide today? */
+    B('d-head', 'Plant head daily view', [{ type: 'headline', ids: ['oee', 'conv', 'fpy', 'ppm', 'sec', 'udt'] }, { type: 'kpis', ids: ['oee', 'conv', 'fpy', 'ppm', 'sec', 'udt'] },
+      { type: 'production' }, { type: 'kpi_trend', id: 'oee' }, { type: 'pareto', source: 'losses' }, { type: 'alerts' }, { type: 'table', of: 'lines', highlight: 'Sprocket Line 2' }]),
+    /* Line lead, Sprocket Line 2: will HB-04 last to the planned stop, and what is holding the line back? */
+    B('d-sl2', 'Sprocket Line 2 war room', [{ type: 'kpis', ids: ['oee', 'chg', 'avail', 'mtbf'] }, { type: 'tag_trend', asset: 'HB-04', tag: 'spindle_vibration' }, { type: 'tag_trend', asset: 'HB-04', tag: 'bearing_temp' },
+      { type: 'live', assets: ['HB-03', 'HB-04'] }, { type: 'asset_health', assets: ['HB-01', 'HB-02', 'HB-03', 'HB-04'] }, { type: 'table', of: 'lines', highlight: 'Sprocket Line 2' }, { type: 'alerts', assets: ['HB-03', 'HB-04'] }]),
+  ],
+  cement: [
+    /* Kiln head: is the kiln stable and efficient, is a stop coming, which setpoint to change? */
+    B('d-kiln', 'Kiln command view', [{ type: 'kpis', ids: ['krf', 'heat', 'fcao', 'udt', 'power', 'cost'] }, { type: 'tag_trend', asset: 'PH-01', tag: 'c4_draft' }, { type: 'tag_trend', asset: 'KL-01', tag: 'free_lime' },
+      { type: 'tag_trend', asset: 'KL-01', tag: 'shell_temp' }, { type: 'live', assets: ['KL-01', 'PH-01', 'ID-01', 'CL-01'] }, { type: 'setpoints' }, { type: 'alerts', assets: ['KL-01', 'PH-01', 'ID-01', 'CL-01'] }]),
+  ],
+  steel: [
+    /* Mill manager: yield and utilisation vs target, cobble and gearbox risk, top losses. */
+    B('d-mill', 'Mill war room', [{ type: 'kpis', ids: ['yield', 'util', 'cobbles', 'udt', 'fuel', 'rej'] }, { type: 'production' }, { type: 'pareto', source: 'losses' },
+      { type: 'tag_trend', asset: 'FS-01', tag: 'gearbox_vibration' }, { type: 'tag_trend', asset: 'RHF-01', tag: 'zone3_temp' }, { type: 'live', assets: ['RS-01', 'IS-01', 'FS-01', 'RHF-01'] }, { type: 'alerts', assets: ['RS-01', 'IS-01', 'FS-01', 'RHF-01', 'CCM-01'] }]),
+  ],
+  'pharma-api': [
+    /* Shift-in-charge, API block: batches on plan, reactor and dryer inside limits, what to escalate. */
+    B('d-shift', 'API block shift-in-charge board', [{ type: 'kpis', ids: ['yield', 'cycle', 'rft', 'dev', 'oee', 'solvent'] }, { type: 'production' }, { type: 'alerts' },
+      { type: 'tag_trend', asset: 'R-102', tag: 'mass_temp' }, { type: 'tag_trend', asset: 'RCVD-301', tag: 'dry_time' }, { type: 'live', assets: ['R-101', 'R-102', 'R-103', 'CF-202', 'RCVD-301', 'DC-401'] }, { type: 'asset_health', limit: 6 }]),
+    /* Plant head / finance: where yield, solvent and time go, and what each fix is worth. */
+    B('d-yield', 'Yield, solvent and cost war room', [{ type: 'headline', ids: ['yield', 'solvent', 'conv', 'cycle', 'sec', 'steam'] }, { type: 'kpis', ids: ['yield', 'solvent', 'conv', 'cycle', 'sec', 'release'] },
+      { type: 'pareto', source: 'losses' }, { type: 'pareto', source: 'defects' }, { type: 'tag_trend', asset: 'DC-401', tag: 'dp' }, { type: 'setpoints' }, { type: 'table', of: 'lines' }]),
+  ],
+  'pharma-formulation': [
+    /* Packaging manager: line OEE, clearance and rejects, worst line first. */
+    B('d-pack', 'Packaging lines war room', [{ type: 'kpis', ids: ['oee', 'clear', 'yield', 'conv'] }, { type: 'table', of: 'lines', highlight: 'Pack line' }, { type: 'pareto', source: 'losses' },
+      { type: 'pareto', source: 'defects' }, { type: 'tag_trend', asset: 'BL-01', tag: 'seal_temp' }, { type: 'live', assets: ['BL-01', 'BL-02', 'VIS-01', 'VIS-02', 'CT-01'] }, { type: 'alerts', assets: ['BL-01', 'BL-02', 'VIS-01', 'VIS-02', 'CT-01'] }]),
+    /* QA head: is compression in control, is the GMP environment inside limits, what deviations are open? */
+    B('d-gmp', 'Compression and GMP environment', [{ type: 'kpis', ids: ['rft', 'wrsd', 'dev', 'release', 'cpm'] }, { type: 'tag_trend', asset: 'TP-02', tag: 'weight_rsd' }, { type: 'tag_trend', asset: 'TP-02', tag: 'weight' },
+      { type: 'table', of: 'tags', tag: 'room_dp' }, { type: 'tag_trend', asset: 'PW-01', tag: 'conductivity' }, { type: 'alerts' }]),
+  ],
+  solar: [
+    /* Portfolio head: energy vs plan and P50, which site is weakest, what the losses are worth. */
+    B('d-portfolio', 'Solar portfolio board', [{ type: 'headline', ids: ['pr', 'cuf', 'p50', 'pa', 'soil', 'curt'] }, { type: 'kpis', ids: ['pr', 'cuf', 'p50', 'pa', 'soil', 'curt'] }, { type: 'site_compare' },
+      { type: 'production' }, { type: 'pareto', source: 'losses' }, { type: 'kpi_trend', id: 'pr' }, { type: 'alerts' }]),
+    /* O&M manager: which inverter, tracker or block to send the crew to first. */
+    B('d-om', 'O&M field board', [{ type: 'kpis', ids: ['pa', 'inva', 'omc', 'clean'] }, { type: 'table', of: 'tags', tag: 'igbt_temp' }, { type: 'asset_health', limit: 6 },
+      { type: 'tag_trend', asset: 'PV-SMS-01', tag: 'soiling_ratio' }, { type: 'tag_trend', asset: 'KN-TRK-12', tag: 'tracking_error' }, { type: 'pareto', source: 'defects' }, { type: 'setpoints' }]),
+  ],
+  wind: [
+    /* Portfolio head: export vs plan and P50, weakest farm, lost production in MWh and ₹. */
+    B('d-portfolio', 'Wind portfolio board', [{ type: 'headline', ids: ['avail', 'cuf', 'pcpi', 'lostprod', 'p50', 'omcost'] }, { type: 'kpis', ids: ['avail', 'cuf', 'pcpi', 'lostprod', 'p50', 'omcost'] }, { type: 'site_compare' },
+      { type: 'production' }, { type: 'pareto', source: 'losses' }, { type: 'table', of: 'lines' }, { type: 'alerts' }]),
+    /* Reliability engineer: which turbine fails next, and where the gearbox and generator run hot. */
+    B('d-turbines', 'Turbine reliability board', [{ type: 'kpis', ids: ['mtbf', 'mttr', 'gbxexc', 'avail'] }, { type: 'table', of: 'tags', tag: 'gbx_hss_temp' }, { type: 'asset_health', limit: 7 },
+      { type: 'tag_trend', asset: 'MP-WTG-07', tag: 'gbx_hss_temp' }, { type: 'tag_trend', asset: 'JS-WTG-05', tag: 'gen_wind_temp' }, { type: 'tag_trend', asset: 'JS-WTG-03', tag: 'yaw_misalign' }, { type: 'pareto', source: 'defects' }]),
+  ],
+  pipes: [
+    /* Shift-in-charge, extrusion: output on plan, which line is down or drifting, what to act on this shift. */
+    B('d-shift', 'Extrusion shift board', [{ type: 'kpis', ids: ['oee', 'giveaway', 'rej', 'udt', 'sec', 'chg'] }, { type: 'production' }, { type: 'table', of: 'lines' },
+      { type: 'tag_trend', asset: 'EXT-L03', tag: 'melt_pressure' }, { type: 'live', assets: ['EXT-L03', 'EXT-L05', 'VAC-L05', 'UTG-L05', 'EXT-L07', 'IMM-14'] }, { type: 'alerts' }]),
+    /* Plant head: resin give-away and rejects are the biggest money leak; how big and which line. */
+    B('d-giveaway', 'Material give-away war room', [{ type: 'headline', ids: ['giveaway', 'rej', 'oee', 'sec'] }, { type: 'kpis', ids: ['giveaway', 'rej', 'util', 'mcpt'] },
+      { type: 'tag_trend', asset: 'UTG-L05', tag: 'weight_m' }, { type: 'table', of: 'tags', tag: 'weight_m', span: 'half' }, { type: 'pareto', source: 'defects' }, { type: 'setpoints' }]),
+  ],
   ems: [
-    { key: 'd-spec', name: 'Specific power and efficiency', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['sec', 'air', 'kwtr', 'blreff', 'dgsfc', 'cond'] }, { type: 'kpi_trend', id: 'air' }, { type: 'kpi_trend', id: 'kwtr' }, { type: 'tag_trend', asset: 'AC-03', tag: 'spec_power' }, { type: 'tag_trend', asset: 'CH-02', tag: 'kw_tr' }, { type: 'kpi_trend', id: 'sec' }, { type: 'setpoints' }] } },
-    { key: 'd-demand', name: 'Demand, PF and tariff', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['md', 'pf', 'cost', 're'] }, { type: 'energy' }, { type: 'tag_trend', asset: 'GRID-01', tag: 'pf' }, { type: 'tag_trend', asset: 'SOL-01', tag: 'ac_kw' }, { type: 'live', assets: ['GRID-01', 'TR-01', 'TR-02', 'SOL-01'] }, { type: 'alerts' }] } },
-    { key: 'd-transformers', name: 'Transformers and DG sets', spec: { view: 'custom', widgets: [{ type: 'live', assets: ['TR-01', 'TR-02', 'DG-01', 'DG-02'] }, { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'TR-01', tag: 'oil_temp' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }, { type: 'asset_health' }, { type: 'kpi_trend', id: 'dgsfc' }] } },
+    /* Utility manager: specific power of air, chillers, boilers and DG vs target, and the setpoint to fix each. */
+    B('d-spec', 'Specific power and efficiency', [{ type: 'kpis', ids: ['sec', 'air', 'kwtr', 'blreff', 'dgsfc', 'cond'] }, { type: 'kpi_compare', ids: ['sec', 'air', 'kwtr', 'blreff', 'dgsfc', 'cond', 're', 'pf'] },
+      { type: 'kpi_trend', id: 'sec' }, { type: 'tag_trend', asset: 'AC-03', tag: 'spec_power' }, { type: 'tag_trend', asset: 'CH-02', tag: 'kw_tr' }, { type: 'tag_trend', asset: 'AR-01', tag: 'leak_pct' }, { type: 'setpoints' }]),
+    /* Energy manager / finance: are we inside contract demand, is PF earning the incentive, what the avoidable cost is. */
+    B('d-demand', 'Demand, PF and tariff', [{ type: 'kpis', ids: ['md', 'pf', 'cost', 're'] }, { type: 'gauge', id: 'md' }, { type: 'gauge', asset: 'GRID-01', tag: 'kva' }, { type: 'gauge', asset: 'TR-02', tag: 'wind_temp' },
+      { type: 'energy' }, { type: 'tag_trend', asset: 'GRID-01', tag: 'pf' }, { type: 'pareto', source: 'losses' }, { type: 'tag_trend', asset: 'SOL-01', tag: 'ac_kw' }, { type: 'alerts', assets: ['GRID-01', 'TR-01', 'TR-02', 'APFC-01', 'HF-01', 'SOL-01'] }]),
+    /* Electrical maintenance: transformers, busbars and DG sets running hot or inefficient. */
+    B('d-transformers', 'Transformers and DG sets', [{ type: 'asset_health', assets: ['TR-01', 'TR-02', 'BB-01', 'BB-02', 'DG-01', 'DG-02', 'UPS-01', 'HF-01'] }, { type: 'live', assets: ['TR-01', 'TR-02', 'BB-01', 'DG-01'] },
+      { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'BB-01', tag: 'joint_y' }, { type: 'tag_trend', asset: 'TR-01', tag: 'oil_temp' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }]),
   ],
   power: [
-    { key: 'd-heatrate', name: 'Heat rate deviation and losses', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['nhr', 'beff', 'apc', 'scc', 'ubc', 'spray'] }, { type: 'kpi_trend', id: 'nhr' }, { type: 'losses' }, { type: 'tag_trend', asset: 'APH-01', tag: 'gas_out' }, { type: 'tag_trend', asset: 'COND-01', tag: 'back_pressure' }, { type: 'tag_trend', asset: 'ATT-01', tag: 'sh_spray' }, { type: 'setpoints' }] } },
-    { key: 'd-apc', name: 'Auxiliary power consumption', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['apc', 'plf'] }, { type: 'kpi_trend', id: 'apc' }, { type: 'live', assets: ['ID-A', 'ID-B', 'FD-A', 'PA-A', 'BFP-A', 'BFP-B'] }, { type: 'tag_trend', asset: 'UAT-01', tag: 'apc' }, { type: 'tag_trend', asset: 'BFP-A', tag: 'recirc_flow' }, { type: 'alerts' }] } },
+    /* Performance engineer: where the net heat rate gap comes from (kcal/kWh and ₹), and the setpoint that closes it. */
+    B('d-heatrate', 'Heat rate deviation and losses', [{ type: 'headline', ids: ['nhr', 'beff', 'apc', 'scc', 'ubc', 'spray'] }, { type: 'kpis', ids: ['nhr', 'beff', 'apc', 'scc', 'ubc', 'spray'] }, { type: 'pareto', source: 'losses' },
+      { type: 'kpi_trend', id: 'nhr' }, { type: 'tag_trend', asset: 'APH-01', tag: 'gas_out' }, { type: 'tag_trend', asset: 'COND-01', tag: 'back_pressure' }, { type: 'tag_trend', asset: 'ATT-01', tag: 'sh_spray' }, { type: 'tag_trend', asset: 'BLR-01', tag: 'o2' }, { type: 'setpoints' }]),
+    /* Electrical / energy engineer: which auxiliary drives eat the APC, and which is wasting power now. */
+    B('d-apc', 'Auxiliary power consumption', [{ type: 'kpis', ids: ['apc', 'plf', 'nhr'] }, { type: 'kpi_trend', id: 'apc' }, { type: 'tag_trend', asset: 'CT-01', tag: 'fan_kw' },
+      { type: 'table', of: 'tags', tag: 'kw', assets: ['BFP-A', 'BFP-B', 'CWP-A', 'CWP-B', 'ID-A', 'ID-B', 'PA-A', 'PA-B', 'FD-A', 'FD-B', 'MILL-A', 'MILL-B', 'MILL-C', 'MILL-D', 'ESP-01'], limit: 8 },
+      { type: 'tag_trend', asset: 'BFP-A', tag: 'recirc_flow' }, { type: 'energy' }, { type: 'alerts', assets: ['BFP-A', 'BFP-B', 'ID-A', 'ID-B', 'CT-01', 'UAT-01'] }]),
   ],
-  steel: [{ key: 'd-mill', name: 'Mill war room', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['yield', 'util', 'cobbles', 'udt'] }, { type: 'live', assets: ['RS-01', 'IS-01', 'FS-01', 'RHF-01'] }, { type: 'losses' }, { type: 'alerts' }] } }],
 };
 
 export function seedAll(DEMOS, now = Date.now()) {
@@ -114,7 +181,7 @@ export function normaliseArtefact(input, demo) {
 
 /** The artefact spec format, for tool descriptions and agent instructions. */
 export const ARTEFACT_HELP = `type: dashboard | sheet | presentation | document | form.
-dashboard spec: { view: "kpis"|"overview"|"maintenance"|"cost"|"quality"|"energy"|"rca" } for a built-in board, { view: "mimic", mimic: "<mimic id from get_mimics>" } for a process or asset view, { view: "twin", asset: "<ASSET-ID>" }, { view: "realtime", assets: ["<ASSET-ID>", …] }, { view: "setpoints" }, or { view: "custom", widgets: [ … ] } with widgets: {type:"kpis", ids:[kpi ids]}, {type:"kpi_trend", id}, {type:"tag_trend", asset, tag}, {type:"asset_health"}, {type:"losses"}, {type:"energy"}, {type:"alerts"}, {type:"setpoints"}, {type:"live", assets:[ids]}, {type:"text", md}.
+dashboard spec: { view: "kpis"|"overview"|"maintenance"|"cost"|"quality"|"energy"|"rca" } for a built-in board, { view: "mimic", mimic: "<mimic id from get_mimics>" } for a process or asset view, { view: "twin", asset: "<ASSET-ID>" }, { view: "realtime", assets: ["<ASSET-ID>", …] }, { view: "setpoints" }, or { view: "custom", widgets: [ … ] } with widgets (titles state the insight, everything follows the period selector): {type:"headline", ids?:[kpi ids]} one-line summary of KPI gaps, top loss and alerts; {type:"kpis", ids:[up to 6 kpi ids]} tiles with target gap and ₹ at stake; {type:"kpi_compare", ids?} progress from baseline to target; {type:"kpi_trend", id}; {type:"gauge", id} or {type:"gauge", asset, tag}; {type:"tag_trend", asset, tag} with limits and hours outside them; {type:"production"} plan vs actual; {type:"energy"} demand vs contract; {type:"pareto", source:"losses"|"defects"} (or {type:"losses"}) ranked with cumulative % and ₹; {type:"table", of:"lines"|"kpis"|"tags", tag?, assets?, ids?, highlight?}; {type:"site_compare"} for multi-site portfolios; {type:"asset_health", assets?, limit?} worst first with next action; {type:"alerts", assets?}; {type:"setpoints"}; {type:"live", assets:[ids]}; {type:"text", md}. Optional on any widget: span "full"|"half"|"third"|"twothirds" (KPI rows, tables and headlines are full width; charts half by default).
 sheet spec: { kind: "daily"|"energy" }. presentation spec: { kind: "monthly" }. document spec: { kind: "report"|"note" }.
 html spec: { html: "<!doctype html>…" } a complete self-contained web page (inline CSS, no external scripts), or { kind: "onepager" } for the generated plant one-pager.
 form spec: { form: { name, sections: [ { title, fields: [ { id, label, type: text|textarea|number|select|radio|checkbox|checklist|date|datetime|time|rating|signature|asset, options?, unit?, required? } ] } ] } }.`;
