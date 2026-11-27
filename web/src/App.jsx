@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc, Workflow, SearchCheck } from 'lucide-react';
+import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc, Workflow, SearchCheck, Code2, PanelLeftClose, PanelLeft, PanelLeftOpen } from 'lucide-react';
 import { LOGIN, DEFAULT_USERS } from './config.js';
 import { usePersist, uid as newId } from './lib/store.js';
 import { getDB, DEMO_LIST, RANGES, resolveRange, fmtTime, fmtDate } from './lib/data.js';
@@ -23,7 +23,7 @@ export const useApp = () => useContext(AppCtx);
 
 /** Icon for an artefact (by dashboard view or type). */
 const VIEW_ICON = { kpis: Target, overview: LayoutDashboard, maintenance: Wrench, cost: IndianRupee, quality: Eye, energy: Gauge, twin: Box, realtime: Activity, setpoints: SlidersHorizontal, mimic: Workflow, rca: SearchCheck, custom: LayoutDashboard };
-const TYPE_ICON = { xlsx: FileSpreadsheet, pptx: Presentation, docx: FileText, form: ClipboardList };
+const TYPE_ICON = { xlsx: FileSpreadsheet, pptx: Presentation, docx: FileText, form: ClipboardList, html: Code2 };
 export const artIcon = a => (a.type === 'dash' ? VIEW_ICON[a.spec?.view] || LayoutDashboard : TYPE_ICON[a.type] || FileText);
 const BUILT_IN = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy'];
 const newArtId = () => 'a-' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
@@ -42,7 +42,8 @@ export default function App() {
   const [userId, setUserId] = usePersist('user', 'master');
   const [demoPick, setDemoPick] = usePersist('demo', 'auto');
   const [anchor, setAnchor] = usePersist('anchor', null);
-  const [range, setRange] = usePersist('range', { id: '30d' });
+  const [range, setRange] = usePersist('range.v2', { id: '7d' });
+  const [sideMode, setSideMode] = usePersist('sidemode', 'full'); // full | icons | hidden
   const [theme, setTheme] = usePersist('theme', 'light');
   const [pinsByUser, setPinsByUser] = usePersist('pins', {});
   const [arts, setArts] = usePersist('artefacts.v3', () => seedAll(DEMOS));
@@ -123,7 +124,7 @@ export default function App() {
 
   const app = {
     user, users, setUsers, setUserId, allowed, demoId, setDemo: setDemoPick, ctx, anchor, setAnchor, range, setRange, rng, theme, setTheme,
-    pins, arts, setArts, tick, tickAt, dbState, refresh, chats, setChats, messages, unread, extraLogs, addLog, prefs, setPrefs, route, nav, toast, actions,
+    pins, arts, setArts, tick, tickAt, dbState, refresh, sideMode, setSideMode, chats, setChats, messages, unread, extraLogs, addLog, prefs, setPrefs, route, nav, toast, actions,
     openPanel: c => setPanel(c), closePanel: () => setPanel(null), panel,
   };
 
@@ -151,7 +152,7 @@ export default function App() {
 
   return (
     <AppCtx.Provider value={app}>
-      <div className={`app ${navOpen ? 'nav-open' : ''}`}>
+      <div className={`app side-${sideMode} ${navOpen ? 'nav-open' : ''}`}>
         <Sidebar section={section} sub={sub} sub2={sub2} signOut={() => setAuth(null)} />
         <div className="main" onClick={() => navOpen && setNavOpen(false)}>
           <TopBar section={section} openNav={e => { e.stopPropagation(); setNavOpen(true); }} openPalette={() => setPalette(true)} />
@@ -175,14 +176,14 @@ function Sidebar({ section, sub, sub2, signOut }) {
   const { user, users, setUserId, unread, pins, arts, nav, actions, theme, setTheme, ctx, dbState } = useApp();
   const [menu, setMenu] = useState(false);
   const [pinMenu, setPinMenu] = useState(false);
-  const item = (to, Icon, label, on, extra) => <a href={'#/' + to} className={`nav-i ${on ? 'on' : ''}`}><Icon />{label}{extra}</a>;
+  const item = (to, Icon, label, on, extra) => <a href={'#/' + to} className={`nav-i ${on ? 'on' : ''}`} title={label}><Icon /><span className="nl">{label}</span>{extra}</a>;
   const { demoId } = ctx.demo ? { demoId: ctx.demo.id } : {};
   const mine = arts.filter(a => a.demo === demoId);
   const pinItems = pins.map(id => { const a = arts.find(x => x.id === id); return a && { to: `artefactory/${a.id}`, label: a.name, icon: artIcon(a), on: section === 'artefactory' && sub === a.id, custom: !a.spec?.shortcut }; }).filter(Boolean);
   const groups = [['Dashboards', mine.filter(a => a.type === 'dash')], ['Forms', mine.filter(a => a.type === 'form')], ['Sheets, decks and documents', mine.filter(a => ['xlsx', 'pptx', 'docx'].includes(a.type))]];
   return (
     <aside className="side">
-      <div className="logo"><span className="wm">FACLON<i>LABS</i></span><small><b>Connected Plant</b><br />Intelligence</small></div>
+      <div className="logo"><span className="wm">FACLON<i>LABS</i></span><span className="wm-mark" aria-hidden>F</span></div>
       <div style={{ position: 'relative' }}>
         <button className="user-btn" onClick={() => setMenu(m => !m)} aria-haspopup="menu"><Av u={user} /><div className="grow"><div className="u-n ellipsis">{user.name}</div><div className="u-r ellipsis">{user.role}</div></div><ChevronDown size={15} color="var(--muted)" /></button>
         {menu && <div className="menu" style={{ left: 10, right: 10, top: 54 }} onMouseLeave={() => setMenu(false)}>
@@ -198,7 +199,8 @@ function Sidebar({ section, sub, sub2, signOut }) {
       <nav className="nav">
         {item('copilot', MessageSquare, 'Copilot', section === 'copilot')}
         {item('messages', Inbox, 'Messages', section === 'messages', unread ? <span className="cnt">{unread}</span> : null)}
-        <div className="nav-l">Shortcuts · Artefactory<button className="nav-add" onClick={() => setPinMenu(m => !m)} title="Add or remove shortcuts" aria-label="Edit shortcuts"><Plus size={14} /></button></div>
+        <div className="nav-sep" />
+        <div className="nav-l"><span className="nl">Shortcuts</span><button className="nav-add" onClick={() => setPinMenu(m => !m)} title="Add or remove shortcuts" aria-label="Edit shortcuts"><Plus size={14} /></button></div>
         <div style={{ position: 'relative' }}>
           {pinMenu && <div className="menu" style={{ left: 0, right: 0, top: -4 }} onMouseLeave={() => setPinMenu(false)}>
             <div style={{ maxHeight: 360, overflow: 'auto' }}>
@@ -207,9 +209,9 @@ function Sidebar({ section, sub, sub2, signOut }) {
             </div>
             <div className="sep" /><button className="mi" onClick={() => { actions.resetPins(); setPinMenu(false); }}><span className="grow muted">Reset to default shortcuts</span></button>
           </div>}
-          {pinItems.map(p => <a key={p.to} href={'#/' + p.to} className={`nav-i ${p.on ? 'on' : ''}`}><p.icon /><span className="ellipsis">{p.label}</span>{p.custom && <span className="dot" />}</a>)}
+          {pinItems.map(p => <a key={p.to} href={'#/' + p.to} className={`nav-i ${p.on ? 'on' : ''}`} title={p.label}><p.icon /><span className="ellipsis nl">{p.label}</span>{p.custom && <span className="dot" />}</a>)}
         </div>
-        <div style={{ height: 10 }} />
+        <div className="nav-sep" />
         {item('artefactory', Folder, 'Artefactory', section === 'artefactory')}
         {item('autopilot', Zap, 'Autopilot', section === 'autopilot')}
         {item('context/uns', Layers, 'Context', section === 'context')}
@@ -221,38 +223,52 @@ function Sidebar({ section, sub, sub2, signOut }) {
 }
 
 function TopBar({ section, openNav, openPalette }) {
-  const { user, allowed, demoId, setDemo, ctx, range, setRange, rng, unread, nav, openPanel, route, anchor, arts } = useApp();
-  const [dm, setDm] = useState(false); const [custom, setCustom] = useState(false);
+  const { user, allowed, demoId, setDemo, ctx, unread, openPanel, route, anchor, arts, sideMode, setSideMode } = useApp();
+  const [dm, setDm] = useState(false); const [sm, setSm] = useState(false);
   const [, artId] = route.split('/');
   const art = section === 'artefactory' && arts.find(a => a.id === artId);
-  const showRange = !!art && art.type === 'dash' && (BUILT_IN.includes(art.spec?.view) || art.spec?.view === 'custom' || !art.spec?.view);
+  const SideIc = sideMode === 'full' ? PanelLeftClose : sideMode === 'icons' ? PanelLeft : PanelLeftOpen;
+  const ask = () => openPanel(art ? { kind: 'artefact', title: art.name, versions: art.versions, summary: [`${art.name}, version ${art.versions[0].v}, ${ctx.demo.company}.`] } : { kind: 'page', title: pageTitle(route, ctx), summary: [] });
   return (
     <header className="top">
       <button className="ibtn menu-btn" onClick={openNav} aria-label="Menu"><Menu /></button>
+      <div className="side-ctl" style={{ position: 'relative' }}>
+        <button className="ibtn" onClick={() => setSm(v => !v)} aria-label="Sidebar view" title="Sidebar: full, icons or hidden"><SideIc /></button>
+        {sm && <div className="menu" style={{ top: 40, left: 0, minWidth: 190 }} onMouseLeave={() => setSm(false)}>
+          <div className="pal-g" style={{ padding: '4px 10px' }}>Sidebar</div>
+          {[['full', PanelLeftClose, 'Show full'], ['icons', PanelLeft, 'Icons only'], ['hidden', PanelLeftOpen, 'Hide']].map(([id, I, l]) => <button key={id} className={`mi ${sideMode === id ? 'on' : ''}`} onClick={() => { setSideMode(id); setSm(false); }}><I size={15} /><span className="grow">{l}</span>{sideMode === id && <Check size={15} />}</button>)}
+        </div>}
+      </div>
       <button className="search" onClick={openPalette}><Search size={15} /><span className="hide-sm">Search assets, KPIs, artefacts, messages</span><span className="kbd">⌘K</span></button>
       {user.master ? (
         <div style={{ position: 'relative' }}>
           <button className="sel" onClick={() => setDm(v => !v)}><Database /><span className="hide-sm">{ctx.demo.company}</span><ChevronDown /></button>
-          {dm && <div className="menu" style={{ top: 40, left: 0 }} onMouseLeave={() => setDm(false)}>
+          {dm && <div className="menu" style={{ top: 40, left: 0, maxHeight: '70vh', overflow: 'auto' }} onMouseLeave={() => setDm(false)}>
             <div className="pal-g" style={{ padding: '4px 10px' }}>Demo database</div>
             {DEMO_LIST.filter(d => allowed.includes(d.id)).map(d => <button key={d.id} className={`mi ${d.id === demoId ? 'on' : ''}`} onClick={() => { setDemo(d.id); setDm(false); }}><span className="grow"><b style={{ fontWeight: 600 }}>{d.company}</b><small className="muted" style={{ display: 'block' }}>{d.industry}</small></span>{d.id === demoId && <Check size={15} />}</button>)}
           </div>}
         </div>
       ) : <span className="sel hide-sm"><Database />{ctx.demo.company} · {ctx.demo.site}</span>}
       <div className="grow" />
-      {showRange && <div className="row hide-sm" style={{ position: 'relative' }}>
-        <div className="seg">{RANGES.map(r => <button key={r.id} className={range.id === r.id ? 'on' : ''} onClick={() => setRange({ id: r.id })}>{r.label}</button>)}
-          <button className={range.id === 'custom' ? 'on' : ''} onClick={() => setCustom(v => !v)}><Calendar size={13} /></button></div>
-        {custom && <div className="menu" style={{ top: 40, right: 0, padding: 12, minWidth: 280 }}>
-          <div className="pal-g" style={{ padding: '0 0 6px' }}>Custom range</div>
-          <CustomRange db={ctx.db} range={range} onApply={r => { setRange(r); setCustom(false); }} />
-        </div>}
-      </div>}
       <span className="muted hide-sm" style={{ fontSize: 12, whiteSpace: 'nowrap' }} title="Data is generated and anchored to the demo clock">{anchor ? <>Demo clock · {fmtDate(ctx.db.anchor)}</> : <><span className="live" /> Live · {fmtTime(ctx.db.now)} IST</>}</span>
       <a className="ibtn" href="#/messages" aria-label="Messages"><Bell />{unread > 0 && <span className="badge">{unread}</span>}</a>
-      {section !== 'copilot' && <button className="btn pri" onClick={() => openPanel({ kind: 'page', title: pageTitle(route, ctx), summary: [] })}><Sparkles />Ask</button>}
+      {section !== 'copilot' && <button className="btn pri" onClick={ask}><Sparkles /><span className="hide-sm">Ask Copilot</span></button>}
     </header>
   );
+}
+
+/** Date range for a dashboard artefact: presets and a custom range. */
+export function RangePicker() {
+  const { ctx, range, setRange } = useApp();
+  const [custom, setCustom] = useState(false);
+  return <div className="row" style={{ position: 'relative' }}>
+    <div className="seg">{RANGES.map(r => <button key={r.id} className={range.id === r.id ? 'on' : ''} onClick={() => setRange({ id: r.id })}>{r.label}</button>)}
+      <button className={range.id === 'custom' ? 'on' : ''} onClick={() => setCustom(v => !v)} aria-label="Custom range" title="Custom range"><Calendar size={13} /></button></div>
+    {custom && <div className="menu" style={{ top: 40, right: 0, padding: 12, minWidth: 280 }}>
+      <div className="pal-g" style={{ padding: '0 0 6px' }}>Custom range</div>
+      <CustomRange db={ctx.db} range={range} onApply={r => { setRange(r); setCustom(false); }} />
+    </div>}
+  </div>;
 }
 function CustomRange({ db, range, onApply }) {
   const iso = t => new Date(t).toISOString().slice(0, 10);

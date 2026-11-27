@@ -16,7 +16,7 @@ import { createArtefact } from './store.mjs';
 import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
 import { MIMICS } from '../web/src/shared/mimics.js';
 
-const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
+const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|html|web ?page|one.?pager|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
 
 /** Save every ```artefact {json}``` block in the answer to the Artefactory. */
 function saveArtefacts(text, demo, emit) {

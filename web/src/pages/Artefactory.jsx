@@ -8,14 +8,16 @@ import { TwinView, RealtimeView, SetpointView, CustomBoard, FormView, RcaView } 
 import { MimicView } from '../mimics/index.jsx';
 import { workbookSheets, downloadWorkbook, downloadHTML } from '../lib/artefacts.js';
 import { TYPES } from '../shared/artefacts.js';
-import { artIcon } from '../App.jsx';
+import { onePager } from '../lib/htmlpage.js';
+import { downloadBlob } from '../lib/data.js';
+import { artIcon, RangePicker } from '../App.jsx';
 import { getDB, DEMO_LIST, fmtRel, fmtDateTime } from '../lib/data.js';
 import { usePersist } from '../lib/store.js';
 
 /* type look: icon, tint for the card thumbnail */
 const TINT = {
   dash: { tint: '#e6ebfa', ink: '#2F55D4' }, xlsx: { tint: '#ecfdf3', ink: '#067647' }, pptx: { tint: '#fff1ea', ink: '#c4320a' },
-  docx: { tint: '#eaf6fd', ink: '#0369a1' }, form: { tint: '#f1edfd', ink: '#6941c6' },
+  docx: { tint: '#eaf6fd', ink: '#0369a1' }, form: { tint: '#f1edfd', ink: '#6941c6' }, html: { tint: '#eef4ff', ink: '#2F55D4' },
 };
 const VIEW_TINT = { mimic: { tint: '#eef0f3', ink: '#40566d' }, rca: { tint: '#fdf0ef', ink: '#b42318' }, twin: { tint: '#e8f6f8', ink: '#0e7490' }, realtime: { tint: '#eafaf1', ink: '#008542' }, setpoints: { tint: '#fff6e5', ink: '#b45309' } };
 const VIEW_LABEL = { mimic: 'Process view', rca: 'RCA', twin: 'Asset twin', realtime: 'Real-time', setpoints: 'Setpoints', kpis: 'KPIs', custom: 'Custom' };
@@ -123,9 +125,9 @@ function ArtefactView({ a, sel }) {
           <button className="btn sm" onClick={() => openInNewTab(a.id)}><ExternalLink />Open in new tab</button>
           <button className="btn sm" onClick={() => { navigator.clipboard?.writeText(`${location.origin}${location.pathname}#/view/${a.id}`); app.toast('Link copied'); }}><Share2 />Share</button>
           {!['dash', 'form'].includes(a.type) && <button className="btn sm" onClick={() => download(app, a, c, ref)}><Download />Download</button>}
-          <button className="btn sm pri" onClick={() => app.openPanel(askCtx)}><Sparkles />Ask</button>
         </div>
       </div>
+      {a.type === 'dash' && !['twin', 'realtime', 'setpoints', 'mimic'].includes(a.spec?.view) && tab === 'preview' && <div className="av-range"><span className="muted" style={{ fontSize: 12 }}>Period</span><RangePicker /></div>}
       <div className="av-body">
         {tab === 'versions' ? (
           <section className="card" style={{ maxWidth: 1100, margin: '0 auto' }}><div className="scroll-x"><table className="t"><thead><tr><th>Version</th><th>Saved</th><th>By</th><th>Change</th><th /></tr></thead><tbody>{a.versions.map(v => (
@@ -139,6 +141,7 @@ function ArtefactView({ a, sel }) {
 
 export function ArtefactBody({ a, c, sel }) {
   if (a.type === 'form') return <FormView c={c} a={a} />;
+  if (a.type === 'html') return <HtmlFrame a={a} c={c} />;
   if (a.type === 'docx' && a.spec?.kind === 'report') return <ReportDoc c={c} kind="daily" title={a.name} />;
   if (a.type === 'xlsx') return <div className="xl-wrap" style={{ maxWidth: 1100, margin: '0 auto' }}><WorkbookView sheets={workbookSheets(c, a.spec?.kind)} /></div>;
   if (a.type === 'pptx') return <div style={{ maxWidth: 1100, margin: '0 auto' }}><DeckView c={c} name={a.name} /></div>;
@@ -155,7 +158,8 @@ export function ArtefactBody({ a, c, sel }) {
 }
 
 function download(app, a, c, ref) {
-  if (a.type === 'xlsx') downloadWorkbook(a.name, workbookSheets(c, a.spec?.kind));
+  if (a.type === 'html') downloadBlob(new Blob([a.spec?.html || onePager(c)], { type: 'text/html' }), `${a.name.replace(/[^A-Za-z0-9]+/g, '-')}.html`);
+  else if (a.type === 'xlsx') downloadWorkbook(a.name, workbookSheets(c, a.spec?.kind));
   else if (ref.current) downloadHTML(a.name, ref.current, a.type === 'docx');
   app.addLog('Access', 'artefact.download', a.name, `v${a.versions[0].v}`);
 }
@@ -187,4 +191,11 @@ export function StandaloneView({ id }) {
       <div className="av-body" ref={ref}><ArtefactBody a={a} c={c} /></div>
     </div>
   );
+}
+
+/** HTML artefact: shown in a sandboxed frame (scripts never run) that grows to fit its page. */
+function HtmlFrame({ a, c }) {
+  const ref = useRef(null);
+  const fit = () => { try { const d = ref.current.contentDocument; ref.current.style.height = Math.max(400, d.documentElement.scrollHeight + 4) + 'px'; } catch { /* keep min height */ } };
+  return <iframe ref={ref} className="html-frame" title={a.name} sandbox="allow-same-origin allow-popups" srcDoc={a.spec?.html || onePager(c)} onLoad={fit} />;
 }

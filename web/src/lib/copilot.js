@@ -178,7 +178,7 @@ export function runQuery(question, ctx) {
 
 /** Is the question asking to create something in the Artefactory? */
 export function createIntent(q) {
-  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
+  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|html|web ?page|one.?pager|scada|mimic|sld|diagram|network|circuit|rca|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
 }
 
 /** Turn a request into an artefact { type, name, spec, label, what }. Uses the plant model to pick assets, KPIs and forms. */
@@ -194,6 +194,7 @@ export function buildArtefact(q, { demo, db, asset, kpi }) {
     const m = mims.slice().sort((x, y) => score(y) - score(x))[0];
     return { type: 'dash', name: m.name, spec: { view: 'mimic', mimic: m.id }, label: 'process view', focus: m.name, what: `It is an interactive ${m.level} view: ${m.desc} Values refresh every 10 seconds; click any equipment to inspect it or open its twin.` };
   }
+  if (/html|web ?page|one.?pager|landing page/.test(s)) return { type: 'html', name: `${demo.company} · plant one-pager`, spec: { kind: 'onepager' }, label: 'HTML page', focus: 'kpis', what: 'It is a self-contained web page with KPIs against baseline, value realised, open issues and asset health. Download it as an .html file to share.' };
   if (/rca|root cause|anomal/.test(s)) return { type: 'dash', name: 'Anomalies · RCA and recommendations', spec: { view: 'rca' }, label: 'RCA board', focus: 'anomalies', what: 'It lists every open anomaly with its trend, root cause, evidence, confidence and recommended action.' };
   if (/twin/.test(s)) return { type: 'dash', name: `${spot.id} · ${spot.name} twin`, spec: { view: 'twin', asset: spot.id }, label: 'asset twin', focus: spot.id, calls: [['get_asset_health', { asset: spot.id }], ['get_data_sources', { asset: spot.id }]],
     what: `It shows live tags every 10 seconds, the 14-day trend, the agent diagnosis, the source system and address of every tag, and the ERP, CMMS and MES records.` };

@@ -9,6 +9,7 @@ export const TYPES = {
   pptx: { label: 'Presentation', plural: 'Presentations', ext: 'PPTX' },
   docx: { label: 'Document', plural: 'Documents', ext: 'DOCX' },
   form: { label: 'Form', plural: 'Forms', ext: 'FORM' },
+  html: { label: 'HTML page', plural: 'HTML pages', ext: 'HTML' },
 };
 export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'mimic', 'rca', 'custom'];
 export const WIDGETS = ['kpis', 'kpi_trend', 'tag_trend', 'asset_health', 'losses', 'energy', 'alerts', 'setpoints', 'live', 'text'];
@@ -41,6 +42,7 @@ export function seedFor(demo, now = Date.now()) {
     A('deck', 'pptx', 'Monthly operations review', { kind: 'monthly' }, [V(5, 'Master', 230, 'Edited decisions slide', now), V(4, 'Copilot for Master', 260, 'Refreshed with month-to-date data', now)]),
     A('daily', 'docx', 'Daily performance report', { kind: 'report' }, [V(58, 'Report Agent', 95, 'Scheduled run', now), V(57, 'Report Agent', 95 + 1440, 'Scheduled run', now)]),
     A('value', 'docx', 'Value realisation note', { kind: 'note' }, [V(3, 'Plant controller', 1700, 'Finance validation added', now), V(2, 'Master', 6000, 'Added energy section', now)]),
+    A('page', 'html', `${demo.company} · plant one-pager`, { kind: 'onepager' }, [V(2, 'Copilot for Master', 60 * 5, 'Refreshed with live KPIs', now), V(1, 'Faclon', 60 * 24 * 6, 'Created as a shareable web page', now)]),
     A('rca', 'dash', 'Anomalies · RCA and recommendations', { view: 'rca' }, [V(6, 'Asset Health Agent', 12, 'New anomaly added with evidence', now), V(5, 'Faclon', 60 * 24 * 5, 'Grouped by asset and status', now)]),
     ...(MIMICS[demo.id] || []).map((m, i) => A('mimic-' + m.id, 'dash', m.name, { view: 'mimic', mimic: m.id, ...(i === 0 ? { shortcut: 10 } : {}) }, [V(3 + i, 'Faclon', 60 * (20 + i * 7), 'Live bindings checked against the UNS', now), V(1, 'Faclon', 60 * 24 * (12 + i), 'Drawn from the plant P&ID and SLD', now)])),
     ...(demo.forms || []).map((f, i) => A('form-' + f.id, 'form', f.name, { form: f.id }, [V(2 + i, 'Faclon', 60 * 24 * (4 + i * 3), 'Fields reviewed with the plant', now)])),
@@ -77,9 +79,9 @@ export function seedAll(DEMOS, now = Date.now()) {
 /** Check and normalise an artefact coming from the Copilot, an agent or the API. Returns { ok, value | error }. */
 export function normaliseArtefact(input, demo) {
   if (!input || typeof input !== 'object') return { ok: false, error: 'artefact must be an object' };
-  const TYPE_OF = { dashboard: 'dash', dash: 'dash', sheet: 'xlsx', xlsx: 'xlsx', workbook: 'xlsx', excel: 'xlsx', spreadsheet: 'xlsx', presentation: 'pptx', deck: 'pptx', slides: 'pptx', pptx: 'pptx', document: 'docx', doc: 'docx', docx: 'docx', note: 'docx', report: 'docx', form: 'form' };
+  const TYPE_OF = { dashboard: 'dash', dash: 'dash', sheet: 'xlsx', xlsx: 'xlsx', workbook: 'xlsx', excel: 'xlsx', spreadsheet: 'xlsx', presentation: 'pptx', deck: 'pptx', slides: 'pptx', pptx: 'pptx', document: 'docx', doc: 'docx', docx: 'docx', note: 'docx', report: 'docx', form: 'form', html: 'html', 'html page': 'html', page: 'html', webpage: 'html', 'web page': 'html', onepager: 'html' };
   const type = TYPE_OF[String(input.type || '').toLowerCase().trim()];
-  if (!TYPES[type]) return { ok: false, error: `type must be one of dashboard, sheet, presentation, document, form` };
+  if (!TYPES[type]) return { ok: false, error: `type must be one of dashboard, sheet, presentation, document, form, html` };
   const name = String(input.name || '').trim().slice(0, 90);
   if (!name) return { ok: false, error: 'name is required' };
   let spec = input.spec && typeof input.spec === 'object' ? input.spec : {};
@@ -98,6 +100,11 @@ export function normaliseArtefact(input, demo) {
     if (typeof spec.form === 'string' && !(demo.forms || []).find(x => x.id === spec.form)) return { ok: false, error: `unknown form ${spec.form}` };
     if (f && !Array.isArray(f.sections)) return { ok: false, error: 'form needs sections' };
   }
+  if (type === 'html') {
+    if (spec.html != null && typeof spec.html !== 'string') return { ok: false, error: 'html spec needs html as a string' };
+    if (spec.html && spec.html.length > 300000) return { ok: false, error: 'html is larger than 300 kB' };
+    if (!spec.html) spec = { ...spec, kind: spec.kind || 'onepager' };
+  }
   return { ok: true, value: { type, name, spec } };
 }
 
@@ -105,4 +112,5 @@ export function normaliseArtefact(input, demo) {
 export const ARTEFACT_HELP = `type: dashboard | sheet | presentation | document | form.
 dashboard spec: { view: "kpis"|"overview"|"maintenance"|"cost"|"quality"|"energy"|"rca" } for a built-in board, { view: "mimic", mimic: "<mimic id from get_mimics>" } for a process or asset view, { view: "twin", asset: "<ASSET-ID>" }, { view: "realtime", assets: ["<ASSET-ID>", …] }, { view: "setpoints" }, or { view: "custom", widgets: [ … ] } with widgets: {type:"kpis", ids:[kpi ids]}, {type:"kpi_trend", id}, {type:"tag_trend", asset, tag}, {type:"asset_health"}, {type:"losses"}, {type:"energy"}, {type:"alerts"}, {type:"setpoints"}, {type:"live", assets:[ids]}, {type:"text", md}.
 sheet spec: { kind: "daily"|"energy" }. presentation spec: { kind: "monthly" }. document spec: { kind: "report"|"note" }.
+html spec: { html: "<!doctype html>…" } a complete self-contained web page (inline CSS, no external scripts), or { kind: "onepager" } for the generated plant one-pager.
 form spec: { form: { name, sections: [ { title, fields: [ { id, label, type: text|textarea|number|select|radio|checkbox|checklist|date|datetime|time|rating|signature|asset, options?, unit?, required? } ] } ] } }.`;

@@ -54,8 +54,8 @@ function buildServer() {
   }
 
   /* ---------- Artefactory (shared database) ---------- */
-  const typeArg = z.enum(['dashboard', 'sheet', 'presentation', 'document', 'form']);
-  const T2 = { dash: 'dashboard', xlsx: 'sheet', pptx: 'presentation', docx: 'document', form: 'form' };
+  const typeArg = z.enum(['dashboard', 'sheet', 'presentation', 'document', 'form', 'html']);
+  const T2 = { dash: 'dashboard', xlsx: 'sheet', pptx: 'presentation', docx: 'document', form: 'form', html: 'html' };
   const brief = a => ({ id: a.id, type: T2[a.type], name: a.name, demo: a.demo, version: a.versions[0].v, updated: new Date(a.versions[0].when).toISOString(), view: a.spec?.view, open: `#/artefactory/${a.id}` });
   server.registerTool('list_artefacts', { title: 'List artefacts', description: 'Dashboards, sheets, presentations, documents and forms in the Artefactory for a demo.', inputSchema: { demo: demoArg, type: typeArg.optional() } },
     async ({ demo, type }) => json(store.listArtefacts({ demo, type: type && Object.keys(T2).find(k => T2[k] === type) }).map(brief)));

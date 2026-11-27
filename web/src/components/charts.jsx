@@ -22,13 +22,14 @@ const Tip = ({ active, payload, label, unit, days, labelFmt }) => {
 /** Time series. data: [{t, ...keys}]. series: [{key, name, color, type: line|area|bar, dash}] */
 export function Trend({ data, series, unit, days = 7, height = 220, refs = [], xRefs = [], bands = [], yDomain, xKey = 't', categorical }) {
   const p = usePalette();
+  const hasBar = series.some(s => s.type === 'bar'); /* bars always start from zero and keep clear of the axis */
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>{series.filter(s => s.type === 'area').map(s => <linearGradient key={s.key} id={`g-${s.key}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={s.color || p.c1} stopOpacity={0.22} /><stop offset="100%" stopColor={s.color || p.c1} stopOpacity={0.01} /></linearGradient>)}</defs>
         <CartesianGrid stroke={p.grid} vertical={false} />
-        <XAxis dataKey={xKey} type={categorical ? 'category' : 'number'} scale={categorical ? 'band' : 'time'} domain={['dataMin', 'dataMax']} tickFormatter={categorical ? undefined : t => axisTime(t, days)} stroke={p.axis} tickLine={false} axisLine={false} minTickGap={36} fontSize={11} />
-        <YAxis stroke={p.axis} tickLine={false} axisLine={false} width={56} fontSize={11} domain={yDomain || ['auto', 'auto']} tickFormatter={v => fmtNum(v, Math.abs(v) < 10 ? 1 : 0)} />
+        <XAxis dataKey={xKey} type={categorical ? 'category' : 'number'} scale={categorical ? 'band' : 'time'} domain={['dataMin', 'dataMax']} padding={hasBar && !categorical ? { left: 18, right: 18 } : undefined} tickFormatter={categorical ? undefined : t => axisTime(t, days)} stroke={p.axis} tickLine={false} axisLine={false} minTickGap={36} fontSize={11} />
+        <YAxis stroke={p.axis} tickLine={false} axisLine={false} width={60} fontSize={11} domain={yDomain || (hasBar ? [0, 'auto'] : ['auto', 'auto'])} tickFormatter={v => (v === 0 ? '0' : fmtNum(v, Math.abs(v) < 10 ? 1 : 0))} />
         <Tooltip content={<Tip unit={unit} days={days} />} />
         {bands.map((b, i) => <ReferenceArea key={i} x1={b.x1} x2={b.x2} y1={b.y1} y2={b.y2} fill={b.color || p.c5} fillOpacity={b.opacity || 0.08} label={b.label ? { value: b.label, position: 'insideTopLeft', fontSize: 10, fill: p.axis } : undefined} />)}
         {refs.map((r, i) => <ReferenceLine key={i} y={r.y} stroke={r.color || p.bad} strokeDasharray={r.solid ? undefined : '4 3'} label={{ value: r.label, position: 'insideTopRight', fontSize: 10, fill: r.color || p.bad }} />)}

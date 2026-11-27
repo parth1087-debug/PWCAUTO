@@ -46,4 +46,12 @@ export const MIMICS = {
     { id: 'extrusion-line', name: 'Extrusion line · process view', level: 'L2', desc: 'Mixer, extruder barrel zones, die, vacuum tank, haul-off, cutter and belling.' },
     { id: 'imm-cell', name: 'Injection moulding cell · fittings', level: 'L3', desc: 'Injection unit, clamp, mould temperature and cycle.' },
   ],
+  power: [
+    { id: 'boiler-scada', name: 'Boiler · complete SCADA screen', level: 'L2', desc: 'Furnace, burners and mills, water walls, drum, superheaters, reheater, economiser, APH, ESP, ID/FD/PA fans and stack.' },
+    { id: 'turbine-scada', name: 'Turbine and feed cycle · SCADA screen', level: 'L2', desc: 'HP/IP/LP turbine, generator, condenser, CEP, LP heaters, deaerator, BFPs, HP heaters, cooling tower and CW pumps.' },
+    { id: 'hbd', name: 'Live heat balance vs design', level: 'L2', desc: 'Heat balance diagram with live flow, pressure, temperature and enthalpy against design at the current load.' },
+    { id: 'aux-scheduler', name: 'Auxiliary scheduler · fans, pumps, mills', level: 'L2', desc: 'Recommended run and standby of ID, FD, PA fans, BFPs, mills, CEPs, CW pumps and cooling tower fans for the load forecast.' },
+    { id: 'soot-blowing', name: 'Soot blower automation · recommendation', level: 'L2', desc: 'Boiler sections with cleanliness factor, heat absorption and the recommended blower sequence.' },
+    { id: 'setpoint-screen', name: 'Combustion and cycle setpoints · recommendation', level: 'L2', desc: 'Current and recommended setpoints on the boiler and turbine with expected heat-rate gain.' },
+  ],
 };
