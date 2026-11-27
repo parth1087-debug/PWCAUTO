@@ -93,10 +93,10 @@ export function DemandChart({ months, cd, floor, height = 260 }) {
       <ComposedChart data={data} margin={{ top: 14, right: 12, left: 0, bottom: 0 }}>
         <CartesianGrid stroke={p.grid} vertical={false} />
         <XAxis dataKey="label" stroke={p.axis} tickLine={false} axisLine={false} fontSize={11} interval={0} />
-        <YAxis domain={[0, Math.ceil((cd + 600) / 500) * 500]} stroke={p.axis} tickLine={false} axisLine={false} fontSize={11} width={52} tickFormatter={v => fmtNum(v)} />
+        <YAxis domain={[0, Math.ceil((cd + 600) / 2000) * 2000]} ticks={Array.from({ length: Math.ceil((cd + 600) / 2000) + 1 }, (_, i) => i * 2000)} stroke={p.axis} tickLine={false} axisLine={false} fontSize={11} width={52} tickFormatter={v => fmtNum(v)} />
         <Tooltip cursor={{ fill: p.grid }} content={({ active, payload }) => active && payload?.length ? (() => { const d = payload[0].payload; return <TT><b>{d.label}</b>{d.src === 'bill' && <span className="muted"> · from bill</span>}<Row k="Max demand" v={`${fmtNum(d.md)} kVA`} /><Row k="Billing demand" v={`${fmtNum(d.billing)} kVA`} /><Row k="vs contract" v={`${d.md > cd ? '+' : ''}${fmtNum(d.md - cd)} kVA`} /></TT>; })() : null} />
-        <ReferenceLine y={cd} stroke={p.bad} strokeDasharray="4 3" label={{ value: `Contract ${fmtNum(cd)} kVA`, position: 'insideTopRight', fontSize: 10.5, fill: p.bad }} />
-        <ReferenceLine y={floor} stroke={p.axis} strokeDasharray="2 3" label={{ value: `75 % floor ${fmtNum(floor)} kVA`, position: 'insideBottomRight', fontSize: 10.5, fill: p.axis }} />
+        <ReferenceLine y={cd} stroke={p.bad} strokeDasharray="5 3" strokeWidth={1.5} ifOverflow="extendDomain" />
+        <ReferenceLine y={floor} stroke={p.axis} strokeDasharray="2 3" strokeWidth={1.5} />
         <Bar dataKey="md" name="Max demand" radius={[4, 4, 0, 0]} maxBarSize={30} isAnimationActive={false}>
           {data.map((d, i) => <Cell key={i} fill={d.exceed ? p.bad : p.c1} fillOpacity={d.src === 'bill' ? 0.55 : 0.9} />)}
         </Bar>
@@ -158,7 +158,7 @@ export function LandedBars({ items, refV, height = 170 }) {
         <ReferenceLine x={refV} stroke={p.axis} strokeDasharray="4 3" />
         <Tooltip cursor={{ fill: p.grid }} content={({ active, payload }) => active && payload?.length ? <TT><b>{payload[0].payload.name}</b><Row k="Landed cost" v={`₹${fmtNum(payload[0].payload.landed, 2)}/kWh`} /></TT> : null} />
         <Bar dataKey="landed" radius={[0, 4, 4, 0]} maxBarSize={16} isAnimationActive={false}>
-          {items.map(d => <Cell key={d.id} fill={d.landed <= refV ? p.good : d.id === 'grid' ? p.c2 : p.warn} />)}
+          {items.map(d => <Cell key={d.id} fill={d.id === 'grid' ? p.c2 : d.landed <= refV ? p.good : p.warn} />)}
           <LabelList dataKey="landed" position="right" fontSize={11} fill={p.axis} formatter={v => fmtNum(v, 2)} />
         </Bar>
       </ComposedChart>

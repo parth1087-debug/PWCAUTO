@@ -62,7 +62,7 @@ export default function CapexBoard({ c }) {
       <Card title="ECM register, fastest payback first" sub={`Baseline measured over ${R.label} · ₹ at ₹${fmtNum(m.tariff, 2)}/kWh blended (solar at ₹${fmtNum(m.energyOnly, 2)}/kWh), gas ₹${NOTES.gasPrice}/Sm³ · IRR and NPV over ${NOTES.years} years at ${NOTES.discount * 100} % · select a row for evidence, risk and M&V`} flush
         csv={{ name: 'ems-ecm-register', rows: csv }} ask="Which energy conservation measures should we approve first, and why?">
         <div className="en-tbl"><table className="t" style={{ minWidth: 1000 }}>
-          <thead><tr><th>#</th><th>Measure</th><th>Baseline (measured) → proposed</th><th className="r">Energy saved /yr</th><th className="r">₹ saved /yr</th><th className="r">Capex</th><th className="r">Payback</th><th className="r">IRR · NPV 10 yr</th><th className="r">tCO₂ /yr</th><th>Recommendation · confidence</th></tr></thead>
+          <thead><tr><th>#</th><th>Measure</th><th>Measured → proposed</th><th className="r">Energy /yr</th><th className="r">₹ /yr</th><th className="r">Capex</th><th className="r">Payback</th><th className="r">IRR · NPV</th><th className="r">tCO₂ /yr</th><th>Decision</th></tr></thead>
           <tbody>{m.rows.map((r, i) => (
             <tr key={r.id} className={`click ${cur.id === r.id ? 'on' : ''}`} onClick={() => setSel(r.id)}>
               <td className="num muted">{i + 1}</td>
