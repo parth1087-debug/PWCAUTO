@@ -11,12 +11,13 @@ export const TYPES = {
   form: { label: 'Form', plural: 'Forms', ext: 'FORM' },
   html: { label: 'HTML page', plural: 'HTML pages', ext: 'HTML' },
 };
-export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'mimic', 'rca', 'custom'];
+export const VIEWS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy', 'twin', 'realtime', 'setpoints', 'mimic', 'rca', 'supply-plan', 'tariff', 'capex', 'trends', 'custom'];
 export const WIDGETS = ['kpis', 'kpi_trend', 'tag_trend', 'asset_health', 'losses', 'energy', 'alerts', 'setpoints', 'live', 'text', 'headline', 'kpi_compare', 'gauge', 'pareto', 'table', 'production', 'site_compare'];
 const DEFAULT_NAMES = { kpis: 'KPI scorecard', overview: 'Plant overview', maintenance: 'Maintenance', cost: 'Cost conversion', quality: 'Quality', energy: 'Energy & utilities' };
 export const dashName = (demo, view) => (demo.dashNames && demo.dashNames[view]) || DEFAULT_NAMES[view];
 
 import { MIMICS } from './mimics.js';
+import { CATALOGUE, EXTRA_DECISION } from './sections.js';
 
 const M = 60e3;
 const V = (v, by, minsAgo, note, now) => ({ v, by, when: now - minsAgo * M, note });
@@ -46,8 +47,20 @@ export function seedFor(demo, now = Date.now()) {
     A('rca', 'dash', 'Anomalies · RCA and recommendations', { view: 'rca' }, [V(6, 'Asset Health Agent', 12, 'New anomaly added with evidence', now), V(5, 'Faclon', 60 * 24 * 5, 'Grouped by asset and status', now)]),
     ...(MIMICS[demo.id] || []).map((m, i) => A('mimic-' + m.id, 'dash', m.name, { view: 'mimic', mimic: m.id, ...(i === 0 ? { shortcut: 10 } : {}) }, [V(3 + i, 'Faclon', 60 * (20 + i * 7), 'Live bindings checked against the UNS', now), V(1, 'Faclon', 60 * 24 * (12 + i), 'Drawn from the plant P&ID and SLD', now)])),
     ...(demo.forms || []).map((f, i) => A('form-' + f.id, 'form', f.name, { form: f.id }, [V(2 + i, 'Faclon', 60 * 24 * (4 + i * 3), 'Fields reviewed with the plant', now)])),
+    ...(EXTRA_DECISION[demo.id] || []).map((x, i) => A(x.key, x.type, x.key, x.spec, [V(1, 'Faclon', 60 * (30 + i * 11), 'Created for the decision boards', now)])),
   ];
   return list;
+}
+
+/** Apply the plant's section catalogue (decision boards / monitoring): section, group, order and an optional name. */
+function applyCatalogue(demo, list) {
+  const cat = CATALOGUE[demo.id]; if (!cat) return list;
+  return list.map(a => {
+    const c = cat[a.id.slice(demo.id.length + 1)];
+    const spec = { ...a.spec }; delete spec.shortcut;
+    if (!c) return { ...a, spec: { ...spec, section: 'none' } };
+    return { ...a, name: c[3] || a.name, spec: { ...spec, section: c[0], group: c[1], order: c[2] } };
+  });
 }
 
 /** Extra custom dashboards, one set per plant. Each board is built for one user and the decisions they make;
@@ -137,12 +150,14 @@ export const EXTRA = {
 export function seedAll(DEMOS, now = Date.now()) {
   const out = [];
   for (const d of Object.values(DEMOS)) {
+    const start = out.length;
     out.push(...seedFor(d, now));
     for (const x of EXTRA[d.id] || []) {
       const kpis = (x.spec.widgets.find(w => w.type === 'kpis')?.ids || []).filter(id => d.kpis.find(k => k.id === id));
       out.push({ id: `${d.id}-${x.key}`, type: 'dash', demo: d.id, name: x.name, owner: d.id, shared: ['master'], spec: { ...x.spec, widgets: x.spec.widgets.map(w => (w.type === 'kpis' ? { ...w, ids: kpis } : w)) },
         versions: [{ v: 3, by: `Copilot for ${d.name}`, when: now - 50 * M, note: 'Added live tiles' }, { v: 2, by: d.name, when: now - 8000 * M, note: 'Re-ordered widgets' }, { v: 1, by: `Copilot for ${d.name}`, when: now - 17000 * M, note: 'Created from prompt' }] });
     }
+    out.splice(start, out.length - start, ...applyCatalogue(d, out.slice(start)));
   }
   return out;
 }

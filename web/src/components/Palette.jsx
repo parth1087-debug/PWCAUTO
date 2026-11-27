@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Search, Sparkles, LayoutDashboard, Box, Target, Folder, Inbox, BookOpen, Shield, Layers, Settings, Tag } from 'lucide-react';
 import { useApp, artIcon } from '../App.jsx';
+import { sectionOf } from '../shared/sections.js';
 import { POLICIES } from '../lib/data.js';
 
 /** Global search: pages, dashboards, UNS assets and tags, KPIs, artefacts, messages, docs and policies. Enter on the first row asks Copilot. */
@@ -13,7 +14,7 @@ export default function Palette({ close }) {
     const m = x => !s || x.toLowerCase().includes(s);
     const out = [];
     if (s) out.push({ g: 'Ask', icon: Sparkles, label: `Ask Copilot: “${q}”`, go: () => { close(); nav('copilot'); setTimeout(() => window.dispatchEvent(new CustomEvent('copilot-ask', { detail: q })), 50); } });
-    arts.filter(a => a.demo === ctx.demo.id && (s ? m(a.name) : a.spec?.shortcut)).slice(0, s ? 8 : 9).forEach(a => out.push({ g: 'Artefactory', icon: artIcon(a), label: a.name, go: () => nav('artefactory/' + a.id) }));
+    arts.filter(a => a.demo === ctx.demo.id && (s ? m(a.name) : sectionOf(a))).slice(0, s ? 8 : 10).forEach(a => out.push({ g: 'Artefactory', icon: artIcon(a), label: a.name, go: () => nav('artefactory/' + a.id) }));
     [['Copilot', 'copilot'], ['Messages', 'messages'], ['Artefactory', 'artefactory'], ['Autopilot', 'autopilot'], ['Context · UNS', 'context/uns'], ['Context · Skills', 'context/skills'], ['Context · Docs', 'context/docs'], ['Context · Connectors', 'context/connectors'], ['Context · Policies', 'context/policies'], ['Settings · Users', 'settings/users'], ['Settings · Agents', 'settings/agents'], ['Settings · Data', 'settings/data'], ['Settings · Logs', 'settings/logs']]
       .filter(p => m(p[0])).forEach(p => out.push({ g: 'Pages', icon: p[1].startsWith('settings') ? Settings : Layers, label: p[0], go: () => nav(p[1]) }));
     if (s) {

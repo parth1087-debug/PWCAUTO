@@ -9,6 +9,16 @@ import { MimicView } from '../mimics/index.jsx';
 import { workbookSheets, downloadWorkbook, downloadHTML } from '../lib/artefacts.js';
 import { TYPES } from '../shared/artefacts.js';
 import { onePager } from '../lib/htmlpage.js';
+import { emsBrief, emsReview } from '../lib/html/ems.js';
+import SupplyPlan from '../components/boards/ems/supply.jsx';
+import TariffAdvisory from '../components/boards/ems/tariff.jsx';
+import CapexBoard from '../components/boards/ems/capex.jsx';
+import TrendExplorer from '../components/boards/ems/trends.jsx';
+import { sectionOf, SECTION_LABEL } from '../shared/sections.js';
+
+/** HTML artefact generators by spec.kind. */
+const HTML_KINDS = { onepager: onePager, 'ems-brief': emsBrief, 'ems-review': emsReview };
+const htmlOf = (a, c) => a.spec?.html || (HTML_KINDS[a.spec?.kind] || onePager)(c);
 import { downloadBlob } from '../lib/data.js';
 import { artIcon, RangePicker } from '../App.jsx';
 import { getDB, DEMO_LIST, fmtRel, fmtDateTime } from '../lib/data.js';
@@ -121,7 +131,8 @@ function ArtefactView({ a, sel }) {
         <div className="t grow"><h1 className="ellipsis">{a.name}</h1><div className="s ellipsis">{kindLabel(a)} · v{cur.v} · {c.demo.company} · {owner.name} · {fmtRel(cur.when)}</div></div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           <div className="seg"><button className={tab === 'preview' ? 'on' : ''} onClick={() => setTab('preview')}>Preview</button><button className={tab === 'versions' ? 'on' : ''} onClick={() => setTab('versions')}>Versions · {a.versions.length}</button></div>
-          {a.demo === app.demoId && <button className="btn sm" onClick={() => { app.actions.pin(a.id); app.toast(pinned ? 'Removed from Shortcuts' : 'Added to Shortcuts'); }}><Star />{pinned ? 'Pinned' : 'Pin'}</button>}
+          <label className="sel-in" title="Where this artefact appears in the sidebar"><span className="muted">Show in</span><select className="inp" value={sectionOf(a) || 'none'} onChange={e => { app.actions.addVersion(a, { note: `Moved to ${e.target.value === 'none' ? 'Artefactory only' : SECTION_LABEL[e.target.value]}`, spec: { ...a.spec, section: e.target.value, group: e.target.value === sectionOf(a) ? a.spec.group : undefined } }); app.toast(e.target.value === 'none' ? 'Removed from the sidebar' : `Shown in ${SECTION_LABEL[e.target.value]}`); }}>
+            <option value="decision">Decision boards</option><option value="monitoring">Monitoring</option><option value="none">Artefactory only</option></select></label>
           <button className="btn sm" onClick={() => openInNewTab(a.id)}><ExternalLink />Open in new tab</button>
           <button className="btn sm" onClick={() => { navigator.clipboard?.writeText(`${location.origin}${location.pathname}#/view/${a.id}`); app.toast('Link copied'); }}><Share2 />Share</button>
           {!['dash', 'form'].includes(a.type) && <button className="btn sm" onClick={() => download(app, a, c, ref)}><Download />Download</button>}
@@ -152,13 +163,17 @@ export function ArtefactBody({ a, c, sel }) {
   if (v === 'setpoints') return <SetpointView c={c} />;
   if (v === 'mimic') return <MimicView c={c} id={a.spec.mimic} />;
   if (v === 'rca') return <RcaView c={c} />;
+  if (v === 'supply-plan') return <SupplyPlan c={c} />;
+  if (v === 'tariff') return <TariffAdvisory c={c} />;
+  if (v === 'capex') return <CapexBoard c={c} />;
+  if (v === 'trends') return <TrendExplorer c={c} />;
   if (v === 'custom') return <CustomBoard c={c} widgets={a.spec.widgets} />;
   if (v) return <DashBody view={v} sel={sel} c={c} />;
   return <CustomDashBody a={a} />;
 }
 
 function download(app, a, c, ref) {
-  if (a.type === 'html') downloadBlob(new Blob([a.spec?.html || onePager(c)], { type: 'text/html' }), `${a.name.replace(/[^A-Za-z0-9]+/g, '-')}.html`);
+  if (a.type === 'html') downloadBlob(new Blob([htmlOf(a, c)], { type: 'text/html' }), `${a.name.replace(/[^A-Za-z0-9]+/g, '-')}.html`);
   else if (a.type === 'xlsx') downloadWorkbook(a.name, workbookSheets(c, a.spec?.kind));
   else if (ref.current) downloadHTML(a.name, ref.current, a.type === 'docx');
   app.addLog('Access', 'artefact.download', a.name, `v${a.versions[0].v}`);
@@ -197,5 +212,5 @@ export function StandaloneView({ id }) {
 function HtmlFrame({ a, c }) {
   const ref = useRef(null);
   const fit = () => { try { const d = ref.current.contentDocument; ref.current.style.height = Math.max(400, d.documentElement.scrollHeight + 4) + 'px'; } catch { /* keep min height */ } };
-  return <iframe ref={ref} className="html-frame" title={a.name} sandbox="allow-same-origin allow-popups" srcDoc={a.spec?.html || onePager(c)} onLoad={fit} />;
+  return <iframe ref={ref} className="html-frame" title={a.name} sandbox="allow-same-origin allow-popups" srcDoc={htmlOf(a, c)} onLoad={fit} />;
 }

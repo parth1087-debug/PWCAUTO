@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc, Workflow, SearchCheck, Code2, PanelLeftClose, PanelLeft, PanelLeftOpen } from 'lucide-react';
+import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc, Workflow, SearchCheck, Code2, PanelLeftClose, PanelLeft, PanelLeftOpen, Lightbulb, MonitorDot } from 'lucide-react';
 import { LOGIN, DEFAULT_USERS } from './config.js';
 import { usePersist, uid as newId } from './lib/store.js';
 import { getDB, DEMO_LIST, RANGES, resolveRange, fmtTime, fmtDate } from './lib/data.js';
@@ -7,6 +7,7 @@ import { seedAll } from './shared/artefacts.js';
 import { DEMOS } from './shared/index.js';
 import { api } from './lib/api.js';
 import { THEMES } from './lib/themes.js';
+import { sectionOf, groupOf, SECTION_LABEL } from './shared/sections.js';
 import { Av } from './components/ui.jsx';
 import Chat from './components/Chat.jsx';
 import Palette from './components/Palette.jsx';
@@ -179,6 +180,14 @@ function Sidebar({ section, sub, sub2, signOut }) {
   const item = (to, Icon, label, on, extra) => <a href={'#/' + to} className={`nav-i ${on ? 'on' : ''}`} title={label}><Icon /><span className="nl">{label}</span>{extra}</a>;
   const { demoId } = ctx.demo ? { demoId: ctx.demo.id } : {};
   const mine = arts.filter(a => a.demo === demoId);
+  const [fold, setFold] = usePersist('navfold', {});
+  const sections = { decision: [], monitoring: [] };
+  mine.forEach(a => { const sc = sectionOf(a); if (sc && sections[sc]) sections[sc].push(a); });
+  const ord = a => (a.spec?.order ?? 50);
+  Object.values(sections).forEach(l => {
+    const rank = {}; l.forEach(a => { const g = groupOf(a); rank[g] = Math.min(rank[g] ?? 1e9, ord(a)); });
+    l.sort((x, y) => rank[groupOf(x)] - rank[groupOf(y)] || groupOf(x).localeCompare(groupOf(y)) || ord(x) - ord(y) || x.name.localeCompare(y.name));
+  });
   const pinItems = pins.map(id => { const a = arts.find(x => x.id === id); return a && { to: `artefactory/${a.id}`, label: a.name, icon: artIcon(a), on: section === 'artefactory' && sub === a.id, custom: !a.spec?.shortcut }; }).filter(Boolean);
   const groups = [['Dashboards', mine.filter(a => a.type === 'dash')], ['Forms', mine.filter(a => a.type === 'form')], ['Sheets, decks and documents', mine.filter(a => ['xlsx', 'pptx', 'docx'].includes(a.type))]];
   return (
@@ -200,18 +209,16 @@ function Sidebar({ section, sub, sub2, signOut }) {
         {item('copilot', MessageSquare, 'Copilot', section === 'copilot')}
         {item('messages', Inbox, 'Messages', section === 'messages', unread ? <span className="cnt">{unread}</span> : null)}
         <div className="nav-sep" />
-        <div className="nav-l"><span className="nl">Shortcuts</span><button className="nav-add" onClick={() => setPinMenu(m => !m)} title="Add or remove shortcuts" aria-label="Edit shortcuts"><Plus size={14} /></button></div>
-        <div style={{ position: 'relative' }}>
-          {pinMenu && <div className="menu" style={{ left: 0, right: 0, top: -4 }} onMouseLeave={() => setPinMenu(false)}>
-            <div style={{ maxHeight: 360, overflow: 'auto' }}>
-            {groups.filter(g => g[1].length).map(([g, list]) => <React.Fragment key={g}><div className="pal-g" style={{ padding: '6px 10px 4px' }}>{g}</div>
-              {list.map(a => { const I = artIcon(a); return <button key={a.id} className="mi" onClick={() => actions.pin(a.id)}><I size={15} /><span className="grow ellipsis">{a.name}</span>{pins.includes(a.id) && <Check size={15} />}</button>; })}</React.Fragment>)}
-            </div>
-            <div className="sep" /><button className="mi" onClick={() => { actions.resetPins(); setPinMenu(false); }}><span className="grow muted">Reset to default shortcuts</span></button>
-          </div>}
-          {pinItems.map(p => <a key={p.to} href={'#/' + p.to} className={`nav-i ${p.on ? 'on' : ''}`} title={p.label}><p.icon /><span className="ellipsis nl">{p.label}</span>{p.custom && <span className="dot" />}</a>)}
-        </div>
-        <div className="nav-sep" />
+        {['decision', 'monitoring'].map(sec => { const list = sections[sec]; if (!list.length) return null; const closed = fold[sec];
+          return <React.Fragment key={sec}>
+            <button className="nav-l nav-sec" onClick={() => setFold(f => ({ ...f, [sec]: !f[sec] }))} aria-expanded={!closed} title={SECTION_LABEL[sec]}>
+              {sec === 'decision' ? <Lightbulb size={13} /> : <MonitorDot size={13} />}<span className="nl grow">{SECTION_LABEL[sec]}</span><span className="nl cnt-s">{list.length}</span><ChevronDown size={13} className="nl" style={{ transform: closed ? 'rotate(-90deg)' : undefined, transition: 'transform .15s' }} /></button>
+            {!closed && list.map((a, k) => { const I = artIcon(a); const g = groupOf(a); const head = k === 0 || groupOf(list[k - 1]) !== g;
+              return <React.Fragment key={a.id}>{head && <div className="nav-g nl">{g}</div>}
+                <a href={'#/artefactory/' + a.id} className={`nav-i ${section === 'artefactory' && sub === a.id ? 'on' : ''}`} title={a.name}><I /><span className="ellipsis nl">{a.name}</span></a></React.Fragment>; })}
+            <div className="nav-sep" />
+          </React.Fragment>; })}
+
         {item('artefactory', Folder, 'Artefactory', section === 'artefactory')}
         {item('autopilot', Zap, 'Autopilot', section === 'autopilot')}
         {item('context/uns', Layers, 'Context', section === 'context')}
