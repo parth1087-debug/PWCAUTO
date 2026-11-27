@@ -1,4 +1,21 @@
 import React from 'react';
+import { Trend, Bars } from './charts.jsx';
+
+/** A Bruce ```chart block: {type, title, x:{key,type}, series:[{key,label}], unit, data}. */
+function AgentChart({ src }) {
+  let c;
+  try { c = JSON.parse(src); } catch { return <pre className="code">{src}</pre>; }
+  const data = Array.isArray(c.data) ? c.data : [];
+  const xKey = c.x?.key || 't';
+  const series = (c.series || []).map((x, i) => ({ key: x.key, name: x.label || x.key, ...(i === 0 && c.type !== 'bar' ? { type: 'area' } : {}) }));
+  if (!data.length || !series.length) return null;
+  const isTime = c.x?.type === 'time' || /^\d{4}-\d\d-\d\d/.test(String(data[0][xKey] ?? ''));
+  return <div className="box"><div className="muted" style={{ fontSize: 12, marginBottom: 4 }}>{c.title}</div>
+    {isTime && c.type !== 'bar'
+      ? <Trend data={data.map(d => ({ ...d, t: new Date(d[xKey]).getTime() }))} series={series} unit={c.unit} days={Math.max(1, Math.round((new Date(data.at(-1)[xKey]) - new Date(data[0][xKey])) / 864e5))} height={180} />
+      : <Bars data={data.map(d => ({ ...d, name: String(d[xKey]) }))} series={series} horizontal={data.length > 6} height={Math.max(160, data.length * 28)} />}
+  </div>;
+}
 
 /* Minimal, safe Markdown for agent answers: paragraphs, lists, tables, quotes, code, **bold**, *italic*, `code`. */
 function inline(s, key = 0) {
@@ -27,9 +44,12 @@ export default function Markdown({ text }) {
     const l = lines[i];
     if (!l.trim()) { i++; continue; }
     if (l.startsWith('```')) {
+      const lang = l.slice(3).trim().toLowerCase();
       const body = []; i++;
       while (i < lines.length && !lines[i].startsWith('```')) body.push(lines[i++]);
-      i++; blocks.push(<pre key={blocks.length} className="code">{body.join('\n')}</pre>); continue;
+      const closed = i < lines.length; i++;
+      if (lang === 'chart') { if (closed) blocks.push(<AgentChart key={blocks.length} src={body.join('\n')} />); continue; }
+      blocks.push(<pre key={blocks.length} className="code">{body.join('\n')}</pre>); continue;
     }
     if (/^#{1,4}\s/.test(l)) { blocks.push(<p key={blocks.length} style={{ fontWeight: 600, margin: '10px 0 4px' }}>{inline(l.replace(/^#+\s/, ''))}</p>); i++; continue; }
     if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
