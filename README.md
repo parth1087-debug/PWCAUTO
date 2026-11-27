@@ -81,7 +81,11 @@ cd mcp && npm run start:http
 
 Tools: `list_demos`, `uns_browse`, `uns_search`, `get_tag_history`, `get_kpis`, `get_kpi_trend`, `get_asset_health`, `diagnose_asset`, `get_production`, `get_oee_losses`, `get_energy`, `get_quality`, `list_messages`, `search_docs`, `list_agents`, `get_policy`. Every data tool takes a `demo` argument.
 
-Hosting: `mcp/Dockerfile` (build context is the repository root) runs the HTTP server on port 8787 with a health check at `/`. `mcp/forge-contract.json` is the ready Forge contract for `https://pwc-plantdb.us.iosense.io/mcp`; creating it needs the Forge **operator** role.
+**Live:** `https://pwc-plantdb.us.iosense.io/mcp` (Streamable HTTP, stateless, no key; health at `/`). Hosted on Faclon Forge, project `pwc-plantdb-mcp`, deployment `dep-pwc-plantdb-mcp-adf6ef`, built from `main` with `mcp/Dockerfile` and redeployed on every push to `main`. The contract is in `mcp/forge-contract.json`.
+
+```json
+{ "mcpServers": { "plantdb": { "type": "http", "url": "https://pwc-plantdb.us.iosense.io/mcp" } } }
+```
 
 Environment: `PLANTDB_DEMOS=auto,cement` limits which databases a connector can read. `PLANTDB_ANCHOR` fixes the demo clock. `PLANTDB_TOKEN` requires a bearer token in HTTP mode.
 

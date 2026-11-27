@@ -4,7 +4,7 @@ import { useApp } from '../App.jsx';
 import { PageHead, Tabs, Tag, Card, Empty, HealthBar, Seg } from '../components/ui.jsx';
 import { Trend } from '../components/charts.jsx';
 import { POLICIES, ENTERPRISE_CONNECTORS, fmtNum, fmtTime } from '../lib/data.js';
-import { DEPLOYED, UNS_BASE } from '../shared/index.js';
+import { DEPLOYED, UNS_BASE, PLANTDB_URL } from '../shared/index.js';
 
 const TABS = [{ id: 'uns', label: 'UNS ontology' }, { id: 'skills', label: 'Skills' }, { id: 'docs', label: 'Docs' }, { id: 'connectors', label: 'Connectors' }, { id: 'policies', label: 'Policies' }];
 
@@ -101,7 +101,7 @@ function Connectors() {
   const { ctx } = useApp();
   const used = new Set(ctx.demo.agents.flatMap(a => a.tools.map(t => t.split('.')[0])));
   const list = ENTERPRISE_CONNECTORS.filter(c => c.id === 'plantdb' || c.id === 'ot' || used.has(c.id) || (c.id === 'msg' && used.has('msg')));
-  const snippet = `{\n  "mcpServers": {\n    "plantdb": {\n      "command": "node",\n      "args": ["mcp/server.mjs"],\n      "env": { "PLANTDB_DEMOS": "${ctx.demo.id}" }\n    }\n  }\n}`;
+  const snippet = `{\n  "mcpServers": {\n    "plantdb": {\n      "type": "http",\n      "url": "${PLANTDB_URL}"\n    }\n  }\n}`;
   return <>
     <Card title="Connectors used by the agents" sub="Bruce MCP gateway and I/O Connect" flush>
       <table className="t"><thead><tr><th>Connector</th><th>Type</th><th>System</th><th className="r">Tools</th><th>Access</th><th>Policy</th></tr></thead><tbody>
@@ -109,7 +109,7 @@ function Connectors() {
       </tbody></table>
     </Card>
     <div className="grid g2 mt">
-      <Card title="plantdb MCP · this demo's database" sub={`one connector, database plantdb/${ctx.demo.id}`}><pre className="code">{snippet}</pre><div className="muted" style={{ fontSize: 12, marginTop: 8 }}>HTTP: <span className="mono">node mcp/server.mjs --http 8787</span> → <span className="mono">http://localhost:8787/mcp</span></div></Card>
+      <Card title="plantdb MCP · this demo's database" sub={`one connector, database plantdb/${ctx.demo.id}`}><pre className="code">{snippet}</pre><div className="muted" style={{ fontSize: 12, marginTop: 8 }}>Live on Forge: <a className="mono" href={PLANTDB_URL.replace('/mcp', '/')} target="_blank" rel="noreferrer">{PLANTDB_URL}</a> · pass <span className="mono">demo: "{ctx.demo.id}"</span> on every call</div></Card>
       <Card title="Tools agents can call" sub="from the agent configurations"><div className="chips">{[...new Set(ctx.demo.agents.flatMap(a => a.tools))].map(t => <span key={t} className="tag line mono" style={{ fontSize: 11 }}>{t}</span>)}</div></Card>
     </div>
   </>;
