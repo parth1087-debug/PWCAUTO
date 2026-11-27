@@ -4,6 +4,7 @@ import { useApp } from '../App.jsx';
 import { PageHead, Tabs, Tag, Card, Empty, HealthBar, Seg } from '../components/ui.jsx';
 import { Trend } from '../components/charts.jsx';
 import { POLICIES, ENTERPRISE_CONNECTORS, fmtNum, fmtTime } from '../lib/data.js';
+import { DEPLOYED, UNS_BASE } from '../shared/index.js';
 
 const TABS = [{ id: 'uns', label: 'UNS ontology' }, { id: 'skills', label: 'Skills' }, { id: 'docs', label: 'Docs' }, { id: 'connectors', label: 'Connectors' }, { id: 'policies', label: 'Policies' }];
 
@@ -43,7 +44,7 @@ function Uns({ param }) {
   const health = isAsset || isTag ? ctx.db.health(node.asset) : null;
   return (
     <>
-      <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>{['Enterprise', 'Site', 'Area', 'Work center', 'Work unit', 'Tag'].map((l, i) => <Tag key={l} c={node.level === l ? 'brand' : 'line'}>L{i} · {l}</Tag>)}<span className="muted right" style={{ fontSize: 12 }}>ISA-95 · {ctx.db.stats().tags} tags · served by plantdb MCP</span></div>
+      <div className="row" style={{ gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>{['Enterprise', 'Site', 'Area', 'Work center', 'Work unit', 'Tag'].map((l, i) => <Tag key={l} c={node.level === l ? 'brand' : 'line'}>L{i} · {l}</Tag>)}<span className="muted right" style={{ fontSize: 12 }}>ISA-95 · {ctx.db.stats().tags} tags{DEPLOYED[ctx.demo.id] && <> · UNS <a href={UNS_BASE + DEPLOYED[ctx.demo.id].uns.workspace} target="_blank" rel="noreferrer" className="mono">{DEPLOYED[ctx.demo.id].uns.workspace}</a></>}</span></div>
       <div className="ld">
         <Card title="Namespace" sub={tree.name} flush><div className="tree" style={{ padding: '4px 6px 10px', maxHeight: 560, overflow: 'auto' }}><Node n={tree} p={tree.name} /></div></Card>
         <Card title={node.label} sub={node.level}>

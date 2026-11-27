@@ -3,6 +3,7 @@ import { Copy, Trash2, UserPlus, Search } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { PageHead, Tabs, Tag, Card, Toggle, Av, Seg, Empty } from '../components/ui.jsx';
 import { Bars, Trend } from '../components/charts.jsx';
+import { DEPLOYED } from '../shared/index.js';
 import { DEMO_LIST, getDB, fmtNum, fmtDate, fmtDateTime, fmtRel } from '../lib/data.js';
 import { uid } from '../lib/store.js';
 
@@ -47,17 +48,17 @@ function Agents() {
   const { ctx, prefs, toast } = useApp();
   const [sel, setSel] = useState(ctx.demo.agents[0].id);
   const a = ctx.demo.agents.find(x => x.id === sel) || ctx.demo.agents[0];
-  const json = JSON.stringify(a, null, 2);
+  const live = DEPLOYED[ctx.demo.id] || { agents: {} };
+  const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `PwC ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
   return <div className="grid" style={{ gap: 16 }}>
-    <Card title="Agents on Bruce" sub={`${ctx.demo.agents.length} configured for plantdb/${ctx.demo.id}`} flush>
-      <div className="scroll-x"><table className="t"><thead><tr><th>Agent</th><th>Version</th><th>Model</th><th>Triggers</th><th className="r">Tools</th><th>Skills</th><th>Autonomy</th><th>Policies</th><th>Status</th></tr></thead><tbody>
-        {ctx.demo.agents.map(x => <tr key={x.id} className={`click ${x.id === a.id ? 'on' : ''}`} onClick={() => setSel(x.id)}><td><div className="b">{x.name}</div><div className="mono muted" style={{ fontSize: 11 }}>{x.id}</div></td><td className="mono">{x.version}</td><td className="mono" style={{ fontSize: 11.5 }}>{x.model.primary}</td>
+    <Card title="Agents on Bruce" sub={`${ctx.demo.agents.length} live in Bruce · UNS ${live.uns?.workspace || '—'}`} flush>
+      <div className="scroll-x"><table className="t"><thead><tr><th>Agent</th><th>Bruce ID</th><th>Version</th><th>Model</th><th>Triggers</th><th className="r">Tools</th><th>Skills</th><th>Autonomy</th><th>Policies</th><th>Status</th></tr></thead><tbody>
+        {ctx.demo.agents.map(x => <tr key={x.id} className={`click ${x.id === a.id ? 'on' : ''}`} onClick={() => setSel(x.id)}><td><div className="b">{x.name}</div><div className="mono muted" style={{ fontSize: 11 }}>{x.id}</div></td><td className="mono" style={{ fontSize: 11 }}>{live.agents[x.id] || '—'}</td><td className="mono">{x.version}</td><td className="mono" style={{ fontSize: 11.5 }}>{x.model.primary}</td>
           <td className="mono" style={{ fontSize: 11.5 }}>{x.triggers.map(t => t.type).join(', ')}</td><td className="r num">{x.tools.length}</td><td className="mono" style={{ fontSize: 11.5 }}>{x.skills.length}</td><td><Tag c={x.autonomy === 'act' ? 'warn' : x.autonomy === 'advise' ? '' : 'brand'}>{x.autonomy}</Tag></td><td className="mono" style={{ fontSize: 11.5 }}>{x.policies.join(' ')}</td><td><Tag c="good">{x.status}</Tag></td></tr>)}
       </tbody></table></div>
     </Card>
     <Card title={a.id} sub="definition" actions={<><button className="btn sm" onClick={() => { navigator.clipboard?.writeText(json); toast('Definition copied'); }}><Copy />Copy JSON</button></>}>
       <pre className="code" style={{ maxHeight: 420, overflow: 'auto' }}>{json}</pre>
-      <div className="muted" style={{ fontSize: 12, marginTop: 10 }}>Push to Bruce: <span className="mono">BRUCE_GATEWAY_URL={prefs.bruceUrl || '<gateway-url>'} node bruce/push-to-bruce.mjs {ctx.demo.id}</span></div>
     </Card>
   </div>;
 }

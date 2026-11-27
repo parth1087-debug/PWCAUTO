@@ -5,6 +5,7 @@ export { createDB, DAYS, HOURS, GO_LIVE_DAYS_AGO } from './engine.js';
 export { POLICIES, ENTERPRISE_CONNECTORS } from './common.js';
 export { createTools, TOOL_SPECS } from './tools.js';
 export { messagesFor, logsFor } from './content.js';
+export { DEPLOYED, UNS_BASE } from './deployed.js';
 
 /** Add a new industry demo by creating shared/demos/<id>.js and listing it here. */
 export const DEMOS = { auto, cement, steel };

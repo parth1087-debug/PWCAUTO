@@ -89,7 +89,23 @@ Example client configuration:
 { "mcpServers": { "plantdb": { "command": "node", "args": ["mcp/server.mjs"], "env": { "PLANTDB_DEMOS": "auto" } } } }
 ```
 
-## Bruce agents and UNS
+## Live in Faclon (UNS and Bruce)
+
+These were created through the Bruce gateway MCP. IDs are in `web/src/shared/deployed.js`; the app shows them in Settings › Agents and Context › UNS ontology.
+
+| Demo | UNS workspace | Nodes / lineage edges | Bruce agents |
+|---|---|---|---|
+| Auto components | [ws_ZsvYBbez4H](https://uns.us.iosense.io/uns/ws_ZsvYBbez4H) | 94 / 27 | 6 |
+| Cement | [ws_MKjfM9LH3n](https://uns.us.iosense.io/uns/ws_MKjfM9LH3n) | 62 / 15 | 6 |
+| Steel | [ws_TGBJVxMdCC](https://uns.us.iosense.io/uns/ws_TGBJVxMdCC) | 45 / 10 | 6 |
+
+- UNS: Enterprise › Site › Area › Line › Machine › Variable. Tags carry unit, nominal, limits and `unsTag`. Lineage uses `rel_feeds`, `rel_supplies` and `rel_causes`.
+- Bruce agents are named `PwC <Demo> · <Agent>`, use model `sarvam-105b` and the **UNS Graph** connector, and are private to the owner. Share them in Bruce before the demo if others will chat.
+- Skills: 13 task skills (`pwc-<demo>-<skill>`) and 3 knowledge skills (`pwc-<demo>-plant-knowledge`) with the plant brief, documents and policies as reference files.
+- Smart Context was not used: the Bruce account has no embedding model connected yet.
+- The agents read the plant model from the UNS and the numbers from the knowledge skill. They can read time series from `plantdb` once that MCP server is hosted and added as a Bruce connector.
+
+## Bruce agents and UNS (export)
 
 ```bash
 node bruce/export.mjs
