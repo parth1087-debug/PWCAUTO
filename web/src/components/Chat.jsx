@@ -100,7 +100,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     }
     const seen = new Set();
     const agentCharts = (r.text.match(/```chart/g) || []).length;
-    const visuals = calls.filter(c => c.ok && !seen.has(c.name) && seen.add(c.name)).map(c => visualFor(c.name, c.input, c.result)).filter(Boolean).slice(0, Math.max(0, 2 - agentCharts));
+    const visuals = calls.filter(c => c.ok && !seen.has(c.name) && seen.add(c.name)).map(c => visualFor(c.name, c.input, c.result)).filter(Boolean).slice(0, agentCharts ? 0 : 2);
     const acts = actionsFor(calls);
     const final = { ...r, ms: Date.now() - t0, blocks: [...visuals, ...(acts ? [acts] : [])], steps: r.steps.map(({ id, ...x }) => ({ ...x, ms: x.ms ?? 1 })) };
     app.addLog('Agents', 'copilot.session.live', final.agent, q.slice(0, 60));
