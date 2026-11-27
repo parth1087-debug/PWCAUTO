@@ -11,6 +11,8 @@
  *   BRUCE_KEY_AUTO / BRUCE_KEY_CEMENT / BRUCE_KEY_STEEL   agent API keys (Forge secrets)
  *   BRUCE_AGENT_AUTO / ... override the agent id per demo
  */
+import { DEMOS, createDB, createTools } from '../web/src/shared/index.js';
+
 const API = (process.env.BRUCE_API || 'https://bruce.us.iosense.io/backend/api').replace(/\/$/, '');
 
 const DEFAULTS = {
@@ -46,14 +48,69 @@ function parseResult(v) {
 }
 const pick = (o, keys) => { for (const k of keys) if (o && o[k] != null) return o[k]; return undefined; };
 
+/** Shrink long arrays so the attached data stays small. */
+function compact(v) {
+  if (Array.isArray(v)) return (v.length > 40 ? v.filter((_, i) => i % Math.ceil(v.length / 40) === 0 || i === v.length - 1) : v).map(compact);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, compact(x)]));
+  return v;
+}
+
 /**
- * @param {{demo: string, message: string, session_id?: string, context?: string, debug?: boolean}} req
+ * Live plant data for the question, read from plantdb before the agent runs.
+ * Bruce skips person-scoped connectors for agent-key calls, so the app attaches the data itself.
+ */
+export function prefetch(demoId, q, anchor) {
+  const demo = DEMOS[demoId];
+  const db = createDB(demo, { anchor: anchor || null });
+  const t = createTools(db);
+  const s = q.toLowerCase();
+  const calls = [];
+  const add = (name, input) => { if (!calls.some(c => c.name === name && JSON.stringify(c.input) === JSON.stringify(input))) calls.push({ name, input }); };
+  const assets = db.assets.filter(a => new RegExp(`\\b${a.id.replace('-', '-?')}\\b`, 'i').test(q)).slice(0, 2);
+  assets.forEach(a => add('diagnose_asset', { asset: a.id }));
+  const kpi = demo.kpis.find(k => s.includes(k.name.toLowerCase())) || demo.kpis.find(k => new RegExp(`\\b${k.id}\\b`).test(s))
+    || (/\boee\b/.test(s) && demo.kpis.find(k => k.id === 'oee')) || (/yield/.test(s) && demo.kpis.find(k => /yield/i.test(k.name)));
+  if (kpi) add('get_kpi_trend', { id: kpi.id, days: 182 });
+  if (/kpi|baseline|target|improv|performance|overall|summary|how (are|is) (we|the plant)|month|week/.test(s)) add('get_kpis', { days: 30 });
+  if (/energy|power|kva|kwh|demand|tariff|fuel|compressed air|compressor|leak|heat/.test(s)) add('get_energy', { days: 7 });
+  if (/oee|loss|cost|changeover|conversion|productiv|downtime|yield|utilis|utiliz/.test(s)) add('get_oee_losses', {});
+  if (/quality|defect|reject|ppm|crack|hardness|free lime|blaine|strength|breakout|cobble|spc|vision/.test(s)) add('get_quality', { days: 30 });
+  if (/production|output|plan|volume|throughput/.test(s)) add('get_production', { days: 14 });
+  if (!assets.length && /health|risk|alarm|attention|failure|maintenance|vibration|bearing|gearbox|asset/.test(s)) add('get_asset_health', {});
+  if (/attention|approval|alert|pending|today|now|messages?|inbox/.test(s)) add('list_messages', {});
+  if (/manual|sop|procedure|document|rca|torque|spec|control plan|how (do|to)/.test(s)) add('search_docs', { q: q.slice(0, 120) });
+  if (!calls.length) { add('get_kpis', { days: 30 }); add('get_asset_health', {}); }
+  return calls.slice(0, 4).map(c => {
+    const t0 = Date.now();
+    let result, ok = true;
+    try { result = t[c.name]({ ...c.input }); if (result?.error) ok = false; } catch (e) { result = { error: e.message }; ok = false; }
+    return { ...c, ok, result, ms: Math.max(1, Date.now() - t0) };
+  });
+}
+
+/**
+ * @param {{demo: string, message: string, session_id?: string, context?: string, anchor?: string, debug?: boolean}} req
  * @param {(event: object) => void} emit  app events: meta, tool_start, tool_end, text, final, done, raw
  */
 export async function runBruce(req, emit, signal) {
   const a = COPILOTS[req.demo];
   if (!a?.key) throw new Error('No Bruce agent key for this demo.');
-  const message = !req.session_id && req.context ? `(The user is looking at: ${req.context})\n\n${req.message}` : req.message;
+  emit({ type: 'meta', agent: { id: a.id, name: a.name }, model: 'Bruce', provider: 'bruce', bruce_agent_id: a.id });
+  const pre = prefetch(req.demo, req.message, req.anchor);
+  pre.forEach((c, i) => {
+    emit({ type: 'tool_start', id: `pre${i}`, name: c.name, label: `plantdb.${c.name}`, input: c.input });
+    emit({ type: 'tool_end', id: `pre${i}`, name: c.name, label: `plantdb.${c.name}`, input: c.input, ok: c.ok, ms: c.ms, result: c.result });
+  });
+  const now = new Date(createDB(DEMOS[req.demo], { anchor: req.anchor || null }).anchor);
+  const live = pre.filter(c => c.ok).map(c => `### plantdb.${c.name}(${JSON.stringify({ demo: req.demo, ...c.input })})\n${JSON.stringify(compact(c.result))}`).join('\n\n').slice(0, 14000);
+  const message = [
+    req.message,
+    '',
+    `<plant_data source="Plant Data connector (plantdb, demo=${req.demo})" read_at="${now.toISOString().slice(0, 16)}Z" note="Live results the app read for this question. Use them as the data source; cite the tool and UNS path.">`,
+    live,
+    '</plant_data>',
+    !req.session_id && req.context ? `\nThe user is looking at: ${req.context}` : '',
+  ].join('\n');
   const r = await fetch(`${API}/agents/v1/agents/${a.id}/chat`, {
     method: 'POST',
     headers: { 'X-API-Key': a.key, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
@@ -67,8 +124,8 @@ export async function runBruce(req, emit, signal) {
     throw new Error(`${why}${detail ? ` ${detail}` : ''}`);
   }
 
-  emit({ type: 'meta', agent: { id: a.id, name: a.name }, model: 'Bruce', provider: 'bruce', bruce_agent_id: a.id });
   let acc = '';
+  let afterTool = false;
   let n = 0;
   const open = new Map();
   const reader = r.body.getReader();
@@ -85,6 +142,32 @@ export async function runBruce(req, emit, signal) {
         const delta = acc && c.startsWith(acc) && c.length > acc.length ? c.slice(acc.length) : c;
         acc += delta;
         emit({ type: 'text', delta });
+        break;
+      }
+      case 'block_delta': {
+        if (ev.kind !== 'text' || typeof ev.delta !== 'string' || !ev.delta) break;
+        if (afterTool && acc) { emit({ type: 'reset' }); acc = ''; }
+        afterTool = false;
+        acc += ev.delta;
+        emit({ type: 'text', delta: ev.delta });
+        break;
+      }
+      case 'block': {
+        const b = ev.data || {};
+        if (b.kind !== 'tool-call' || !b.detail) break;
+        const d = b.detail;
+        const id = String(d.toolCallId || b.id);
+        const name = toolName(d.name);
+        const label = PLANTDB.includes(name) ? `plantdb.${name}` : d.is_agent ? `agent · ${d.name}` : `bruce.${d.name}`;
+        if (b.status === 'running') {
+          if (!open.has(id)) { open.set(id, { name, input: d.input || {}, t0: Date.now() }); emit({ type: 'tool_start', id, name, label, input: d.input || {} }); }
+          afterTool = true;
+        } else {
+          const o = open.get(id) || { name, input: d.input || {}, t0: Date.now() };
+          open.delete(id);
+          emit({ type: 'tool_end', id, name, label, input: o.input, ok: b.status === 'done', ms: d.duration_ms || Date.now() - o.t0, result: PLANTDB.includes(name) ? parseResult(d.output) : null });
+          afterTool = true;
+        }
         break;
       }
       case 'tool_call': {
@@ -106,7 +189,7 @@ export async function runBruce(req, emit, signal) {
       }
       case 'stream_end': {
         const c = typeof ev.content === 'string' ? ev.content : '';
-        if (c && c !== acc) emit({ type: 'final', text: c });
+        if (c && !acc) emit({ type: 'final', text: c });
         break;
       }
       case 'usage': emit({ type: 'usage', usage: ev.data || {} }); break;

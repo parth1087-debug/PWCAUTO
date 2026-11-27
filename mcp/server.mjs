@@ -96,7 +96,7 @@ async function chat(req, res) {
     const context = typeof body.context === 'string' ? body.context.slice(0, 500) : '';
     if (viaBruce) {
       const session_id = typeof body.session_id === 'string' && /^[A-Za-z0-9_-]{6,64}$/.test(body.session_id) ? body.session_id : undefined;
-      await runBruce({ demo: body.demo, message: clean[clean.length - 1].content, session_id, context, debug: body.debug === true }, emit, ctrl.signal);
+      await runBruce({ demo: body.demo, message: clean[clean.length - 1].content, session_id, context, anchor: typeof body.anchor === 'string' ? body.anchor : null, debug: body.debug === true }, emit, ctrl.signal);
     } else {
       await runAgent({ demo: body.demo, agent: body.agent, messages: clean, context, anchor: typeof body.anchor === 'string' ? body.anchor : null }, emit, ctrl.signal);
     }

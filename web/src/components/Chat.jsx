@@ -84,10 +84,11 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
         if (ev.type === 'meta') { r = { ...r, agent: ev.agent.name, model: ev.model, provider: ev.provider || 'claude', cap: ev.provider === 'bruce' ? 'Live on Bruce' : `Live · ${ev.model}` }; show(); }
         else if (ev.type === 'session') { r = { ...r, sessionId: ev.session_id }; }
         else if (ev.type === 'final') { r = { ...r, text: ev.text }; show(); }
-        else if (ev.type === 'tool_start') { r.steps.push({ id: ev.id, tool: `plantdb.${ev.name}`, args: ev.input, ms: null }); show(); }
+        else if (ev.type === 'tool_start') { r.steps.push({ id: ev.id, tool: ev.label || `plantdb.${ev.name}`, args: ev.input, ms: null }); show(); }
+        else if (ev.type === 'reset') { r = { ...r, text: '' }; show(); }
         else if (ev.type === 'tool_end') {
           const st = r.steps.find(x => x.id === ev.id); if (st) { st.ms = Math.max(1, ev.ms); st.ok = ev.ok; }
-          calls.push({ name: ev.name, input: ev.input, ok: ev.ok, result: ev.result }); show();
+          if (ev.result != null) calls.push({ name: ev.name, input: ev.input, ok: ev.ok, result: ev.result }); show();
         }
         else if (ev.type === 'text') { r = { ...r, text: r.text + ev.delta }; show(); }
         else if (ev.type === 'error') { throw new Error(ev.message); }
