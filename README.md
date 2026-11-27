@@ -128,10 +128,13 @@ The script lists the gateway's tools and calls the one that creates agents. Set 
 
 ## Live agents in the app
 
-The Copilot runs the demo's agents live on Claude (`claude-opus-5-5` by default) through the hosted server: `POST https://pwc-plantdb.us.iosense.io/api/chat` streams the run as server-sent events (agent, tool calls, text). The server (`mcp/agent.mjs`) gives the agent the same instructions, skills, plant brief, documents and policies as its Bruce twin, and the `plantdb` tools in process. The app draws charts and tables from the real tool results and offers actions (raise work order, open a dashboard).
+The Copilot talks to real Bruce agents through Bruce's **agent API** (Integrations › REST API). Each demo has a **Plant Copilot** agent on Bruce: `PwC Auto · Plant Copilot`, `PwC Cement · Plant Copilot`, `PwC Steel · Plant Copilot` (ids in `web/src/shared/deployed.js`). It has the plant knowledge skill and the Plant Data, UNS Graph and Bruce connectors, and can delegate to the six specialist agents when its Team is set in Bruce.
 
-- Needs `ANTHROPIC_API_KEY` on the server (a Forge secret). `GET /api/status` says whether live is on.
-- Optional: `LLM_MODEL`, `LLM_EFFORT` (default `medium`), `CHAT_LIMIT` (requests per IP per 10 minutes, default 30), `DEMO_KEY` (require header `X-Demo-Key`).
+The app never holds a key. It calls `POST https://pwc-plantdb.us.iosense.io/api/chat`; the server (`mcp/bruce.mjs`) relays to `POST https://bruce.us.iosense.io/backend/api/agents/v1/agents/{id}/chat` with the agent's API key and streams the answer back (session, tool calls, text). Follow-up questions continue the same Bruce conversation. The app draws charts and tables from the real Plant Data tool results and offers actions (raise work order, open a dashboard).
+
+- Keys: `BRUCE_KEY_AUTO`, `BRUCE_KEY_CEMENT`, `BRUCE_KEY_STEEL` on the server (Forge secrets). `GET /api/status` lists the demos that are live.
+- Fallback runtime: with `ANTHROPIC_API_KEY` instead, `mcp/agent.mjs` runs the agents on Claude directly (`LLM_MODEL`, `LLM_EFFORT`).
+- Limits: `CHAT_LIMIT` requests per IP per 10 minutes (default 30); optional `DEMO_KEY` requires the header `X-Demo-Key`.
 - If live is off or unreachable, the Copilot falls back to the in-app engine. Settings › Agents › Live agents shows the status and turns it on or off.
 - Requests to create reports, decks or dashboards stay on the in-app engine, because it writes them to the Artefactory.
 - For local development, set `localStorage["pwc-cpi.liveBase"] = "http://localhost:8787"` in the browser.
