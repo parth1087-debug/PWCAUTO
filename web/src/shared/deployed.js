@@ -1,7 +1,7 @@
 /** What is live in Faclon: the UNS workspace and the Bruce agents and skills created for each demo. */
 export const UNS_BASE = 'https://uns.us.iosense.io/uns/';
 
-/** The plantdb MCP server, hosted on Faclon Forge (project pwc-plantdb-mcp). Redeploys on every push to main. */
+/** The plantdb MCP server, hosted on Faclon Forge (project pwc-plantdb-mcp). Redeploy deployment dep-pwc-plantdb-mcp-adf6ef after server changes. */
 export const PLANTDB_URL = 'https://pwc-plantdb.us.iosense.io/mcp';
 
 export const DEPLOYED = {
