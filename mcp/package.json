@@ -3,7 +3,17 @@
   "version": "1.0.0",
   "description": "MCP server for the demo plant databases (one database per industry demo)",
   "type": "module",
-  "bin": { "plantdb-mcp": "server.mjs" },
-  "scripts": { "start": "node server.mjs", "start:http": "node server.mjs --http 8787", "test": "node smoke-test.mjs" },
-  "dependencies": { "@modelcontextprotocol/sdk": "1.32.2", "zod": "3.25.76" }
+  "bin": {
+    "plantdb-mcp": "server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "start:http": "node server.mjs --http 8787",
+    "test": "node smoke-test.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.14.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "3.25.76"
+  }
 }

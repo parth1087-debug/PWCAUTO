@@ -4,6 +4,7 @@ import { useApp } from '../App.jsx';
 import { PageHead, Tabs, Tag, Card, Toggle, Av, Seg, Empty } from '../components/ui.jsx';
 import { Bars, Trend } from '../components/charts.jsx';
 import { DEPLOYED } from '../shared/index.js';
+import { liveStatus, LIVE_BASE } from '../lib/live.js';
 import { DEMO_LIST, getDB, fmtNum, fmtDate, fmtDateTime, fmtRel } from '../lib/data.js';
 import { uid } from '../lib/store.js';
 
@@ -44,6 +45,21 @@ function Users() {
   </div>;
 }
 
+function LiveCard() {
+  const { prefs, setPrefs, toast } = useApp();
+  const [st, setSt] = useState(null);
+  useEffect(() => { liveStatus(true).then(setSt); }, []);
+  const on = prefs.live !== false;
+  return <Card title="Live agents" sub="Copilot answers from the agents running on Claude, with the plantdb tools" actions={<Toggle on={on} label="Live agents" onChange={v => { setPrefs(p => ({ ...p, live: v })); toast(v ? 'Live agents on' : 'Using the in-app engine'); }} />}>
+    <dl className="kv">
+      <dt>Status</dt><dd>{st == null ? 'Checking…' : st.live ? <Tag c="good">Online</Tag> : <Tag c="warn">Not configured</Tag>}</dd>
+      <dt>Model</dt><dd className="mono">{st?.model || '—'}</dd>
+      <dt>Server</dt><dd className="mono">{LIVE_BASE}/api/chat</dd>
+      <dt>Fallback</dt><dd>In-app engine, when live is off or not reachable</dd>
+    </dl>
+  </Card>;
+}
+
 function Agents() {
   const { ctx, prefs, toast } = useApp();
   const [sel, setSel] = useState(ctx.demo.agents[0].id);
@@ -51,6 +67,7 @@ function Agents() {
   const live = DEPLOYED[ctx.demo.id] || { agents: {} };
   const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `PwC ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph', 'Plant Data'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
   return <div className="grid" style={{ gap: 16 }}>
+    <LiveCard />
     <Card title="Agents on Bruce" sub={`${ctx.demo.agents.length} live in Bruce · UNS ${live.uns?.workspace || '—'}`} flush>
       <div className="scroll-x"><table className="t"><thead><tr><th>Agent</th><th>Bruce ID</th><th>Version</th><th>Model</th><th>Triggers</th><th className="r">Tools</th><th>Skills</th><th>Autonomy</th><th>Policies</th><th>Status</th></tr></thead><tbody>
         {ctx.demo.agents.map(x => <tr key={x.id} className={`click ${x.id === a.id ? 'on' : ''}`} onClick={() => setSel(x.id)}><td><div className="b">{x.name}</div><div className="mono muted" style={{ fontSize: 11 }}>{x.id}</div></td><td className="mono" style={{ fontSize: 11 }}>{live.agents[x.id] || '—'}</td><td className="mono">{x.version}</td><td className="mono" style={{ fontSize: 11.5 }}>{x.model.primary}</td>

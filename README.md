@@ -126,4 +126,12 @@ cd bruce && npm install && BRUCE_GATEWAY_URL=https://<your-bruce>/mcp BRUCE_TOKE
 
 The script lists the gateway's tools and calls the one that creates agents. Set `BRUCE_AGENT_TOOL` if its name is different. Use `--dry-run` to see what would be sent.
 
-Inside the app, the Copilot runs these agents on a built-in demo runtime that calls the same `plantdb` tools.
+## Live agents in the app
+
+The Copilot runs the demo's agents live on Claude (`claude-opus-5-5` by default) through the hosted server: `POST https://pwc-plantdb.us.iosense.io/api/chat` streams the run as server-sent events (agent, tool calls, text). The server (`mcp/agent.mjs`) gives the agent the same instructions, skills, plant brief, documents and policies as its Bruce twin, and the `plantdb` tools in process. The app draws charts and tables from the real tool results and offers actions (raise work order, open a dashboard).
+
+- Needs `ANTHROPIC_API_KEY` on the server (a Forge secret). `GET /api/status` says whether live is on.
+- Optional: `LLM_MODEL`, `LLM_EFFORT` (default `medium`), `CHAT_LIMIT` (requests per IP per 10 minutes, default 30), `DEMO_KEY` (require header `X-Demo-Key`).
+- If live is off or unreachable, the Copilot falls back to the in-app engine. Settings › Agents › Live agents shows the status and turns it on or off.
+- Requests to create reports, decks or dashboards stay on the in-app engine, because it writes them to the Artefactory.
+- For local development, set `localStorage["pwc-cpi.liveBase"] = "http://localhost:8787"` in the browser.

@@ -6,6 +6,7 @@ export { POLICIES, ENTERPRISE_CONNECTORS } from './common.js';
 export { createTools, TOOL_SPECS } from './tools.js';
 export { messagesFor, logsFor } from './content.js';
 export { DEPLOYED, UNS_BASE, PLANTDB_URL } from './deployed.js';
+export { plantBrief, plantDocs, policiesText, skillSteps } from './knowledge.js';
 
 /** Add a new industry demo by creating shared/demos/<id>.js and listing it here. */
 export const DEMOS = { auto, cement, steel };

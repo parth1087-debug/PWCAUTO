@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, Bot, ChevronRight, ThumbsUp, ThumbsDown, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { runQuery } from '../lib/copilot.js';
+import { liveStatus, staysLocal, pickAgent, streamChat, visualFor, actionsFor } from '../lib/live.js';
+import Markdown from './Markdown.jsx';
 import { Trend, Bars } from './charts.jsx';
 import { fmtNum } from '../lib/data.js';
 
@@ -46,9 +48,63 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     else if (a.type === 'toast') app.toast(a.text);
   };
 
-  function send(q) {
+  const abort = useRef(null);
+  useEffect(() => () => abort.current?.abort(), []);
+
+  const answerText = r => (r.live ? r.text : (r.blocks || []).filter(b => b.type === 'text' || b.type === 'list').map(b => (b.type === 'text' ? b.md : b.items.map(x => `- ${x}`).join('\n'))).join('\n'));
+
+  async function send(q) {
     q = (q || text).trim(); if (!q || pending) return;
     setText('');
+    if (app.prefs.live !== false && !staysLocal(q)) {
+      setPending({ q, r: { agent: 'Connecting to agents…', cap: 'Live', steps: [], blocks: [], live: true, text: '' }, shown: 0 });
+      const st = await liveStatus();
+      if (st.live && await sendLive(q)) return;
+      setPending(null);
+    }
+    sendLocal(q);
+  }
+
+  /** Live: the demo's Bruce agent runs on Claude with the plantdb tools; the run streams in. Returns false to fall back. */
+  async function sendLive(q) {
+    const { demo, db } = app.ctx;
+    const asset = db.assets.find(a => new RegExp(`\\b${a.id.replace('-', '-?')}\\b`, 'i').test(q));
+    const agent = pickAgent(demo, q, asset?.id);
+    const t0 = Date.now();
+    const calls = [];
+    let r = { agent: agent.name, cap: 'Live', steps: [], blocks: [], live: true, text: '', model: '' };
+    const show = () => setPending({ q, r: { ...r, steps: [...r.steps] }, shown: r.steps.filter(x => x.ms != null).length });
+    show();
+    const history = [...turns.slice(-5).flatMap(t => [{ role: 'user', content: t.q }, { role: 'assistant', content: answerText(t.r) || '(answer shown as a chart)' }]), { role: 'user', content: q }];
+    const ctxText = context ? `${context.kind}: ${context.title}` : '';
+    abort.current = new AbortController();
+    try {
+      await streamChat({ demo: demo.id, agent: agent.id, messages: history, context: ctxText, anchor: app.anchor || null }, ev => {
+        if (ev.type === 'meta') { r = { ...r, agent: ev.agent.name, model: ev.model, cap: `Live · ${ev.model}` }; show(); }
+        else if (ev.type === 'tool_start') { r.steps.push({ id: ev.id, tool: `plantdb.${ev.name}`, args: ev.input, ms: null }); show(); }
+        else if (ev.type === 'tool_end') {
+          const st = r.steps.find(x => x.id === ev.id); if (st) { st.ms = Math.max(1, ev.ms); st.ok = ev.ok; }
+          calls.push({ name: ev.name, input: ev.input, ok: ev.ok, result: ev.result }); show();
+        }
+        else if (ev.type === 'text') { r = { ...r, text: r.text + ev.delta }; show(); }
+        else if (ev.type === 'error') { throw new Error(ev.message); }
+      }, abort.current.signal);
+    } catch (e) {
+      if (abort.current?.signal.aborted) return true;
+      if (!r.text && !calls.length) { app.toast(`${e.message} Using the in-app engine.`); return false; }
+      r = { ...r, text: `${r.text}\n\n> ${e.message}` };
+    }
+    const seen = new Set();
+    const visuals = calls.filter(c => c.ok && !seen.has(c.name) && seen.add(c.name)).map(c => visualFor(c.name, c.input, c.result)).filter(Boolean).slice(0, 2);
+    const acts = actionsFor(calls);
+    const final = { ...r, ms: Date.now() - t0, blocks: [...visuals, ...(acts ? [acts] : [])], steps: r.steps.map(({ id, ...x }) => ({ ...x, ms: x.ms ?? 1 })) };
+    app.addLog('Agents', 'copilot.session.live', final.agent, q.slice(0, 60));
+    setPending(null);
+    setTurns([...turns, { q, r: final, at: Date.now() }]);
+    return true;
+  }
+
+  function sendLocal(q) {
     const r = runQuery(q, { ...app.ctx, context, actions: app.actions });
     app.addLog('Agents', 'copilot.session', r.agent, q.slice(0, 60));
     setPending({ q, r, shown: 0 });
@@ -67,7 +123,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
   return (
     <div className="chat">
       <div className="chat-body" ref={body}>
-        {!turns.length && !pending && (hello || <div className="hello"><Bot size={26} color="var(--brand)" /><h2 style={{ fontSize: 18 }}>Ask about {context ? 'this view' : 'the plant'}</h2><p className="muted">Answers use live plant data through the Bruce MCP gateway.</p></div>)}
+        {!turns.length && !pending && (hello || <div className="hello"><Bot size={26} color="var(--brand)" /><h2 style={{ fontSize: 18 }}>Ask about {context ? 'this view' : 'the plant'}</h2><p className="muted">Answers use live plant data through the plantdb MCP server.</p></div>)}
         {turns.map((t, i) => <Turn key={i} t={t} onAct={act} />)}
         {pending && <Turn t={pending} running onAct={act} />}
       </div>
@@ -85,18 +141,19 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
 
 function Turn({ t, running, onAct }) {
   const { r } = t; const app = useApp();
-  const total = r.steps.reduce((a, s) => a + s.ms, 0);
+  const total = r.live ? (r.ms || 0) : r.steps.reduce((a, s) => a + s.ms, 0);
+  const doneSteps = r.live ? r.steps.filter(s => s.ms != null).length : t.shown;
   const [fb, setFb] = useState(null);
   return (
     <>
       <div className="msg-u">{t.q}</div>
       <div className="msg-b">
-        <div className="route"><Bot size={14} />Routed to <b>{r.agent}</b> · {r.cap}</div>
-        <details className="trace" open={running}>
-          <summary><Layers size={12} />{running ? `Working · step ${Math.min(t.shown + 1, r.steps.length)} of ${r.steps.length}` : `${r.steps.length} tool calls · ${(total / 1000).toFixed(1)} s · via MCP gateway`}<ChevronRight size={12} style={{ marginLeft: 'auto' }} /></summary>
-          {r.steps.map((s, i) => <div key={i} className={`step ${!running || i < t.shown ? 'done' : i === t.shown ? 'run' : ''}`}><span className="ic" /><span className="tl ellipsis">{s.tool}{Object.keys(s.args || {}).length ? <span className="muted"> {JSON.stringify(s.args)}</span> : ''}</span><span className="ms">{(!running || i < t.shown) ? s.ms + ' ms' : ''}</span></div>)}
-        </details>
-        {running ? <span className="typing"><i /><i /><i /></span> : <div className="ans"><Blocks blocks={r.blocks} onAct={onAct} />
+        <div className="route"><Bot size={14} />Routed to <b>{r.agent}</b> · {r.cap}{r.live && <span className="tag good" style={{ marginLeft: 6, fontSize: 10.5 }}>Live</span>}</div>
+        {(r.steps.length > 0 || !r.live) && <details className="trace" open={running}>
+          <summary><Layers size={12} />{running ? (r.live ? `Working · ${doneSteps} of ${r.steps.length} tool calls done` : `Working · step ${Math.min(t.shown + 1, r.steps.length)} of ${r.steps.length}`) : `${r.steps.length} tool calls · ${(total / 1000).toFixed(1)} s · ${r.live ? 'live via plantdb MCP' : 'via MCP gateway'}`}<ChevronRight size={12} style={{ marginLeft: 'auto' }} /></summary>
+          {r.steps.map((s, i) => { const done = r.live ? s.ms != null : (!running || i < t.shown); return <div key={i} className={`step ${done ? 'done' : (r.live || i === t.shown) ? 'run' : ''}`}><span className="ic" /><span className="tl ellipsis">{s.tool}{Object.keys(s.args || {}).length ? <span className="muted"> {JSON.stringify(s.args)}</span> : ''}</span><span className="ms">{done ? s.ms + ' ms' : ''}</span></div>; })}
+        </details>}
+        {running && r.live && r.text ? <div className="ans"><Markdown text={r.text} /></div> : running ? <span className="typing"><i /><i /><i /></span> : <div className="ans">{r.live && <Markdown text={r.text} />}<Blocks blocks={r.blocks} onAct={onAct} />
           <div className="row" style={{ marginTop: 6, gap: 2 }}><button className="ibtn" style={{ width: 26, height: 26, color: fb === 1 ? 'var(--good)' : undefined }} aria-label="Useful" onClick={() => { setFb(1); app.toast('Thanks. Saved to the agent feedback loop.'); }}><ThumbsUp size={13} /></button><button className="ibtn" style={{ width: 26, height: 26, color: fb === 0 ? 'var(--bad)' : undefined }} aria-label="Not useful" onClick={() => { setFb(0); app.toast('Thanks. An SME will review this answer.'); }}><ThumbsDown size={13} /></button></div></div>}
       </div>
     </>
