@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Send, Bot, ChevronRight, ThumbsUp, ThumbsDown, Layers } from 'lucide-react';
 import { useApp } from '../App.jsx';
 import { runQuery } from '../lib/copilot.js';
+import { createIntent, buildArtefact } from '../lib/copilot.js';
+import { openInNewTab } from '../pages/Artefactory.jsx';
 import { liveStatus, liveFor, staysLocal, pickAgent, streamChat, visualFor, actionsFor } from '../lib/live.js';
 import Markdown from './Markdown.jsx';
 import { Trend, Bars } from './charts.jsx';
@@ -43,7 +45,8 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     if (a.type === 'nav') { app.closePanel(); app.nav(a.to); }
     else if (a.type === 'ask') send(a.q);
     else if (a.type === 'wo') app.actions.raiseWO(a.asset, a.title);
-    else if (a.type === 'pin') { app.actions.pin(a.key); app.toast('Added to Shortcuts'); }
+    else if (a.type === 'pin') { app.actions.pin(a.key); app.toast('Shortcuts updated'); }
+    else if (a.type === 'tab') openInNewTab(a.id);
     else if (a.type === 'art') { app.closePanel(); app.nav('artefactory/' + a.id); }
     else if (a.type === 'toast') app.toast(a.text);
   };
@@ -71,7 +74,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     const asset = db.assets.find(a => new RegExp(`\\b${a.id.replace('-', '-?')}\\b`, 'i').test(q));
     const agent = pickAgent(demo, q, asset?.id);
     const t0 = Date.now();
-    const calls = [];
+    const calls = []; const made = [];
     let r = { agent: agent.name, cap: 'Live', steps: [], blocks: [], live: true, text: '', model: '' };
     const show = () => setPending({ q, r: { ...r, steps: [...r.steps] }, shown: r.steps.filter(x => x.ms != null).length });
     show();
@@ -91,6 +94,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
           if (ev.result != null) calls.push({ name: ev.name, input: ev.input, ok: ev.ok, result: ev.result }); show();
         }
         else if (ev.type === 'text') { r = { ...r, text: r.text + ev.delta }; show(); }
+        else if (ev.type === 'artefact') { app.actions.addArtefact(ev.artefact); made.push(ev.artefact); r.steps.push({ tool: 'artefactory.create_artefact', args: { name: ev.artefact.name }, ms: 1, ok: true }); show(); }
         else if (ev.type === 'error') { throw new Error(ev.message); }
       }, abort.current.signal);
     } catch (e) {
@@ -101,7 +105,12 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
     const seen = new Set();
     const agentCharts = (r.text.match(/```chart/g) || []).length;
     const visuals = calls.filter(c => c.ok && !seen.has(c.name) && seen.add(c.name)).map(c => visualFor(c.name, c.input, c.result)).filter(Boolean).slice(0, agentCharts ? 0 : 2);
-    const acts = actionsFor(calls);
+    /* creation asked but the agent saved nothing: build it from the plant model */
+    if (!made.length && createIntent(q)) {
+      const m = buildArtefact(q, { demo, db, asset, kpi: demo.kpis.find(k => q.toLowerCase().includes(k.name.toLowerCase())) });
+      if (m) { const id = app.actions.createArtefact({ type: m.type, name: m.name, spec: m.spec, demo: demo.id, note: 'Created from prompt' }); made.push({ id, name: m.name }); r.steps.push({ tool: 'artefactory.create_artefact', args: { name: m.name }, ms: 1, ok: true }); }
+    }
+    const acts = made.length ? { type: 'actions', items: made.flatMap(a => [{ label: `Open ${a.name}`, act: { type: 'art', id: a.id }, pri: true }, { label: 'Pin to Shortcuts', act: { type: 'pin', key: a.id } }]) } : actionsFor(calls);
     const final = { ...r, ms: Date.now() - t0, blocks: [...visuals, ...(acts ? [acts] : [])], steps: r.steps.map(({ id, ...x }) => ({ ...x, ms: x.ms ?? 1 })) };
     app.addLog('Agents', 'copilot.session.live', final.agent, q.slice(0, 60));
     setPending(null);

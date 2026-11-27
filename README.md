@@ -1,6 +1,6 @@
-# PwC Connected Plant Intelligence
+# Faclon Connected Plant Intelligence
 
-A working demo of an industrial intelligence app, branded PwC, with AI agents powered by Faclon Labs.
+A working demo of an industrial intelligence app by Faclon Labs, with AI agents on Bruce.
 It runs several industry demos side by side, each with its own database, UNS ontology and Bruce agents.
 
 All plant data is generated. Values are fixed by a seed, so they are the same on every run.
@@ -15,6 +15,18 @@ Timestamps are anchored to "now", so the newest point is always the current hour
 | `mcp/` | `plantdb` MCP server: one connector for the app's databases (stdio or HTTP) |
 | `bruce/` | Bruce agent definitions and UNS export per demo, and a script to push agents to a Bruce gateway |
 | `legacy/` | The earlier static HTML version |
+
+
+## Solutions and the Artefactory (round 3)
+
+- **7 solutions**: auto components, cement, steel, pharma API, pharma formulation, solar (3 plants) and wind (3 farms). Each has its own user and plant database. Add one with `web/src/shared/demos/<id>.js`, register it in `web/src/shared/index.js`, and check it with `node web/src/shared/validate.mjs <id>`.
+- **Artefactory is the source of shortcuts.** Each plant has 16–18 artefacts: 9 shortcut dashboards (KPIs, overview, maintenance, cost, quality, energy, asset twin, real-time monitor, setpoint advisor), custom boards, a sheet, a presentation, 2 documents and 3 forms. Reports are documents, not a separate type.
+- **Database**: the server keeps artefacts, versions, form submissions and setpoint decisions in `DATA_DIR/plant-app.json` (`/data` in Docker). REST: `/api/artefacts`, `/api/artefacts/<id>/versions|submissions|archive`, `/api/setpoints`, `/api/sources`.
+- **MCP tools** for agents: `list_artefacts`, `get_artefact`, `create_artefact`, `update_artefact`, `submit_form`, `list_form_submissions`, `get_setpoints`, `get_data_sources`.
+- **Copilot creates artefacts**: the in-app engine and the Bruce Plant Copilots (they emit an `artefact` JSON block the server saves).
+- **Live values**: the UI draws new live values and reloads the database every 10 seconds.
+- **Ontology data sources**: Context › Data sources shows the lineage and, for every tag, its source system, protocol address, historian and UNS path, plus ERP, CMMS and MES records.
+- **Themes**: Faclon light, Faclon dark, Midnight, Graphite, Ocean and Sand (user menu).
 
 ## Run the app
 
@@ -34,7 +46,7 @@ cd web && npm run build:single
 
 `build` writes a static site to `web/dist/`. `build:single` writes one file, `web/dist-single/index.html`, that opens offline from disk or a phone.
 
-Sign in with **pwc** / **Demo@2026**. Change it in `web/src/config.js`. This login is a demo gate in the browser, not real security.
+Sign in with **faclon** / **Demo@2026**. Change it in `web/src/config.js`. This login is a demo gate in the browser, not real security.
 
 ## Users and demos
 
@@ -106,7 +118,7 @@ These were created through the Bruce gateway MCP. IDs are in `web/src/shared/dep
 | Steel | [ws_TGBJVxMdCC](https://uns.us.iosense.io/uns/ws_TGBJVxMdCC) | 45 / 10 | 6 |
 
 - UNS: Enterprise › Site › Area › Line › Machine › Variable. Tags carry unit, nominal, limits and `unsTag`. Lineage uses `rel_feeds`, `rel_supplies` and `rel_causes`.
-- Bruce agents are named `PwC <Demo> · <Agent>`, use model `sarvam-105b` and two connectors: **UNS Graph** (plant model) and **Plant Data** (the hosted plantdb MCP server, for KPIs, trends, health, energy, quality and documents). They are private to the owner. Share them in Bruce before the demo if others will chat.
+- Bruce agents are named `Faclon <Demo> · <Agent>` (older specialist agents may still carry the PwC prefix), use model `sarvam-105b` and two connectors: **UNS Graph** (plant model) and **Plant Data** (the hosted plantdb MCP server, for KPIs, trends, health, energy, quality and documents). They are private to the owner. Share them in Bruce before the demo if others will chat.
 - Skills: 13 task skills (`pwc-<demo>-<skill>`) and 3 knowledge skills (`pwc-<demo>-plant-knowledge`) with the plant brief, documents and policies as reference files.
 - Smart Context was not used: the Bruce account has no embedding model connected yet.
 
@@ -128,7 +140,7 @@ The script lists the gateway's tools and calls the one that creates agents. Set 
 
 ## Live agents in the app
 
-The Copilot talks to real Bruce agents through Bruce's **agent API** (Integrations › REST API). Each demo has a **Plant Copilot** agent on Bruce: `PwC Auto · Plant Copilot`, `PwC Cement · Plant Copilot`, `PwC Steel · Plant Copilot` (ids in `web/src/shared/deployed.js`). It has the plant knowledge skill and the Plant Data, UNS Graph and Bruce connectors, and can delegate to the six specialist agents when its Team is set in Bruce.
+The Copilot talks to real Bruce agents through Bruce's **agent API** (Integrations › REST API). Each demo has a **Plant Copilot** agent on Bruce: `Faclon Auto · Plant Copilot`, `Faclon Cement · Plant Copilot`, `Faclon Steel · Plant Copilot` (ids in `web/src/shared/deployed.js`). It has the plant knowledge skill and the Plant Data, UNS Graph and Bruce connectors, and can delegate to the six specialist agents when its Team is set in Bruce.
 
 The app never holds a key. It calls `POST https://pwc-plantdb.us.iosense.io/api/chat`; the server (`mcp/bruce.mjs`) relays to `POST https://bruce.us.iosense.io/backend/api/agents/v1/agents/{id}/chat` with the agent's API key and streams the answer back (session, tool calls, text). Follow-up questions continue the same Bruce conversation. The app draws charts and tables from the real Plant Data tool results and offers actions (raise work order, open a dashboard).
 

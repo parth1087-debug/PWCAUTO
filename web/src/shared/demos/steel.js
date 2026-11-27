@@ -6,13 +6,13 @@ export default {
   company: 'Konark Steel', companySlug: 'konark', site: 'Rolling Complex', siteSlug: 'rolling-complex', location: 'Odisha',
   production: { unit: 't billets', planPerDay: 2400, label: 'TMT bars and billets', massUnit: 't' },
   classes: {
-    eaf: { label: 'Electric arc furnace', tags: [['power', 'Active power', 'MW', 62, 2.5, 0], ['tap_to_tap', 'Tap-to-tap time', 'min', 52, 1.5, 0], ['electrode_current', 'Electrode current deviation', '%', 4.2, 0.4, 0, 0, 8], ['kwh_per_t', 'Energy per tonne', 'kWh/t', 412, 6, 0]] },
-    ladle: { label: 'Ladle furnace', tags: [['temp', 'Steel temperature', '°C', 1595, 5, 0], ['power', 'Power', 'MW', 14, 0.8, 0]] },
-    caster: { label: 'Continuous caster', tags: [['mould_level', 'Mould level deviation', 'mm', 2.1, 0.25, 0, 0, 6], ['cast_speed', 'Casting speed', 'm/min', 3.2, 0.05, 0], ['mould_flow', 'Mould water flow', 'm³/h', 145, 2, 0]] },
-    reheat: { label: 'Reheating furnace', tags: [['zone3_temp', 'Soak zone temp', '°C', 1180, 5, 0, 1150, 1200], ['fuel', 'Fuel rate', 'GJ/t', 1.32, 0.03, 0], ['discharge_temp', 'Billet discharge temp', '°C', 1105, 6, 0]] },
-    stand: { label: 'Rolling stand', tags: [['gearbox_vibration', 'Gearbox vibration', 'mm/s', 2.8, 0.25, 0, 0, 7.1], ['motor_current', 'Motor current', 'A', 920, 30, 60], ['roll_temp', 'Roll temperature', '°C', 64, 1.2, 0]] },
-    cooling: { label: 'Cooling tower', tags: [['approach', 'Approach', '°C', 4.2, 0.2, 0.4], ['fan_power', 'Fan power', 'kW', 180, 6, 20]] },
-    compressor: { label: 'Air compressor', tags: [['pressure', 'Discharge pressure', 'bar', 7.0, 0.06, 0.05], ['power', 'Power', 'kW', 240, 6, 25]] },
+    eaf: { label: 'Electric arc furnace', src: 'plc', tags: [['power', 'Active power', 'MW', 62, 2.5, 0, undefined, undefined, 'ems'], ['tap_to_tap', 'Tap-to-tap time', 'min', 52, 1.5, 0, undefined, undefined, 'l2'], ['electrode_current', 'Electrode current deviation', '%', 4.2, 0.4, 0, 0, 8], ['kwh_per_t', 'Energy per tonne', 'kWh/t', 412, 6, 0, undefined, undefined, 'l2']] },
+    ladle: { label: 'Ladle furnace', src: 'plc', tags: [['temp', 'Steel temperature', '°C', 1595, 5, 0], ['power', 'Power', 'MW', 14, 0.8, 0, undefined, undefined, 'ems']] },
+    caster: { label: 'Continuous caster', src: 'mould', tags: [['mould_level', 'Mould level deviation', 'mm', 2.1, 0.25, 0, 0, 6], ['cast_speed', 'Casting speed', 'm/min', 3.2, 0.05, 0, undefined, undefined, 'plc'], ['mould_flow', 'Mould water flow', 'm³/h', 145, 2, 0]] },
+    reheat: { label: 'Reheating furnace', src: 'plc', tags: [['zone3_temp', 'Soak zone temp', '°C', 1180, 5, 0, 1150, 1200], ['fuel', 'Fuel rate', 'GJ/t', 1.32, 0.03, 0, undefined, undefined, 'l2'], ['discharge_temp', 'Billet discharge temp', '°C', 1105, 6, 0]] },
+    stand: { label: 'Rolling stand', src: 'plc', tags: [['gearbox_vibration', 'Gearbox vibration', 'mm/s', 2.8, 0.25, 0, 0, 7.1, 'cms'], ['motor_current', 'Motor current', 'A', 920, 30, 60], ['roll_temp', 'Roll temperature', '°C', 64, 1.2, 0]] },
+    cooling: { label: 'Cooling tower', src: 'plc', tags: [['approach', 'Approach', '°C', 4.2, 0.2, 0.4], ['fan_power', 'Fan power', 'kW', 180, 6, 20, undefined, undefined, 'ems']] },
+    compressor: { label: 'Air compressor', src: 'ems', tags: [['pressure', 'Discharge pressure', 'bar', 7.0, 0.06, 0.05], ['power', 'Power', 'kW', 240, 6, 25]] },
   },
   areas: [
     { id: 'melt-shop', name: 'Melt shop', lines: [{ id: 'eaf-line', name: 'EAF line', assets: [['EAF-01', 'Electric arc furnace 60 t', 'eaf', 'A'], ['LF-01', 'Ladle furnace', 'ladle', 'A']] }] },
@@ -91,4 +91,80 @@ export default {
       skills: [], tools: ['plantdb.get_production', 'plantdb.get_kpis'], autonomy: 'act' },
   ]),
   suggestions: ['What needs my attention right now?', 'Why is FS-01 gearbox vibration rising?', 'How is mill yield against baseline?', 'Why is reheating fuel up?', 'Show EAF energy for the last 30 days', 'Write the daily mill report'],
+  sources: {
+    plc: { name: 'L1 PLCs and DCS', kind: 'OT · PLC/DCS', via: 'I/O Connect · OPC UA', detail: 'EAF electrode regulation, ladle furnace, reheating furnace and mill drives' },
+    l2: { name: 'L2 process models', kind: 'OT · Level 2', via: 'SQL · heat and billet tracking', detail: 'EAF heat model, reheating furnace model, energy per tonne per heat' },
+    mould: { name: 'Caster mould system', kind: 'OT · Caster', via: 'OPC UA', detail: 'Mould level (Cs-137), mould water flow and ΔT, 4 strands' },
+    cms: { name: 'Online vibration monitoring', kind: 'OT · Condition monitoring', via: 'I/O Connect · MQTT', detail: 'Gearboxes and motors on roughing, intermediate and finishing stands' },
+    ems: { name: 'Energy management system', kind: 'OT · Energy', via: 'IEC 61850 · Modbus TCP', detail: '220 kV intake, EAF and LF transformers, utility feeders' },
+    lims: { name: 'Spectro and mechanical lab', kind: 'IT · Quality', via: 'SQL · read replica', detail: 'Heat chemistry, bend and tensile tests, oil debris analysis' },
+    historian: { name: 'Plant historian', kind: 'Data · Historian', via: 'OPC HDA', detail: '4 years of L1 and L2 history' },
+    erp: { name: 'SAP S/4HANA', kind: 'IT · ERP', via: 'OData · BAPI', detail: 'Cost per tonne, electrode and refractory stock, despatch' },
+    cmms: { name: 'SAP PM', kind: 'IT · CMMS', via: 'OData · BAPI', detail: 'Work orders, roll shop records, spares' },
+  },
+  setpoints: [
+    { asset: 'RHF-01', tag: 'fuel', name: 'Reheating furnace pressure −0.4 → +0.2 mmWC and air-fuel ratio 1.14 → 1.08', current: 1.41, recommended: 1.32, unit: 'GJ/t', lo: 1.25, hi: 1.45, gain: '₹6.5 L/month · −0.09 GJ/t', kpi: 'fuel',
+      reason: 'Furnace pressure is −0.4 mmWC against a +0.2 target and flue O₂ rose from 2.1 to 3.6 %, so cold air is leaking in. The combustion guide (p. 48) asks for slightly positive pressure.', confidence: 0.79, status: 'proposed' },
+    { asset: 'RHF-01', tag: 'zone3_temp', name: 'Soak zone temperature', current: 1180, recommended: 1165, unit: '°C', lo: 1150, hi: 1200, gain: '−0.02 GJ/t · ₹18 L/yr, less scale loss', kpi: 'fuel',
+      reason: 'Billets discharge at 1,105 °C against 1,080 °C needed for Fe 500D, and RS-01 motor current has 18 % headroom. A 15 °C lower soak keeps discharge at about 1,092 °C.', confidence: 0.7, status: 'proposed' },
+    { asset: 'CCM-01', tag: 'cast_speed', name: 'Strand 3 casting speed', current: 3.2, recommended: 3.1, unit: 'm/min', lo: 2.9, hi: 3.4, gain: 'Lower breakout risk · one breakout costs about ₹28 L', kpi: 'rej',
+      reason: 'Strand 3 mould level deviation rose from 2 to 5.2 mm in 6 hours. The caster SOP (section 6) asks for a speed cut above 5 mm until the level controller is retuned.', confidence: 0.82, status: 'approved' },
+    { asset: 'EAF-01', tag: 'kwh_per_t', name: 'EAF O₂ lancing 38 → 41 Nm³/t with carbon injection 9 → 10 kg/t', current: 412, recommended: 401, unit: 'kWh/t', lo: 395, hi: 420, gain: '−11 kWh/t · ₹62 L/yr', kpi: 'eafkwh',
+      reason: 'The 120 best heats of the last quarter used 41 Nm³/t oxygen with a foamy slag that covered the arc, and took 404 kWh/t. FeO in slag stayed below 30 %, so yield was not hurt.', confidence: 0.71, status: 'proposed' },
+  ],
+  forms: [
+    { id: 'heat-log', name: 'Ladle and heat log', desc: 'One record per heat from EAF tap to caster. Cross-checked against L2 heat tracking.',
+      sections: [
+        { title: 'Heat', fields: [
+          { id: 'heat_no', label: 'Heat number', type: 'text', placeholder: 'e.g. H26-11-0412', required: true },
+          { id: 'grade', label: 'Grade', type: 'select', options: ['Fe 500D', 'Fe 550D', 'SAE 1008', 'SAE 1018'], required: true },
+          { id: 'ladle', label: 'Ladle number', type: 'select', options: ['L-01', 'L-02', 'L-03', 'L-04', 'L-05'], required: true },
+          { id: 'ladle_life', label: 'Ladle refractory life', type: 'number', unit: 'heats' } ] },
+        { title: 'EAF and ladle furnace', fields: [
+          { id: 'tap_time', label: 'Tap time', type: 'time', required: true },
+          { id: 'tap_weight', label: 'Tap weight', type: 'number', unit: 't' },
+          { id: 'tap_temp', label: 'Tap temperature', type: 'number', unit: '°C' },
+          { id: 'lf_temp', label: 'LF final temperature', type: 'number', unit: '°C', required: true },
+          { id: 'additions', label: 'Alloy additions', type: 'textarea', placeholder: 'SiMn, FeSi, Al wire (kg)' } ] },
+        { title: 'Caster', fields: [
+          { id: 'tundish_temp', label: 'Tundish superheat', type: 'number', unit: '°C', help: 'Target 25–35 °C.' },
+          { id: 'checks', label: 'Ladle checks', type: 'checklist', options: ['Slide gate checked', 'Purging plug OK', 'Ladle shroud fitted', 'Slag cover applied'] },
+          { id: 'sign', label: 'Melt shop shift in-charge', type: 'signature', required: true } ] },
+      ] },
+    { id: 'roll-change', name: 'Roll change checklist', desc: 'For every planned roll or guide change on the bar mill. Closes the roll shop order in SAP PM.',
+      sections: [
+        { title: 'Job', fields: [
+          { id: 'stand', label: 'Stand', type: 'asset', required: true },
+          { id: 'reason', label: 'Reason', type: 'radio', options: ['Planned campaign end', 'Size change', 'Roll mark or crack', 'After cobble'], required: true },
+          { id: 'tonnage', label: 'Tonnage on old rolls', type: 'number', unit: 't' },
+          { id: 'start', label: 'Start', type: 'datetime', required: true } ] },
+        { title: 'Safety and change', fields: [
+          { id: 'safety', label: 'Safety', type: 'checklist', options: ['Mill stopped and drives isolated', 'Lock-out tag-out on stand and cooling water', 'Crane and lifting tackle checked'], required: true },
+          { id: 'change', label: 'Roll change', type: 'checklist', options: ['Roll gap set to pass schedule', 'Guides aligned to pass centre', 'Cooling nozzles cleared', 'Bearing chocks greased'] },
+          { id: 'roll_dia', label: 'New roll diameter', type: 'number', unit: 'mm' } ] },
+        { title: 'Restart', fields: [
+          { id: 'first_bar', label: 'First bar section within tolerance', type: 'radio', options: ['Yes', 'No · adjust and re-test'], required: true },
+          { id: 'end', label: 'Mill restarted', type: 'time' },
+          { id: 'remarks', label: 'Remarks', type: 'textarea' },
+          { id: 'sign', label: 'Roll shop foreman', type: 'signature', required: true } ] },
+      ] },
+    { id: 'hot-work-permit', name: 'Hot work permit', desc: 'Required for cutting, welding or grinding outside the workshop. Valid for one shift.',
+      sections: [
+        { title: 'Work', fields: [
+          { id: 'location', label: 'Location and equipment', type: 'asset', required: true },
+          { id: 'work', label: 'Work type', type: 'checklist', options: ['Gas cutting', 'Arc welding', 'Grinding', 'Oxygen lancing'], required: true },
+          { id: 'description', label: 'Job description', type: 'textarea', required: true },
+          { id: 'valid_from', label: 'Valid from', type: 'datetime', required: true },
+          { id: 'valid_to', label: 'Valid to', type: 'datetime', required: true } ] },
+        { title: 'Precautions', fields: [
+          { id: 'precautions', label: 'Precautions in place', type: 'checklist', options: ['Combustibles removed within 11 m', 'Fire extinguisher and fire watch present', 'Gas test done (CO and O₂)', 'Hydraulic and oil lines covered', 'Barricade and signage placed'], required: true },
+          { id: 'co_ppm', label: 'CO reading', type: 'number', unit: 'ppm', help: 'Stop work above 25 ppm.' },
+          { id: 'fire_watch', label: 'Fire watch name', type: 'text' } ] },
+        { title: 'Authorisation', fields: [
+          { id: 'issuer', label: 'Permit issuer (area in-charge)', type: 'signature', required: true },
+          { id: 'receiver', label: 'Permit receiver (job leader)', type: 'signature', required: true } ] },
+      ] },
+  ],
+  dashNames: { cost: 'Yield & utilisation', quality: 'Billet & bar quality', energy: 'Power & fuel' },
+  realtime: { title: 'Melt shop, caster and bar mill', assets: ['EAF-01', 'LF-01', 'CCM-01', 'RHF-01', 'RS-01', 'IS-01', 'FS-01', 'CT-01', 'AC-21'] },
 };

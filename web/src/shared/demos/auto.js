@@ -6,14 +6,14 @@ export default {
   company: 'Northstar Drive Components', companySlug: 'northstar', site: 'Hosur Plant', siteSlug: 'hosur', location: 'Hosur, Tamil Nadu',
   production: { unit: 'pcs', planPerDay: 50000, label: 'Sprockets, chains and kits', massUnit: 'kg' },
   classes: {
-    press: { label: 'Press', tags: [['tonnage', 'Press tonnage', 't', 362, 6, 8], ['spm', 'Stroke rate', 'spm', 38, 1.5, 3], ['oil_temp', 'Hydraulic oil temp', '°C', 51.4, 0.8, 1.5], ['energy', 'Energy', 'kWh', 96, 3, 18]] },
-    hobber: { label: 'CNC hobbing machine', tags: [['spindle_vibration', 'Spindle vibration', 'mm/s', 2.1, 0.22, 0.15, 0, 4.5], ['bearing_temp', 'Spindle bearing temp', '°C', 48, 0.9, 1.2, 0, 70], ['cycle_time', 'Cycle time', 's', 42.5, 0.8, 0.4], ['energy', 'Energy', 'kWh', 9.8, 0.4, 1.8]] },
-    induction: { label: 'Induction hardening', tags: [['quench_flow', 'Quench water flow', 'L/min', 18.2, 0.25, 0.1, 16, 22], ['coil_power', 'Coil power', 'kW', 142, 3, 6], ['quench_temp', 'Quench temp', '°C', 31.5, 0.6, 1.2], ['energy', 'Energy', 'kWh', 118, 4, 20]] },
-    furnace: { label: 'Heat treatment furnace', tags: [['zone_temp', 'Zone temperature', '°C', 880, 2.5, 0, 870, 890], ['carbon_potential', 'Carbon potential', '%C', 0.82, 0.012, 0], ['belt_current', 'Drive motor current', 'A', 7.8, 0.18, 0.1], ['energy', 'Energy', 'kWh', 225, 6, 25]] },
-    assembly: { label: 'Chain assembly', tags: [['speed', 'Assembly speed', 'links/min', 310, 5, 20], ['rivet_force', 'Riveting force', 'kN', 18.6, 0.3, 0], ['energy', 'Energy', 'kWh', 11.2, 0.4, 2]] },
-    vision: { label: 'Vision inspection', tags: [['reject_rate', 'Reject rate', '%', 0.42, 0.05, 0.03], ['confidence', 'Model confidence', '%', 97.8, 0.3, 0]] },
-    compressor: { label: 'Air compressor', tags: [['pressure', 'Discharge pressure', 'bar', 7.0, 0.06, 0.05], ['load', 'Load', '%', 80, 4, 12], ['power', 'Power', 'kW', 124, 5, 18], ['oil_temp', 'Oil temp', '°C', 84, 1.2, 1.5, 0, 100]] },
-    transformer: { label: 'Transformer', tags: [['load', 'Load', 'kVA', 1640, 50, 380], ['oil_temp', 'Oil temp', '°C', 58, 0.9, 3]] },
+    press: { label: 'Press', src: 'plc', tags: [['tonnage', 'Press tonnage', 't', 362, 6, 8], ['spm', 'Stroke rate', 'spm', 38, 1.5, 3], ['oil_temp', 'Hydraulic oil temp', '°C', 51.4, 0.8, 1.5], ['energy', 'Energy', 'kWh', 96, 3, 18, undefined, undefined, 'ems']] },
+    hobber: { label: 'CNC hobbing machine', src: 'plc', tags: [['spindle_vibration', 'Spindle vibration', 'mm/s', 2.1, 0.22, 0.15, 0, 4.5, 'cms'], ['bearing_temp', 'Spindle bearing temp', '°C', 48, 0.9, 1.2, 0, 70, 'cms'], ['cycle_time', 'Cycle time', 's', 42.5, 0.8, 0.4], ['energy', 'Energy', 'kWh', 9.8, 0.4, 1.8, undefined, undefined, 'ems']] },
+    induction: { label: 'Induction hardening', src: 'plc', tags: [['quench_flow', 'Quench water flow', 'L/min', 18.2, 0.25, 0.1, 16, 22], ['coil_power', 'Coil power', 'kW', 142, 3, 6], ['quench_temp', 'Quench temp', '°C', 31.5, 0.6, 1.2], ['energy', 'Energy', 'kWh', 118, 4, 20, undefined, undefined, 'ems']] },
+    furnace: { label: 'Heat treatment furnace', src: 'plc', tags: [['zone_temp', 'Zone temperature', '°C', 880, 2.5, 0, 870, 890], ['carbon_potential', 'Carbon potential', '%C', 0.82, 0.012, 0], ['belt_current', 'Drive motor current', 'A', 7.8, 0.18, 0.1], ['energy', 'Energy', 'kWh', 225, 6, 25, undefined, undefined, 'ems']] },
+    assembly: { label: 'Chain assembly', src: 'plc', tags: [['speed', 'Assembly speed', 'links/min', 310, 5, 20], ['rivet_force', 'Riveting force', 'kN', 18.6, 0.3, 0], ['energy', 'Energy', 'kWh', 11.2, 0.4, 2, undefined, undefined, 'ems']] },
+    vision: { label: 'Vision inspection', src: 'vision', tags: [['reject_rate', 'Reject rate', '%', 0.42, 0.05, 0.03], ['confidence', 'Model confidence', '%', 97.8, 0.3, 0]] },
+    compressor: { label: 'Air compressor', src: 'ems', tags: [['pressure', 'Discharge pressure', 'bar', 7.0, 0.06, 0.05], ['load', 'Load', '%', 80, 4, 12], ['power', 'Power', 'kW', 124, 5, 18], ['oil_temp', 'Oil temp', '°C', 84, 1.2, 1.5, 0, 100]] },
+    transformer: { label: 'Transformer', src: 'ems', tags: [['load', 'Load', 'kVA', 1640, 50, 380], ['oil_temp', 'Oil temp', '°C', 58, 0.9, 3]] },
   },
   areas: [
     { id: 'press-shop', name: 'Press Shop', lines: [{ id: 'blanking-1', name: 'Blanking Line 1', assets: [['PR-01', 'Fine-blanking press 400T', 'press', 'A'], ['PR-02', 'Power press 250T', 'press', 'B']] }] },
@@ -123,4 +123,88 @@ export default {
       skills: ['shift-report'], tools: ['plantdb.get_production', 'plantdb.get_kpis', 'plantdb.list_messages', 'msg.send_email'], triggers: [{ type: 'schedule', cron: '5 6,14,22 * * *' }, { type: 'prompt' }], autonomy: 'act' },
   ]),
   suggestions: ['What needs my attention right now?', 'Why is HB-04 vibration rising?', 'How is OEE against the baseline?', 'Show energy per kg for the last 30 days', 'Which assets are at risk this month?', 'Write the daily plant report'],
+  sources: {
+    plc: { name: 'Siemens S7-1500 and Mitsubishi iQ-R PLCs', kind: 'OT · PLC', via: 'I/O Connect · OPC UA', detail: '14 PLCs across press, machining, heat treatment and assembly; 1 s scan, 412 tags' },
+    cms: { name: 'Wireless vibration and temperature sensors', kind: 'OT · Condition monitoring', via: 'I/O Connect · MQTT', detail: 'Tri-axial sensors on HB-01 to HB-04 spindles; 10 min trend and 4 h waveform' },
+    vision: { name: 'AI vision cameras', kind: 'OT · Vision', via: 'Edge gateway · REST', detail: 'VI-01 sprocket and VI-02 chain stations; image, verdict and model confidence per part' },
+    ems: { name: 'Energy meters and utility controllers', kind: 'OT · Energy', via: 'Modbus TCP', detail: '38 Schneider PM5560 meters, compressor and transformer controllers' },
+    historian: { name: 'AVEVA PI historian', kind: 'Data · Historian', via: 'PI Web API', detail: '6 years of process history, backfill for models' },
+    mes: { name: 'MES · production and genealogy', kind: 'IT · MES', via: 'REST API', detail: 'Work orders, part genealogy, downtime reasons, shift output' },
+    lims: { name: 'Quality lab (LIMS)', kind: 'IT · Quality', via: 'SQL · read replica', detail: 'Hardness, case depth, metallography, water hardness' },
+    erp: { name: 'SAP S/4HANA', kind: 'IT · ERP', via: 'OData · BAPI', detail: 'CO actuals, MM stock, QM holds, purchase requisitions' },
+    cmms: { name: 'SAP PM', kind: 'IT · CMMS', via: 'OData · BAPI', detail: 'Notifications, work orders, maintenance history, spares' },
+  },
+  setpoints: [
+    { asset: 'IH-02', tag: 'quench_flow', name: 'IH-02 quench water flow', current: 14.6, recommended: 18.5, unit: 'L/min', lo: 16, hi: 22, gain: '₹9 L/yr scrap · tooth crack rejects back to 0.4 %', kpi: 'ppm',
+      reason: 'Flow dropped to 14.6 L/min three hours ago and 94 % of cracked parts came through IH-02. The OEM manual (p. 97) gives 16 L/min as the minimum; 18.5 L/min held crack rejects below 0.45 % for the last 90 days.', confidence: 0.88, status: 'proposed' },
+    { asset: 'AC-01', tag: 'pressure', name: 'AC-01 discharge pressure', current: 7.0, recommended: 6.6, unit: 'bar', lo: 6.3, hi: 7.2, gain: '₹6.1 L/yr · −5.5 % compressor power', kpi: 'air',
+      reason: 'The highest user, the CA-02 riveting cylinder, needs 5.9 bar and the worst-case header drop is 0.5 bar. Pressure at the far end has not gone below 6.3 bar in 60 days, and each 1 bar costs about 7 % power.', confidence: 0.84, status: 'approved' },
+    { asset: 'AC-02', tag: 'pressure', name: 'AC-02 discharge pressure', current: 7.0, recommended: 6.6, unit: 'bar', lo: 6.3, hi: 7.2, gain: '₹5.4 L/yr · also lowers oil temp about 3 °C', kpi: 'air',
+      reason: 'Same header as AC-01. A lower setpoint also reduces load on AC-02, which runs at 96 °C oil temperature because of cooler fouling.', confidence: 0.82, status: 'proposed' },
+    { asset: 'MBF-01', tag: 'zone_temp', name: 'MBF-01 hardening zone temperature', current: 880, recommended: 872, unit: '°C', lo: 870, hi: 890, gain: '₹4.8 L/yr · −2.1 % furnace energy', kpi: 'sec',
+      reason: 'The last 240 lots averaged 53.6 HRC against the 50–55 HRC control plan, with carbon potential steady at 0.82 %C. Trials at 872 °C gave 52.9 HRC with Cpk 1.41.', confidence: 0.72, status: 'proposed' },
+    { asset: 'PR-01', tag: 'spm', name: 'PR-01 fine-blanking stroke rate', current: 38, recommended: 40, unit: 'spm', lo: 34, hi: 42, gain: '+1.6 % OEE on Blanking Line 1 · ₹7 L/yr', kpi: 'oee',
+      reason: 'Tonnage peaks at 362 t against the 400 t rating and hydraulic oil stays near 51 °C. Die shear-edge wear at 40 spm was within limit over 3 trial shifts.', confidence: 0.67, status: 'proposed' },
+  ],
+  forms: [
+    { id: 'shift-handover', name: 'Shift handover log', desc: 'Filled by the outgoing shift in-charge and signed by the incoming one. Feeds the Shift Report Agent.',
+      sections: [
+        { title: 'Shift', fields: [
+          { id: 'date', label: 'Date', type: 'date', required: true },
+          { id: 'shift', label: 'Shift', type: 'radio', options: ['A · 06:00–14:00', 'B · 14:00–22:00', 'C · 22:00–06:00'], required: true },
+          { id: 'area', label: 'Area', type: 'select', options: ['Press Shop', 'Machining', 'Heat Treatment', 'Chain Assembly', 'Quality', 'Utilities'], required: true },
+          { id: 'manpower', label: 'Operators present', type: 'number', unit: 'people', placeholder: 'e.g. 22' } ] },
+        { title: 'Output and losses', fields: [
+          { id: 'output', label: 'Output this shift', type: 'number', unit: 'pcs', required: true },
+          { id: 'rejects', label: 'Rejects and rework', type: 'number', unit: 'pcs' },
+          { id: 'breakdowns', label: 'Breakdowns over 10 min', type: 'textarea', placeholder: 'Asset, start, end, cause, action', help: 'Each line becomes a downtime record in MES.' },
+          { id: 'down_asset', label: 'Asset still down', type: 'asset' } ] },
+        { title: 'Safety and quality', fields: [
+          { id: 'safety', label: 'Safety incidents or near misses', type: 'radio', options: ['None', 'Near miss', 'First aid', 'Reportable'], required: true },
+          { id: 'quality_hold', label: 'Material on quality hold', type: 'textarea', placeholder: 'Lot, part number, quantity, reason' },
+          { id: 'checks', label: 'End-of-shift checks', type: 'checklist', options: ['5S done in area', 'Gauges returned and calibrated', 'Scrap bins weighed and logged', 'Open work orders updated in SAP PM'] } ] },
+        { title: 'Handover', fields: [
+          { id: 'pending', label: 'Pending actions for next shift', type: 'textarea', required: true },
+          { id: 'outgoing', label: 'Outgoing shift in-charge', type: 'signature', required: true },
+          { id: 'incoming', label: 'Incoming shift in-charge', type: 'signature', required: true } ] },
+      ] },
+    { id: 'pm-hobber', name: 'Preventive maintenance checklist · CNC hobber', desc: 'Monthly PM for HB-01 to HB-04 (Gleason). Closes the SAP PM order on submit.',
+      sections: [
+        { title: 'Job', fields: [
+          { id: 'asset', label: 'Machine', type: 'asset', required: true },
+          { id: 'wo', label: 'SAP PM order', type: 'text', placeholder: '4100 xxxx', required: true },
+          { id: 'started', label: 'Started', type: 'datetime', required: true },
+          { id: 'loto', label: 'Lock-out tag-out applied and verified', type: 'checkbox', required: true } ] },
+        { title: 'Spindle and drives', fields: [
+          { id: 'vib', label: 'Spindle vibration (velocity, RMS)', type: 'number', unit: 'mm/s', help: 'ISO 10816: alarm 4.5 mm/s.', required: true },
+          { id: 'brg_temp', label: 'Spindle bearing temperature after 15 min run', type: 'number', unit: '°C' },
+          { id: 'nut_torque', label: 'Spindle nut torque', type: 'number', unit: 'Nm', help: 'OEM manual p. 214: 180 Nm.' },
+          { id: 'spindle_checks', label: 'Spindle checks', type: 'checklist', options: ['Hob arbor run-out ≤ 5 µm', 'Backlash on hob slide within limit', 'No abnormal noise at 1,450 rpm', 'Belt tension checked'] } ] },
+        { title: 'Lubrication and coolant', fields: [
+          { id: 'lube_pressure', label: 'Lube oil pressure', type: 'number', unit: 'bar' },
+          { id: 'lube_checks', label: 'Lubrication and coolant', type: 'checklist', options: ['Lube oil level topped up (ISO VG 68)', 'Lube filter changed', 'Coolant concentration 6–8 %', 'Chip conveyor cleaned'] },
+          { id: 'condition', label: 'Overall machine condition', type: 'rating' } ] },
+        { title: 'Close-out', fields: [
+          { id: 'remarks', label: 'Findings and parts replaced', type: 'textarea' },
+          { id: 'technician', label: 'Technician', type: 'signature', required: true } ] },
+      ] },
+    { id: 'first-piece', name: 'First-piece inspection · sprocket', desc: 'After every set-up, hob change or heat-treatment change. Releases the line in MES.',
+      sections: [
+        { title: 'Set-up', fields: [
+          { id: 'asset', label: 'Machine', type: 'asset', required: true },
+          { id: 'part', label: 'Part number', type: 'select', options: ['428-42T rear sprocket', '428-14T front sprocket', '520-45T rear sprocket', '415H chain kit'], required: true },
+          { id: 'reason', label: 'Reason', type: 'radio', options: ['New set-up', 'Hob or tool change', 'Process change', 'After breakdown'], required: true },
+          { id: 'time', label: 'Inspection time', type: 'time', required: true } ] },
+        { title: 'Measurements', fields: [
+          { id: 'hardness', label: 'Surface hardness', type: 'number', unit: 'HRC', help: 'Control plan row 18: 50–55 HRC.', required: true },
+          { id: 'case_depth', label: 'Effective case depth', type: 'number', unit: 'mm' },
+          { id: 'pcd', label: 'Pitch circle diameter deviation', type: 'number', unit: 'µm' },
+          { id: 'visual', label: 'Visual checks', type: 'checklist', options: ['No tooth crack (MPI)', 'No burr on tooth tip', 'Bore and keyway OK', 'Plating even'] } ] },
+        { title: 'Decision', fields: [
+          { id: 'result', label: 'Result', type: 'radio', options: ['Accept · release line', 'Accept with deviation', 'Reject · reset'], required: true },
+          { id: 'notes', label: 'Notes', type: 'textarea' },
+          { id: 'inspector', label: 'Quality inspector', type: 'signature', required: true } ] },
+      ] },
+  ],
+  realtime: { title: 'Machining, heat treatment and utilities', assets: ['HB-03', 'HB-04', 'IH-01', 'IH-02', 'SQF-01', 'MBF-01', 'VI-01', 'AC-01', 'AC-02', 'TR-01'] },
 };

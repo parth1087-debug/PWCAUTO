@@ -12,18 +12,35 @@
  *   BRUCE_AGENT_AUTO / ... override the agent id per demo
  */
 import { DEMOS, createDB, createTools } from '../web/src/shared/index.js';
+import { createArtefact } from './store.mjs';
+import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
+
+const CREATE = /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i;
+
+/** Save every ```artefact {json}``` block in the answer to the Artefactory. */
+function saveArtefacts(text, demo, emit) {
+  const re = /```artefact\s*([\s\S]*?)```/g; let m; let n = 0;
+  while ((m = re.exec(text)) && n < 3) {
+    n++;
+    try {
+      const spec = JSON.parse(m[1]);
+      const a = createArtefact({ demo, type: spec.type, name: spec.name, spec: spec.spec || {}, by: 'Plant Copilot (Bruce)', note: spec.note || 'Created from the Copilot' });
+      emit({ type: 'artefact', artefact: a });
+    } catch (e) { emit({ type: 'artefact_error', message: e.message }); }
+  }
+}
 
 const API = (process.env.BRUCE_API || 'https://bruce.us.iosense.io/backend/api').replace(/\/$/, '');
 
 const DEFAULTS = {
-  auto: { id: '6b093960bee99942f628db17', name: 'PwC Auto · Plant Copilot' },
-  cement: { id: '6b093961bee99942f628db1b', name: 'PwC Cement · Plant Copilot' },
-  steel: { id: '6b093961bee99942f628db1f', name: 'PwC Steel · Plant Copilot' },
+  auto: { id: '6b093960bee99942f628db17', name: 'Faclon Auto · Plant Copilot' },
+  cement: { id: '6b093961bee99942f628db1b', name: 'Faclon Cement · Plant Copilot' },
+  steel: { id: '6b093961bee99942f628db1f', name: 'Faclon Steel · Plant Copilot' },
 };
 export const COPILOTS = Object.fromEntries(Object.entries(DEFAULTS).map(([demo, a]) => [demo, {
   id: process.env[`BRUCE_AGENT_${demo.toUpperCase()}`] || a.id,
   name: a.name,
-  key: process.env[`BRUCE_KEY_${demo.toUpperCase()}`] || '',
+  key: process.env[`BRUCE_KEY_${demo.toUpperCase().replace(/-/g, "_")}`] || '',
 }]));
 
 export const bruceDemos = () => Object.keys(COPILOTS).filter(d => COPILOTS[d].key);
@@ -110,6 +127,7 @@ export async function runBruce(req, emit, signal) {
     live,
     '</plant_data>',
     !req.session_id && req.context ? `\nThe user is looking at: ${req.context}` : '',
+    CREATE.test(req.message) ? `\n<artefact_format note="The user wants an artefact saved in the Artefactory. Add exactly one fenced block with the language tag artefact holding JSON {type, name, spec}. The app saves it to the plant database and shows an Open button; the block itself is hidden. Use only asset ids, tag keys, KPI ids and form ids from the plant data. Then say in one or two sentences what it shows.">\n${ARTEFACT_HELP}\nForm ids in this plant: ${(DEMOS[req.demo].forms || []).map(f => f.id).join(', ')}. KPI ids: ${DEMOS[req.demo].kpis.map(k => k.id).join(', ')}.\n</artefact_format>` : '',
   ].join('\n');
   const r = await fetch(`${API}/agents/v1/agents/${a.id}/chat`, {
     method: 'POST',
@@ -125,6 +143,7 @@ export async function runBruce(req, emit, signal) {
   }
 
   let acc = '';
+  let all = '';
   let afterTool = false;
   let n = 0;
   const open = new Map();
@@ -140,7 +159,7 @@ export async function runBruce(req, emit, signal) {
         const c = typeof ev.content === 'string' ? ev.content : '';
         if (!c) break;
         const delta = acc && c.startsWith(acc) && c.length > acc.length ? c.slice(acc.length) : c;
-        acc += delta;
+        acc += delta; all += delta;
         emit({ type: 'text', delta });
         break;
       }
@@ -148,7 +167,7 @@ export async function runBruce(req, emit, signal) {
         if (ev.kind !== 'text' || typeof ev.delta !== 'string' || !ev.delta) break;
         if (afterTool && acc) { emit({ type: 'reset' }); acc = ''; }
         afterTool = false;
-        acc += ev.delta;
+        acc += ev.delta; all += ev.delta;
         emit({ type: 'text', delta: ev.delta });
         break;
       }
@@ -190,6 +209,7 @@ export async function runBruce(req, emit, signal) {
       case 'stream_end': {
         const c = typeof ev.content === 'string' ? ev.content : '';
         if (c && !acc) emit({ type: 'final', text: c });
+        if (c) all = c;
         break;
       }
       case 'usage': emit({ type: 'usage', usage: ev.data || {} }); break;
@@ -207,9 +227,10 @@ export async function runBruce(req, emit, signal) {
       const data = chunk.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trimStart()).join('\n');
       if (!data) continue;
       let ev; try { ev = JSON.parse(data); } catch { continue; }
-      if (ev.type === 'done') { emit({ type: 'done' }); return; }
+      if (ev.type === 'done') { saveArtefacts(all, req.demo, emit); emit({ type: 'done' }); return; }
       handle(ev);
     }
   }
+  saveArtefacts(all, req.demo, emit);
   emit({ type: 'done' });
 }

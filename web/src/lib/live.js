@@ -4,7 +4,8 @@ import { fmtNum } from './data.js';
 
 /* Server base; set localStorage "pwc-cpi.liveBase" to point at another server (for example http://localhost:8787) while developing. */
 const override = (() => { try { return localStorage.getItem('pwc-cpi.liveBase'); } catch { return null; } })();
-export const LIVE_BASE = (override || PLANTDB_URL).replace(/\/mcp$/, '').replace(/\/$/, '');
+const sameOrigin = (() => { try { return /^https?:$/.test(location.protocol) && (location.hostname === new URL(PLANTDB_URL).hostname || (location.hostname === 'localhost' && location.port !== '5173')); } catch { return false; } })();
+export const LIVE_BASE = (override || (sameOrigin ? location.origin : PLANTDB_URL)).replace(/\/mcp$/, '').replace(/\/$/, '');
 
 let statusCache = null;
 /** { live, liveDemos, provider: {demo: 'bruce'|'claude'}, agents, model } — cached for 60 s. */
@@ -24,10 +25,8 @@ export async function liveStatus(force = false) {
 /** Whether live answers are available for this demo. */
 export const liveFor = (st, demoId) => !!st?.live && (st.liveDemos ? st.liveDemos.includes(demoId) : true);
 
-/** Questions that create things in the app stay on the in-app engine (it writes to the Artefactory). */
-export function staysLocal(q) {
-  return /(write|create|generate|prepare|make|draft|export|build).*(report|deck|presentation|slides|workbook|excel|note|document|dashboard)/i.test(q);
-}
+/** Nothing is forced local now: creation runs on the live agent, which saves artefacts to the plant database; the in-app engine is the fallback. */
+export function staysLocal() { return false; }
 
 /** Pick the demo agent whose domain fits the question. */
 export function pickAgent(demo, q, assetId) {
@@ -111,7 +110,7 @@ export function actionsFor(calls) {
   const items = [];
   const dx = calls.find(c => c.name === 'diagnose_asset' && c.ok && c.result?.title && c.result.health < 75);
   if (dx) items.push({ label: 'Raise work order', act: { type: 'wo', asset: dx.result.asset, title: dx.result.title }, pri: true });
-  if (calls.some(c => c.name === 'diagnose_asset' || c.name === 'get_asset_health')) items.push({ label: 'Open Maintenance', act: { type: 'nav', to: 'd/maintenance' } });
+  if (calls.some(c => c.name === 'diagnose_asset' || c.name === 'get_asset_health')) items.push({ label: 'Open Maintenance', act: { type: 'nav', to: 'd/twin' } });
   if (calls.some(c => c.name === 'get_energy')) items.push({ label: 'Open Energy', act: { type: 'nav', to: 'd/energy' } });
   if (calls.some(c => c.name === 'get_oee_losses')) items.push({ label: 'Open Cost conversion', act: { type: 'nav', to: 'd/cost' } });
   if (calls.some(c => c.name === 'get_quality')) items.push({ label: 'Open Quality', act: { type: 'nav', to: 'd/quality' } });

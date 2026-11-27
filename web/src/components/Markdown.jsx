@@ -48,6 +48,7 @@ export default function Markdown({ text }) {
       const body = []; i++;
       while (i < lines.length && !lines[i].startsWith('```')) body.push(lines[i++]);
       const closed = i < lines.length; i++;
+      if (lang === 'artefact' || lang === 'artifact') continue;
       if (lang === 'chart') { if (closed) blocks.push(<AgentChart key={blocks.length} src={body.join('\n')} />); continue; }
       blocks.push(<pre key={blocks.length} className="code">{body.join('\n')}</pre>); continue;
     }

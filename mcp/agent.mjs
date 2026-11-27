@@ -1,5 +1,5 @@
 /**
- * Live agent runtime for the PwC Connected Plant app.
+ * Live agent runtime for the Faclon Connected Plant app.
  * Runs a demo's Bruce agent on Claude with the plantdb tools in process, and streams
  * the run to the browser as server-sent events (agent, tool calls, text, done).
  *
@@ -65,7 +65,7 @@ function systemFor(demo, agent) {
   const pol = agent.policies.map(id => POLICIES.find(p => p.id === id)).filter(Boolean).map(p => `- ${p.id} ${p.name}: ${p.stmt}`).join('\n');
   const steps = skillSteps(demo, agent);
   const ws = DEPLOYED[demo.id]?.uns?.workspace;
-  return `You are the ${agent.name}, a Bruce agent for ${demo.company}, ${demo.site} (${demo.industry}). This is the PwC Connected Plant demo, powered by Faclon Labs. All plant data is demo data from the plant database.
+  return `You are the ${agent.name}, a Bruce agent for ${demo.company}, ${demo.site} (${demo.industry}). This is the Faclon Connected Plant demo. All plant data is demo data from the plant database.
 
 Your job: ${agent.instructions}
 ${AUTONOMY[agent.autonomy] || ''}

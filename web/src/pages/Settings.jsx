@@ -1,3 +1,4 @@
+import { DEFAULT_USERS } from '../config.js';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Copy, Trash2, UserPlus, Search } from 'lucide-react';
 import { useApp } from '../App.jsx';
@@ -33,7 +34,7 @@ function Users() {
         <td>{u.master ? <Tag c="brand">All demos · admin</Tag> : <Tag>{DEMO_LIST.find(d => d.id === u.demos[0])?.name}</Tag>}</td>
         <td className="mono muted">{u.master ? 'plantdb/*' : `plantdb/${u.demos[0]}`}</td>
         <td className="r"><div className="row" style={{ justifyContent: 'flex-end' }}>{u.id === user.id ? <Tag c="good">Signed in</Tag> : <button className="btn sm" onClick={() => { setUserId(u.id); nav('copilot'); }}>Switch</button>}
-          {user.master && !u.master && !['auto', 'cement', 'steel'].includes(u.id) && <button className="ibtn" title="Remove" onClick={() => setUsers(users.filter(x => x.id !== u.id))}><Trash2 /></button>}</div></td></tr>)}</tbody></table>
+          {user.master && !u.master && !DEFAULT_USERS.find(d => d.id === u.id) && <button className="ibtn" title="Remove" onClick={() => setUsers(users.filter(x => x.id !== u.id))}><Trash2 /></button>}</div></td></tr>)}</tbody></table>
     </Card>
     <Card title="Add a demo user" sub={user.master ? 'Master only' : 'Switch to Master to add users'}>
       <label className="muted" style={{ fontSize: 12 }}>Name</label><input className="inp" value={name} onChange={e => setName(e.target.value)} placeholder="For example: Pune plant demo" disabled={!user.master} />
@@ -65,7 +66,7 @@ function Agents() {
   const [sel, setSel] = useState(ctx.demo.agents[0].id);
   const a = ctx.demo.agents.find(x => x.id === sel) || ctx.demo.agents[0];
   const live = DEPLOYED[ctx.demo.id] || { agents: {} };
-  const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `PwC ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph', 'Plant Data'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
+  const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `Faclon ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph', 'Plant Data'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
   return <div className="grid" style={{ gap: 16 }}>
     <LiveCard />
     <Card title="Agents on Bruce" sub={`${ctx.demo.agents.length} live in Bruce · UNS ${live.uns?.workspace || '—'}`} flush>

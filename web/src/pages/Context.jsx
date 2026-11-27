@@ -5,8 +5,9 @@ import { PageHead, Tabs, Tag, Card, Empty, HealthBar, Seg } from '../components/
 import { Trend } from '../components/charts.jsx';
 import { POLICIES, ENTERPRISE_CONNECTORS, fmtNum, fmtTime } from '../lib/data.js';
 import { DEPLOYED, UNS_BASE, PLANTDB_URL } from '../shared/index.js';
+import { assetSources, sourceSummary } from '../shared/sources.js';
 
-const TABS = [{ id: 'uns', label: 'UNS ontology' }, { id: 'skills', label: 'Skills' }, { id: 'docs', label: 'Docs' }, { id: 'connectors', label: 'Connectors' }, { id: 'policies', label: 'Policies' }];
+const TABS = [{ id: 'uns', label: 'UNS ontology' }, { id: 'sources', label: 'Data sources' }, { id: 'skills', label: 'Skills' }, { id: 'docs', label: 'Docs' }, { id: 'connectors', label: 'Connectors' }, { id: 'policies', label: 'Policies' }];
 
 export default function Context({ tab, param }) {
   const { ctx, nav } = useApp();
@@ -15,6 +16,7 @@ export default function Context({ tab, param }) {
       <PageHead title="Context" sub={`What the ${ctx.demo.agents.length} agents of ${ctx.demo.company} know and can use. Read only, managed by Faclon.`}><Tag c="line">Read only</Tag></PageHead>
       <Tabs value={tab} onChange={t => nav('context/' + t)} tabs={TABS} />
       {tab === 'uns' && <Uns param={param} />}
+      {tab === 'sources' && <Sources sel={param} />}
       {tab === 'skills' && <Skills />}
       {tab === 'docs' && <Docs />}
       {tab === 'connectors' && <Connectors />}
@@ -56,6 +58,7 @@ function Uns({ param }) {
           {isAsset && <><dl className="kv" style={{ marginBottom: 12 }}><dt>Class</dt><dd>{health.cls}</dd><dt>Criticality</dt><dd>{health.crit}</dd><dt>Health</dt><dd><HealthBar v={health.health} /></dd><dt>Life left</dt><dd>{health.rulDays} days</dd><dt>Finding</dt><dd>{health.finding || '—'}</dd></dl>
             <table className="t"><thead><tr><th>Tag</th><th className="r">Latest</th><th>Unit</th></tr></thead><tbody>{node.children.map(t => <tr key={t.name} className="click" onClick={() => go(`${path}/${t.name}`)}><td><span className="mono">{t.name}</span> <span className="muted">· {t.label}</span></td><td className="r num">{fmtNum(ctx.db.latest(t.asset, t.tag))}</td><td className="muted">{t.unit}</td></tr>)}</tbody></table></>}
           {!isTag && !isAsset && <table className="t"><tbody>{(node.children || []).map(k => <tr key={k.name} className="click" onClick={() => go(`${path}/${k.name}`)}><td className="b">{k.label}</td><td className="muted">{k.level}</td><td className="mono muted">{k.name}</td></tr>)}</tbody></table>}
+          {(isAsset || isTag) && <Binding a={node.asset} tag={isTag ? node.tag : null} />}
           <div className="muted" style={{ fontSize: 11.5, marginTop: 12 }}>MCP: <span className="mono">plantdb.{isTag ? 'get_tag_history' : 'uns_browse'}({'{'} demo: "{ctx.demo.id}", path: "{path}" {'}'})</span></div>
         </Card>
       </div>
@@ -133,6 +136,61 @@ function Policies({ sel }) {
         <p style={{ marginTop: 0 }}>{p.stmt}</p>
         <dl className="kv" style={{ marginBottom: 12 }}><dt>Applies to</dt><dd>{p.scope}</dd><dt>Approver</dt><dd>{p.approver}</dd><dt>Enforced by</dt><dd>{p.by}</dd><dt>Agents bound</dt><dd>{agents.join(', ') || 'All, by platform rule'}</dd></dl>
         <pre className="code">{p.code}</pre>
+      </Card>
+    </div>
+  </>;
+}
+
+/** Where an asset's (or one tag's) data comes from. */
+function Binding({ a, tag }) {
+  const { ctx, nav } = useApp();
+  const src = assetSources(ctx.db, a); if (!src) return null;
+  const rows = tag ? src.tags.filter(t => t.tag === tag) : src.tags;
+  return <div style={{ marginTop: 16 }}>
+    <div className="row" style={{ marginBottom: 6 }}><b style={{ fontSize: 12.5 }}>Data sources</b><span className="muted" style={{ fontSize: 12 }}>· mapped to this node</span><button className="btn sm ghost right" onClick={() => nav('context/sources/' + a)}>Lineage</button></div>
+    <div className="scroll-x"><table className="t"><thead><tr><th>Tag</th><th>Source system</th><th>Protocol · address</th><th>Historian</th></tr></thead><tbody>
+      {rows.map(t => <tr key={t.tag}><td className="mono">{t.tag}</td><td>{t.system}<div className="muted" style={{ fontSize: 11 }}>{t.system_kind}</div></td><td><span className="muted" style={{ fontSize: 11 }}>{t.via}</span><div className="mono" style={{ fontSize: 11 }}>{t.address}</div></td><td className="mono muted" style={{ fontSize: 11 }}>{t.historian} · {t.sampling}</td></tr>)}
+    </tbody></table></div>
+    {!tag && <table className="t" style={{ marginTop: 8 }}><tbody>{src.records.map(r => <tr key={r.object}><td className="muted">{r.system}</td><td>{r.object}</td><td className="mono">{r.id}</td></tr>)}</tbody></table>}
+  </div>;
+}
+
+/** Plant-wide data-source map: source systems → connectivity → historian → UNS → agents and apps. */
+function Sources({ sel }) {
+  const { ctx, nav } = useApp();
+  const sum = useMemo(() => sourceSummary(ctx.db), [ctx]);
+  const ot = sum.filter(x => x.tags > 0); const biz = sum.filter(x => !x.tags);
+  const asset = ctx.db.assetById[sel] || ctx.db.assetById[ctx.demo.maintenance.spotlight] || ctx.db.assets[0];
+  const src = assetSources(ctx.db, asset.id);
+  const totalTags = ot.reduce((n, x) => n + x.tags, 0);
+  const col = (title, items) => <div className="lin-col"><div className="lin-h">{title}</div>{items}</div>;
+  return <>
+    <div className="kpis" style={{ gridTemplateColumns: 'repeat(4, minmax(0,1fr))' }}>
+      <div className="kpi"><div className="l">Source systems</div><div className="v">{sum.length}</div><div className="f">{ot.length} live OT · {biz.length} business and context</div></div>
+      <div className="kpi"><div className="l">Tags mapped</div><div className="v">{totalTags}</div><div className="f">every tag bound to a UNS path</div></div>
+      <div className="kpi"><div className="l">Assets mapped</div><div className="v">{ctx.db.assets.length}</div><div className="f">with ERP, CMMS and MES records</div></div>
+      <div className="kpi"><div className="l">Sites</div><div className="v">{ctx.db.sites.length}</div><div className="f">{ctx.db.sites.map(x => x.name).join(' · ')}</div></div>
+    </div>
+    <Card title="Lineage" sub="How plant data reaches the namespace, the agents and the Artefactory">
+      <div className="lin">
+        {col('Source systems', ot.map(x => <div key={x.key} className="lin-n"><b>{x.name}</b><span>{x.kind} · {x.tags} tags</span></div>))}
+        {col('Connectivity', [...new Set(ot.map(x => x.via.split('·')[0].trim()))].map(v => <div key={v} className="lin-n"><b>{v}</b><span>{ot.filter(x => x.via.startsWith(v)).map(x => x.via.split('·')[1]?.trim()).filter(Boolean).filter((y, i, a) => a.indexOf(y) === i).join(', ')}</span></div>))}
+        {col('Store', [<div key="h" className="lin-n"><b>{sum.find(x => x.key === 'historian')?.name || 'Historian'}</b><span>History for every tag</span></div>, <div key="u" className="lin-n brand"><b>UNS · ISA-95</b><span>{ctx.demo.company}/{ctx.db.sites.length > 1 ? 'sites' : ctx.demo.siteSlug}/…</span></div>])}
+        {col('Context', biz.filter(x => x.key !== 'historian').map(x => <div key={x.key} className="lin-n"><b>{x.name}</b><span>{x.kind} · {x.role}</span></div>))}
+        {col('Consumers', [<div key="a" className="lin-n"><b>{ctx.demo.agents.length} Bruce agents</b><span>plantdb MCP · UNS Graph</span></div>, <div key="b" className="lin-n"><b>Artefactory</b><span>dashboards, twins, forms</span></div>, <div key="c" className="lin-n"><b>Copilot</b><span>answers with evidence</span></div>])}
+      </div>
+    </Card>
+    <div className="grid g2 mt">
+      <Card title="Source systems" sub="What each system feeds" flush>
+        <div className="scroll-x"><table className="t"><thead><tr><th>System</th><th>Kind</th><th>Via</th><th className="r">Tags</th><th className="r">Assets</th></tr></thead><tbody>
+          {sum.map(x => <tr key={x.key}><td className="b">{x.name}</td><td className="muted">{x.kind}</td><td className="muted" style={{ fontSize: 12 }}>{x.via}</td><td className="r num">{x.tags || '—'}</td><td className="r num">{x.assets || (x.tags ? '' : x.role)}</td></tr>)}
+        </tbody></table></div>
+      </Card>
+      <Card title={`${asset.id} · ${asset.name}`} sub={src.uns} actions={<select className="inp" style={{ height: 30, width: 180 }} value={asset.id} onChange={e => nav('context/sources/' + e.target.value)}>{ctx.db.assets.map(a => <option key={a.id} value={a.id}>{a.id} · {a.name}</option>)}</select>} flush>
+        <div className="scroll-x"><table className="t"><thead><tr><th>Tag</th><th>Source</th><th>Address</th><th>UNS path</th></tr></thead><tbody>
+          {src.tags.map(t => <tr key={t.tag}><td><b style={{ fontWeight: 600 }}>{t.name}</b><div className="muted" style={{ fontSize: 11 }}>{t.unit} · {t.sampling}</div></td><td>{t.system}</td><td className="mono" style={{ fontSize: 11 }}>{t.address}</td><td className="mono muted" style={{ fontSize: 10.5 }}>{t.uns}</td></tr>)}
+          {src.records.map(r => <tr key={r.object}><td className="muted">{r.object}</td><td>{r.system}</td><td className="mono" style={{ fontSize: 11 }}>{r.id}</td><td className="muted" style={{ fontSize: 11 }}>asset record</td></tr>)}
+        </tbody></table></div>
       </Card>
     </div>
   </>;

@@ -1,0 +1,202 @@
+import { makeAgents, PLANTDB_TOOLS as T } from '../common.js';
+
+const UNS = 'suryodaya/portfolio';
+const BH = { slug: 'bhadla', name: 'Bhadla Solar Park · 300 MWp', location: 'Bhadla, Jodhpur, Rajasthan' };
+const PV = { slug: 'pavagada', name: 'Pavagada · 200 MWp', location: 'Pavagada, Tumakuru, Karnataka' };
+const KN = { slug: 'kurnool', name: 'Kurnool · 150 MWp', location: 'Panyam, Kurnool, Andhra Pradesh' };
+
+export default {
+  id: 'solar', continuous: true, name: 'Solar portfolio', industry: 'Utility-scale solar IPP · 650 MWp across 3 plants',
+  company: 'Suryodaya Renewables', companySlug: 'suryodaya', site: 'Solar portfolio', siteSlug: 'portfolio', location: 'India',
+  production: { unit: 'MWh', planPerDay: 3300, label: 'Net energy exported at the pooling substations', massUnit: 'MWh' },
+  classes: {
+    inverter: { label: 'Central inverter', src: 'scada', tags: [['dc_power', 'DC power', 'MW', 1.68, 0.05, 1.62], ['ac_power', 'AC power', 'MW', 1.63, 0.05, 1.58], ['igbt_temp', 'IGBT module temperature', '°C', 54, 0.8, 10, 0, 85], ['efficiency', 'Conversion efficiency', '%', 98.5, 0.05, 0, 97.8, 99.2]] },
+    strinv: { label: 'String inverter', src: 'scada', tags: [['dc_power', 'DC power', 'kW', 162, 4, 156], ['ac_power', 'AC power', 'kW', 158, 4, 152], ['string_current', 'Average string current', 'A', 5.6, 0.12, 5.4], ['igbt_temp', 'IGBT module temperature', '°C', 49, 0.7, 9, 0, 80], ['efficiency', 'Conversion efficiency', '%', 98.6, 0.05, 0, 97.8, 99.2]] },
+    tracker: { label: 'Single-axis tracker', src: 'scada', tags: [['angle', 'Tracker angle', '°', 0, 0.4, 52, -60, 60], ['motor_current', 'Slew motor current', 'A', 0.6, 0.08, 0.4, 0, 4], ['tracking_error', 'Tracking error vs set angle', '°', 0.7, 0.25, 0, 0, 5]] },
+    idt: { label: 'Inverter-duty transformer', src: 'scada', tags: [['load', 'Load', 'kVA', 3300, 60, 3200], ['oil_temp', 'Top oil temperature', '°C', 52, 0.7, 9, 0, 90], ['winding_temp', 'Winding hot-spot temperature', '°C', 60, 0.9, 12, 0, 105]] },
+    ptr: { label: 'Pooling power transformer', src: 'scada', tags: [['export_mw', 'Export at 220 kV', 'MW', 62, 2, 60, 0, 250, 'abt'], ['oil_temp', 'Top oil temperature', '°C', 56, 0.8, 9, 0, 90], ['winding_temp', 'Winding hot-spot temperature', '°C', 64, 1, 12, 0, 110], ['pf', 'Power factor at POI', '', 0.99, 0.003, 0, 0.95, 1]] },
+    wms: { label: 'Weather monitoring station', src: 'wms', tags: [['ghi', 'Global horizontal irradiance', 'W/m²', 480, 25, 470], ['poa', 'Plane-of-array irradiance', 'W/m²', 540, 28, 530], ['module_temp', 'Module back-sheet temperature', '°C', 38, 0.8, 18, 0, 75], ['ambient_temp', 'Ambient temperature', '°C', 30, 0.5, 7], ['wind_speed', 'Wind speed', 'm/s', 3.6, 0.6, 1.4, 0, 18]] },
+    sms: { label: 'Soiling & reference cell station', src: 'wms', tags: [['soiling_ratio', 'Soiling ratio (dirty / clean cell)', '', 0.982, 0.002, 0, 0.95, 1], ['ref_cell', 'Reference cell irradiance', 'W/m²', 535, 28, 525], ['pyr_deviation', 'Pyranometer vs reference cell deviation', '%', 0.6, 0.25, 0, -3, 3]] },
+  },
+  areas: [
+    { id: 'bh-generation', name: 'Bhadla generation blocks', site: BH, lines: [
+      { id: 'bh-block-a', name: 'Block A · 150 MWp', assets: [['BH-INV-01', 'Central inverter 3.3 MW #1', 'inverter', 'A'], ['BH-INV-02', 'Central inverter 3.3 MW #2', 'inverter', 'A'], ['BH-INV-03', 'Central inverter 3.3 MW #3', 'inverter', 'A'], ['BH-IDT-03', 'IDT 6.6 MVA, 33 kV, ICR-03', 'idt', 'A']] },
+      { id: 'bh-block-b', name: 'Block B · 150 MWp', assets: [['BH-INV-04', 'Central inverter 3.3 MW #4', 'inverter', 'A'], ['BH-TRK-07', 'Tracker row controller TRK-07', 'tracker', 'B']] }] },
+    { id: 'bh-pooling', name: 'Bhadla pooling substation', site: BH, lines: [{ id: 'bh-pss', name: '33/220 kV pooling substation', assets: [['BH-PTR-01', 'Power transformer 315 MVA', 'ptr', 'A']] }] },
+    { id: 'bh-weather', name: 'Bhadla weather station', site: BH, lines: [{ id: 'bh-wms', name: 'WMS', assets: [['BH-WMS-01', 'Weather station (Class A pyranometers)', 'wms', 'B'], ['BH-SMS-01', 'Soiling station', 'sms', 'B']] }] },
+
+    { id: 'pv-generation', name: 'Pavagada generation blocks', site: PV, lines: [
+      { id: 'pv-block-a', name: 'Block A · 100 MWp fixed tilt', assets: [['PV-INV-01', 'String inverter group A1 (20 × 225 kW)', 'strinv', 'A'], ['PV-INV-02', 'String inverter group A2 (20 × 225 kW)', 'strinv', 'A']] },
+      { id: 'pv-block-b', name: 'Block B · 100 MWp fixed tilt', assets: [['PV-INV-05', 'String inverter group B1 (20 × 225 kW)', 'strinv', 'A'], ['PV-INV-06', 'String inverter group B2 (20 × 225 kW)', 'strinv', 'A'], ['PV-IDT-02', 'IDT 6.6 MVA, 33 kV, Block B', 'idt', 'A']] }] },
+    { id: 'pv-pooling', name: 'Pavagada pooling substation', site: PV, lines: [{ id: 'pv-pss', name: '33/220 kV pooling substation', assets: [['PV-PTR-01', 'Power transformer 200 MVA', 'ptr', 'A']] }] },
+    { id: 'pv-weather', name: 'Pavagada weather station', site: PV, lines: [{ id: 'pv-wms', name: 'WMS', assets: [['PV-WMS-01', 'Weather station', 'wms', 'B'], ['PV-SMS-01', 'Soiling station Block B', 'sms', 'B']] }] },
+
+    { id: 'kn-generation', name: 'Kurnool generation blocks', site: KN, lines: [
+      { id: 'kn-block-a', name: 'Block A · 75 MWp tracker', assets: [['KN-INV-01', 'Central inverter 2.5 MW #1', 'inverter', 'A'], ['KN-INV-02', 'Central inverter 2.5 MW #2', 'inverter', 'A'], ['KN-TRK-11', 'Tracker row controller TRK-11', 'tracker', 'B'], ['KN-TRK-12', 'Tracker row controller TRK-12', 'tracker', 'B']] },
+      { id: 'kn-block-b', name: 'Block B · 75 MWp tracker', assets: [['KN-INV-03', 'Central inverter 2.5 MW #3', 'inverter', 'A'], ['KN-IDT-02', 'IDT 5 MVA, 33 kV, ICR-02', 'idt', 'A']] }] },
+    { id: 'kn-pooling', name: 'Kurnool pooling substation', site: KN, lines: [{ id: 'kn-pss', name: '33/220 kV pooling substation', assets: [['KN-PTR-01', 'Power transformer 160 MVA', 'ptr', 'A']] }] },
+    { id: 'kn-weather', name: 'Kurnool weather station', site: KN, lines: [{ id: 'kn-wms', name: 'WMS', assets: [['KN-WMS-01', 'Weather station', 'wms', 'B'], ['KN-SMS-01', 'Soiling & reference cell station', 'sms', 'B']] }] },
+  ],
+  kpis: [
+    { id: 'pr', name: 'Performance ratio', unit: '%', group: 'cost', base: 77.4, cur: 80.6, target: 82, better: 'up', dec: 1, lakh: 610, owner: 'Head, asset management' },
+    { id: 'cuf', name: 'CUF (AC)', unit: '%', group: 'cost', base: 24.1, cur: 25.3, target: 26, better: 'up', dec: 1, lakh: 0, owner: 'Head, asset management' },
+    { id: 'p50', name: 'Energy vs P50 forecast', unit: '%', group: 'cost', base: 95.2, cur: 98.7, target: 100, better: 'up', dec: 1, lakh: 0, owner: 'Portfolio head' },
+    { id: 'pa', name: 'Plant availability', unit: '%', group: 'maintenance', base: 98.6, cur: 99.4, target: 99.6, better: 'up', dec: 2, lakh: 180, owner: 'O&M head' },
+    { id: 'inva', name: 'Inverter availability', unit: '%', group: 'maintenance', base: 98.1, cur: 99.3, target: 99.5, better: 'up', dec: 2, lakh: 145, owner: 'O&M head' },
+    { id: 'omc', name: 'O&M cost', unit: '₹ lakh/MWp/yr', group: 'maintenance', base: 4.6, cur: 4.1, target: 3.8, better: 'down', dec: 2, lakh: 325, owner: 'Portfolio controller' },
+    { id: 'soil', name: 'Soiling loss', unit: '%', group: 'quality', base: 3.8, cur: 2.4, target: 1.8, better: 'down', dec: 1, lakh: 390, owner: 'Site in-charges' },
+    { id: 'clean', name: 'Module cleaning cycle', unit: 'days', group: 'quality', base: 21, cur: 14, target: 12, better: 'down', dec: 0, lakh: 0, owner: 'Site in-charges' },
+    { id: 'ga', name: 'Grid availability', unit: '%', group: 'energy', base: 98.9, cur: 99.5, target: 99.7, better: 'up', dec: 2, lakh: 0, owner: 'Grid & scheduling lead' },
+    { id: 'curt', name: 'Curtailment', unit: 'MWh/month', group: 'energy', base: 2850, cur: 1640, target: 1200, better: 'down', dec: 0, lakh: 210, owner: 'Grid & scheduling lead' },
+  ],
+  overview: ['pr', 'cuf', 'p50', 'pa', 'soil', 'curt'],
+  events: [
+    { id: 's1', asset: 'BH-INV-03', tag: 'igbt_temp', kind: 'ramp', startHoursAgo: 72, to: 88, health: 44, rulDays: 3, severity: 'bad', minutesAgo: 9,
+      title: 'BH-INV-03 IGBT temperature 88 °C, derating at 90 °C', agent: 'Asset Health Agent', finding: 'Cooling fan failure',
+      diagnosis: { title: 'Failed cabinet cooling fan F2 on BH-INV-03', confidence: 0.86, points: ['IGBT temperature rose from 64 to 88 °C at midday in 3 days, at the same AC power as BH-INV-01 and BH-INV-02.', 'Fan F2 run feedback has been off since 24 Nov 13:40 IST; F1 runs at 100 %.', 'Efficiency dropped from 98.5 to 97.6 % as the inverter starts to self-derate.', 'Ambient at Bhadla WMS is 33 °C, normal for the season, so the heat is internal.'], reco: 'Replace fan F2 tomorrow before 09:00 IST (spare in Bhadla store, MM 610442). Until then cap BH-INV-03 at 90 % AC power to keep IGBT below 85 °C.' } },
+    { id: 's1b', asset: 'BH-INV-03', tag: 'efficiency', kind: 'ramp', startHoursAgo: 72, to: 97.6 },
+    { id: 's2', asset: 'PV-SMS-01', tag: 'soiling_ratio', kind: 'ramp', startHoursAgo: 240, to: 0.93, health: 70, severity: 'bad', minutesAgo: 35, curve: 1.1,
+      title: 'Pavagada Block B string current down 6 %: soiling ratio 0.93', agent: 'Soiling & Cleaning Agent', finding: 'Soiling after dust storm',
+      diagnosis: { title: 'Dust soiling on Block B after the 17 Nov dust event', confidence: 0.83, points: ['Soiling ratio at PV-SMS-01 fell from 0.98 to 0.93 in 10 days with no rain.', 'Average string current on PV-INV-05 and PV-INV-06 is 6 % below PV-INV-01 at the same POA irradiance.', 'Block B was last cleaned 19 days ago; Block A 8 days ago.', 'Loss is about 38 MWh per day, worth ₹1.1 lakh per day at the ₹2.85/kWh PPA tariff.'], reco: 'Bring Block B forward in the cleaning roster: robotic dry clean tonight on rows B-01 to B-120, water clean for the rest within 3 days.' } },
+    { id: 's2b', asset: 'PV-INV-05', tag: 'string_current', kind: 'ramp', startHoursAgo: 240, to: 5.25, curve: 1.1 },
+    { id: 's3', asset: 'KN-TRK-12', tag: 'tracking_error', kind: 'step', startHoursAgo: 30, to: 38, health: 38, rulDays: 1, severity: 'bad', minutesAgo: 22,
+      title: 'KN-TRK-12 stuck at stow angle: tracking error 38°', agent: 'Asset Health Agent', finding: 'Tracker stuck at stow',
+      diagnosis: { title: 'Slew drive stalled at 0° stow after the wind-stow event', confidence: 0.81, points: ['KN-TRK-12 went to stow at 0° on 26 Nov 14:10 IST (wind 17 m/s) and did not return when wind fell below 10 m/s.', 'Motor current is zero while the controller commands west tracking; KN-TRK-11 tracks normally.', 'Row loss is about 0.9 MWh per day (~18 % of the row) until it is fixed.'], reco: 'Reset the row controller from the PPC; if the slew motor does not draw current, check the motor fuse and limit switch on the next site round.' } },
+    { id: 's4', asset: 'BH-PTR-01', tag: 'oil_temp', kind: 'ramp', startHoursAgo: 120, to: 91, health: 58, rulDays: 20, severity: 'warn', minutesAgo: 80, curve: 1.2,
+      title: 'Bhadla 315 MVA pooling transformer oil temperature 91 °C', agent: 'Asset Health Agent', finding: 'Radiator cooling degraded',
+      diagnosis: { title: 'Two ONAF radiator fans off and fins dust-choked', confidence: 0.76, points: ['Top oil temperature at midday rose from 74 to 91 °C in 5 days at the same export MW.', 'Winding hot-spot follows at 98 °C; alarm is 110 °C.', 'Fan group 2 contactor trip logged in SCADA on 22 Nov; last radiator wash was in March.'], reco: 'Reset fan group 2 and plan a radiator water wash in the next low-irradiance window. Take a DGA oil sample this week.' } },
+    { id: 's4b', asset: 'BH-PTR-01', tag: 'winding_temp', kind: 'ramp', startHoursAgo: 120, to: 86, curve: 1.2 },
+    { id: 's5', asset: 'KN-SMS-01', tag: 'pyr_deviation', kind: 'ramp', startHoursAgo: 480, to: 4.2, health: 72, severity: 'warn', minutesAgo: 150, curve: 1,
+      title: 'Kurnool pyranometer reads 4.2 % above reference cell', agent: 'Performance Agent', finding: 'Pyranometer drift',
+      diagnosis: { title: 'POA pyranometer drift; PR understated by about 3 points', confidence: 0.78, points: ['Pyranometer vs reference cell deviation grew from 0.6 to 4.2 % over 20 days, on clear and cloudy days alike.', 'Inverter DC power and the second pyranometer agree with the reference cell.', 'Last calibration was 26 months ago; the IEC 61724-1 interval for Class A is 2 years.'], reco: 'Switch PR calculation to the reference cell now and send the pyranometer for calibration; swap in the spare from Pavagada.' } },
+  ],
+  cost: { unitLabel: '₹ lakh/MWp/yr', budget: 3.8,
+    elements: [['Module cleaning', 1.05], ['O&M contractor manpower', 0.92], ['Spares & repairs', 0.71], ['Insurance', 0.58], ['Security', 0.44], ['Vegetation & civil', 0.22], ['SCADA & comms', 0.18]],
+    bridge: [['Module cleaning', 0.18], ['Spares & repairs', 0.14], ['O&M contractor manpower', 0.08], ['Insurance', 0.04], ['Vegetation & civil', -0.03]],
+    lines: [['Bhadla Block A', 99.1, 81.2, 98.9, 'BH-INV-03 derating'], ['Bhadla Block B', 99.5, 82.0, 99.1, 'Clipping at noon'], ['Pavagada Block A', 99.6, 81.4, 99.3, 'Soiling'], ['Pavagada Block B', 99.4, 76.1, 99.0, 'Soiling (0.93 ratio)'], ['Kurnool Block A', 98.7, 79.8, 99.2, 'KN-TRK-12 stuck'], ['Kurnool Block B', 99.6, 80.9, 99.4, 'Grid curtailment']],
+    losses: [['Soiling', 1120], ['Grid curtailment', 1640], ['Inverter downtime', 410], ['Tracker faults', 260], ['Clipping', 380], ['Transformer & cable losses', 520]] },
+  quality: { defects: [['Hotspot (> 20 °C ΔT)', 186], ['Bypass diode failure', 94], ['Cracked cell / glass', 71], ['PID string', 48], ['Connector burn (MC4)', 33], ['Delamination', 19]],
+    spc: { asset: 'PV-SMS-01', tag: 'soiling_ratio', name: 'Pavagada Block B soiling ratio', lsl: 0.95, usl: 1 }, inspect: 'PV-INV-05' },
+  energy: { contractKVA: 520000, scale: 2218, meter: ['BH-PTR-01', 'export_mw'], areas: [['Bhadla', 47], ['Pavagada', 30], ['Kurnool', 23]],
+    utilities: [['BH-PTR-01', 'export_mw'], ['PV-PTR-01', 'export_mw'], ['KN-PTR-01', 'export_mw'], ['BH-IDT-03', 'load']] },
+  maintenance: { spotlight: 'BH-INV-03' },
+  approvals: [
+    { id: 'a1', from: 'O&M Planner', minutesAgo: 7, title: 'Approve WO 4300 2217 · replace BH-INV-03 cooling fan F2', policy: 'P-03',
+      table: [['Equipment', 'BH-INV-03 · Central inverter 3.3 MW #3'], ['Job', 'Replace cabinet fan F2, clean air filters'], ['Window', 'Tomorrow 06:30–08:30 IST, before generation ramps'], ['Cost', '₹48,500'], ['Spares', 'MM 610442 in Bhadla store']], prompt: 'Why is BH-INV-03 IGBT temperature rising?' },
+    { id: 'a2', from: 'Soiling & Cleaning Agent', minutesAgo: 30, title: 'Approve unscheduled cleaning · Pavagada Block B · ₹3.6 L', policy: 'P-04',
+      table: [['Scope', '100 MWp, robotic dry + water clean'], ['Amount', '₹3,60,000'], ['Recovery', '≈38 MWh/day, payback 4 days']], prompt: 'Should we clean Pavagada Block B now?' },
+    { id: 'a3', from: 'Forecast & Grid Agent', minutesAgo: 95, title: 'Approve PF setpoint 0.98 lag at Kurnool POI', policy: 'P-02',
+      table: [['Change', 'PF 1.00 → 0.98 lag'], ['Reason', 'APTRANSCO voltage band, reactive charges'], ['Impact', '₹9 L/yr reactive penalty avoided']], prompt: 'What PF should Kurnool run at?' },
+  ],
+  docs: [
+    { id: 'd1', name: 'Central inverter 3.3 MW · O&M manual', type: 'OEM manual', obj: 'BH-INV-01 to 04, KN-INV-01 to 03', pages: 356, cited: 41, pass: [['IGBT temperature above 85 °C triggers power derating; the unit trips at 95 °C. Check cabinet fans and filters first.', 'p. 142'], ['Replace cabinet fans every 5 years or on failure of run feedback.', 'p. 219']] },
+    { id: 'd2', name: 'Module cleaning SOP', type: 'SOP', obj: 'All blocks', pages: 9, cited: 22, pass: [['Clean when the soiling ratio falls below 0.96 or 15 days have passed, whichever is first. Use water with TDS below 200 ppm.', 'Step 2']] },
+    { id: 'd3', name: 'IEC 61724-1 · PV system performance monitoring', type: 'Standard', obj: 'WMS, SMS', pages: 64, cited: 17, pass: [['Class A systems shall recalibrate irradiance sensors at least every 2 years.', 'Clause 7.2.4']] },
+    { id: 'd4', name: 'RCA-2026-009 · BH-INV-02 IGBT failure', type: 'Past RCA', obj: 'BH-INV-02', pages: 7, cited: 12, pass: [['A failed fan ran unnoticed for 9 days; IGBT module failed at 97 °C. Loss 410 MWh.', 'D4']] },
+    { id: 'd5', name: 'Tracker controller · service manual', type: 'OEM manual', obj: 'BH-TRK-07, KN-TRK-11, KN-TRK-12', pages: 128, cited: 9, pass: [['After wind stow, rows return to tracking when wind is below 10 m/s for 10 minutes. A row that stays in stow needs a controller reset.', 'p. 58']] },
+    { id: 'd6', name: 'CERC DSM regulations 2024 · solar', type: 'Regulatory', obj: 'Forecasting & scheduling', pages: 38, cited: 14, pass: [['Deviation beyond 10 % of available capacity attracts charges at the normal rate of charges.', 'Reg. 8(2)']] },
+  ],
+  skills: [
+    { id: 'pr-loss-waterfall', name: 'PR loss waterfall', pack: 'Faclon · Solar', ver: '2.2', steps: ['Read POA irradiance, module temperature and export per block.', 'Compute expected energy with temperature correction.', 'Split the gap into soiling, availability, clipping, curtailment and electrical losses.', 'Rank losses in MWh and ₹.'] },
+    { id: 'inverter-thermal', name: 'Inverter thermal diagnosis', pack: 'Faclon · Solar', ver: '1.7', steps: ['Compare IGBT temperature with sister inverters at the same power.', 'Check fan feedback and ambient.', 'Estimate time to derate and to trip.', 'Draft a work order.'] },
+    { id: 'soiling-cleaning-optimiser', name: 'Cleaning schedule optimiser', pack: 'Faclon · Solar', ver: '1.4', steps: ['Read soiling ratio and string current per block.', 'Forecast loss with rain outlook.', 'Compare loss value with cleaning cost.', 'Propose the cleaning roster.'] },
+    { id: 'forecast-dsm', name: 'Day-ahead forecast & DSM', pack: 'Faclon · Grid', ver: '2.0', steps: ['Read NWP and satellite forecast.', 'Correct with live WMS data.', 'Submit 15-minute schedule to the SLDC.', 'Track deviation and DSM charges.'] },
+    { id: 'tracker-health', name: 'Tracker fault detection', pack: 'Faclon · Solar', ver: '1.2', steps: ['Compare tracker angle with the sun-position set angle.', 'Flag rows with error > 5° for 30 min.', 'Check motor current and stow state.'] },
+    { id: 'daily-gen-report', name: 'Daily generation report', pack: 'Private · Suryodaya', ver: '3.1', steps: ['Export, PR, CUF and availability per plant.', 'Energy vs P50 and DSM.', 'Top losses and open faults.', 'Send by email and Teams at 07:00 IST.'] },
+  ],
+  schedules: [
+    ['Daily generation report', 'Report', 'Daily Generation Report Agent', 'Daily · 07:00 IST', 'CEO, portfolio and site heads (12)'],
+    ['Day-ahead schedule & DSM', 'Excel', 'Forecast & Grid Agent', 'Daily · 09:30 IST', 'Scheduling desk (4)'],
+    ['Weekly PR loss waterfall', 'Deck', 'Performance Agent', 'Weekly · Mon 09:00', 'Asset management (8)'],
+    ['Cleaning roster', 'Excel', 'Soiling & Cleaning Agent', 'Daily · 18:00', 'Site in-charges (3)'],
+    ['Monthly lender & SPV report', 'Report', 'Daily Generation Report Agent', 'Monthly · 3rd 10:00', 'Finance, lenders (6)'],
+  ],
+  workflows: [
+    ['Inverter fault to work order', [['Trigger', 'IGBT temp > 85 °C or inverter trip'], ['Agent', 'Asset Health · diagnose'], ['Agent', 'O&M Planner · draft WO and spares'], ['Approval', 'Site in-charge > ₹25k'], ['Action', 'CMMS · release WO']]],
+    ['Soiling-based cleaning', [['Trigger', 'Soiling ratio < 0.95 on any block'], ['Agent', 'Soiling & Cleaning · cost vs loss'], ['Approval', 'O&M head > ₹2 L'], ['Action', 'Cleaning roster and contractor notice']]],
+    ['Forecast revision', [['Trigger', 'Actual vs schedule deviation > 7 % for 2 blocks'], ['Agent', 'Forecast & Grid · revise schedule'], ['Action', 'Revision to SLDC']]],
+    ['Tracker stuck alert', [['Trigger', 'Tracking error > 5° for 30 min'], ['Agent', 'Asset Health · confirm'], ['Action', 'PPC reset and site technician alert']]],
+  ],
+  agents: makeAgents('solar', [
+    { key: 'performance', name: 'Performance Agent', domain: 'cost', version: '2.2.0', uns: UNS, instructions: 'Explain PR, CUF and energy vs P50 for each plant and block. Split losses into soiling, availability, clipping, curtailment and electrical, in MWh and ₹.',
+      skills: ['pr-loss-waterfall'], tools: [...T, 'deepsense.forecast'], triggers: [{ type: 'prompt' }, { type: 'schedule', cron: '0 9 * * 1' }] },
+    { key: 'asset-health', name: 'Asset Health Agent', domain: 'maintenance', version: '2.3.0', uns: UNS, instructions: 'Detect developing faults on inverters, trackers and transformers across all plants, diagnose the cause and estimate time to derate or trip.',
+      skills: ['inverter-thermal', 'tracker-health'], tools: [...T, 'deepsense.rul_predict', 'cmms.create_notification'], triggers: [{ type: 'prompt' }, { type: 'event', on: 'health < 50' }], canCall: ['solar.om-planner'] },
+    { key: 'soiling', name: 'Soiling & Cleaning Agent', domain: 'quality', version: '1.4.0', uns: UNS, instructions: 'Track soiling ratio and string current per block, and plan cleaning when the energy loss is worth more than the cleaning cost.',
+      skills: ['soiling-cleaning-optimiser'], tools: ['plantdb.get_quality', 'plantdb.get_tag_history', 'plantdb.diagnose_asset', 'weather.rain_outlook'], triggers: [{ type: 'prompt' }, { type: 'event', on: 'soiling_ratio < 0.95' }], autonomy: 'act_with_approval', policies: ['P-01', 'P-04'] },
+    { key: 'forecast-grid', name: 'Forecast & Grid Agent', domain: 'energy', version: '2.0.0', uns: UNS, instructions: 'Make day-ahead and intraday forecasts, submit schedules, keep DSM charges low and manage PF and curtailment at each POI.',
+      skills: ['forecast-dsm'], tools: ['plantdb.get_energy', 'plantdb.get_tag_history', 'plantdb.get_kpi_trend', 'forecast.get_schedule'], triggers: [{ type: 'schedule', cron: '30 9 * * *' }, { type: 'prompt' }], autonomy: 'act_with_approval', policies: ['P-01', 'P-02'] },
+    { key: 'om-planner', name: 'O&M Planner', domain: 'maintenance', version: '1.6.0', uns: UNS, instructions: 'Plan jobs into low-irradiance windows (early morning, night) and draft CMMS work orders with spares and permits.',
+      skills: [], tools: ['plantdb.get_asset_health', 'plantdb.get_production', 'cmms.create_order', 'sap_mm.get_stock'], triggers: [{ type: 'call' }, { type: 'schedule', cron: '0 17 * * *' }], autonomy: 'act_with_approval', policies: ['P-01', 'P-03'] },
+    { key: 'daily-report', name: 'Daily Generation Report Agent', domain: 'reports', version: '3.1.0', uns: UNS, instructions: 'Write the daily generation report for each plant and the portfolio, and send it at 07:00 IST.',
+      skills: ['daily-gen-report'], tools: ['plantdb.get_production', 'plantdb.get_kpis', 'plantdb.list_messages', 'msg.send_email'], triggers: [{ type: 'schedule', cron: '0 7 * * *' }, { type: 'prompt' }], autonomy: 'act' },
+  ]),
+  suggestions: ['What needs my attention across the three plants?', 'Why is BH-INV-03 IGBT temperature rising?', 'Should we clean Pavagada Block B now?', 'Why is KN-TRK-12 stuck at stow?', 'How is portfolio PR against P50 this month?', 'Write the daily generation report'],
+  sources: {
+    scada: { name: 'Inverter & plant SCADA', kind: 'OT · SCADA', via: 'I/O Connect · Modbus TCP', detail: 'Inverters, trackers, IDTs and substation IEDs at all 3 plants' },
+    wms: { name: 'Weather monitoring stations', kind: 'OT · WMS', via: 'I/O Connect · Modbus RTU', detail: 'Class A pyranometers, reference cells, soiling stations' },
+    ppc: { name: 'Power plant controller', kind: 'OT · PPC', via: 'I/O Connect · IEC 61850', detail: 'Active/reactive power and PF control at each POI' },
+    abt: { name: 'ABT energy meters', kind: 'OT · Meters', via: 'I/O Connect · DLMS', detail: 'Main and check meters at 220 kV' },
+    historian: { name: 'Plant historian', kind: 'IT · Historian', via: 'I/O Sense · REST', detail: '1-minute data since COD' },
+    erp: { name: 'SAP S/4HANA', kind: 'IT · ERP', via: 'SAP OData', detail: 'O&M cost, spares, PPA invoicing' },
+    cmms: { name: 'CMMS', kind: 'IT · CMMS', via: 'REST API', detail: 'Work orders, permits, cleaning logs' },
+    forecast: { name: 'Forecasting service', kind: 'IT · Forecast', via: 'REST API', detail: 'Day-ahead and intraday 15-min schedules' },
+    drone: { name: 'Drone thermography', kind: 'IT · Inspection', via: 'File import', detail: 'IR and IV-curve scans, quarterly' },
+  },
+  setpoints: [
+    { asset: 'KN-TRK-11', tag: 'angle', name: 'Backtracking start angle', current: 55, recommended: 50, unit: '°', lo: 40, hi: 60, gain: '+420 MWh/yr', kpi: 'pr', reason: 'Row shading appears in morning and evening at Kurnool because of the 3° north-south slope. Starting backtracking at 50° removes the shading seen in string current from 07:00 to 07:40 IST.', confidence: 0.78, status: 'proposed' },
+    { asset: 'KN-PTR-01', tag: 'pf', name: 'POI power factor setpoint', current: 1.0, recommended: 0.98, unit: '', lo: 0.95, hi: 1, gain: '₹9 L/yr', kpi: 'ga', reason: 'Voltage at the Kurnool POI ran above 1.05 pu for 210 hours last month. A 0.98 lag PF keeps voltage in band and avoids reactive energy charges.', confidence: 0.74, status: 'proposed' },
+    { asset: 'PV-SMS-01', tag: 'soiling_ratio', name: 'Cleaning trigger threshold', current: 0.95, recommended: 0.965, unit: '', lo: 0.93, hi: 0.99, gain: '₹46 L/yr', kpi: 'soil', reason: 'At Pavagada one cleaning costs ₹1.8 lakh per block, and one day at 0.95 loses ₹1.1 lakh. A 0.965 trigger cleans 3 days earlier and saves more than it costs in the dry season.', confidence: 0.81, status: 'approved' },
+    { asset: 'BH-INV-01', tag: 'igbt_temp', name: 'Inverter derating start temperature', current: 80, recommended: 85, unit: '°C', lo: 75, hi: 90, gain: '+610 MWh/yr', kpi: 'pr', reason: 'Bhadla inverters derate at 80 °C, 5 °C below the OEM limit. With healthy fans IGBT never passes 82 °C, so the early derate loses noon energy in April to June.', confidence: 0.7, status: 'proposed' },
+  ],
+  forms: [
+    { id: 'module-cleaning', name: 'Module cleaning log', desc: 'One log per block per cleaning cycle. Feeds the soiling model.', sections: [
+      { title: 'Block and crew', fields: [
+        { id: 'plant', label: 'Plant', type: 'select', options: ['Bhadla', 'Pavagada', 'Kurnool'], required: true },
+        { id: 'block', label: 'Block / rows', type: 'text', placeholder: 'Block B, rows B-01 to B-120', required: true },
+        { id: 'date', label: 'Date', type: 'date', required: true },
+        { id: 'method', label: 'Cleaning method', type: 'radio', options: ['Robotic dry', 'Water (manual)', 'Water + brush tractor'], required: true },
+        { id: 'crew', label: 'Contractor crew size', type: 'number', unit: 'people' }] },
+      { title: 'Before and after', fields: [
+        { id: 'sr_before', label: 'Soiling ratio before', type: 'number', help: 'From the soiling station at 12:00 IST' },
+        { id: 'sr_after', label: 'Soiling ratio after', type: 'number' },
+        { id: 'water', label: 'Water used', type: 'number', unit: 'kL' },
+        { id: 'tds', label: 'Water TDS', type: 'number', unit: 'ppm', help: 'Must be below 200 ppm' },
+        { id: 'modules', label: 'Modules cleaned', type: 'number', unit: 'nos' }] },
+      { title: 'Observations', fields: [
+        { id: 'damage', label: 'Damage found', type: 'checklist', options: ['Cracked glass', 'Bird droppings (heavy)', 'Loose clamp', 'Cable sag', 'None'] },
+        { id: 'notes', label: 'Notes', type: 'textarea' },
+        { id: 'sign', label: 'Site supervisor', type: 'signature', required: true }] }] },
+    { id: 'inverter-pm', name: 'Inverter preventive maintenance checklist', desc: 'Half-yearly PM for central and string inverters.', sections: [
+      { title: 'Equipment', fields: [
+        { id: 'asset', label: 'Inverter', type: 'asset', required: true },
+        { id: 'start', label: 'Start time', type: 'datetime', required: true },
+        { id: 'isolation', label: 'DC and AC isolation confirmed', type: 'checkbox', required: true }] },
+      { title: 'Checks', fields: [
+        { id: 'checks', label: 'PM checks', type: 'checklist', options: ['Cabinet fans run and feedback OK', 'Air filters cleaned or replaced', 'IGBT heat-sink clean', 'DC fuse and SPD status', 'Busbar torque checked', 'Thermal scan of terminals', 'Firmware version noted'], required: true },
+        { id: 'ir', label: 'DC insulation resistance', type: 'number', unit: 'MΩ' },
+        { id: 'max_dt', label: 'Highest terminal ΔT in IR scan', type: 'number', unit: '°C' },
+        { id: 'fan_hours', label: 'Fan run hours', type: 'number', unit: 'h' }] },
+      { title: 'Close-out', fields: [
+        { id: 'condition', label: 'Overall condition', type: 'rating' },
+        { id: 'parts', label: 'Parts replaced', type: 'textarea', placeholder: 'Fan F2, MM 610442' },
+        { id: 'end', label: 'Back in service', type: 'time' },
+        { id: 'sign', label: 'Technician', type: 'signature', required: true }] }] },
+    { id: 'ht-ptw', name: 'HT permit to work', desc: '33 kV and 220 kV work. Needs isolation, earthing and two signatures.', sections: [
+      { title: 'Work', fields: [
+        { id: 'asset', label: 'Equipment', type: 'asset', required: true },
+        { id: 'voltage', label: 'Voltage level', type: 'radio', options: ['33 kV', '220 kV'], required: true },
+        { id: 'job', label: 'Job description', type: 'textarea', required: true },
+        { id: 'from', label: 'Valid from', type: 'datetime', required: true },
+        { id: 'to', label: 'Valid to', type: 'datetime', required: true }] },
+      { title: 'Isolation and earthing', fields: [
+        { id: 'breaker', label: 'Breaker / isolator number', type: 'text', placeholder: 'Q52, bay 4', required: true },
+        { id: 'steps', label: 'Safety steps', type: 'checklist', options: ['Breaker open and racked out', 'Isolator open and locked', 'Voltage absence tested', 'Earth switch closed', 'Portable earths applied', 'LOTO tags placed', 'SLDC informed'], required: true },
+        { id: 'ppe', label: 'PPE', type: 'checklist', options: ['Arc-flash suit', 'HV gloves', 'Helmet and shoes', 'Harness (work at height)'] }] },
+      { title: 'Authorisation', fields: [
+        { id: 'issuer', label: 'Permit issuer', type: 'signature', required: true },
+        { id: 'receiver', label: 'Permit receiver', type: 'signature', required: true }] }] },
+  ],
+  dashNames: { cost: 'Generation losses', quality: 'Module health', energy: 'Grid export' },
+  realtime: { title: 'Portfolio live · inverters, trackers, substations', assets: ['BH-INV-03', 'BH-INV-01', 'BH-PTR-01', 'BH-WMS-01', 'PV-INV-05', 'PV-SMS-01', 'PV-PTR-01', 'KN-TRK-12', 'KN-INV-01', 'KN-SMS-01', 'KN-PTR-01'] },
+};

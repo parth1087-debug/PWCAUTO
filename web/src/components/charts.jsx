@@ -1,14 +1,12 @@
 import React from 'react';
 import { ResponsiveContainer, ComposedChart, LineChart, Line, Area, Bar, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, Cell, PieChart, Pie } from 'recharts';
 import { useApp } from '../App.jsx';
+import { themeOf } from '../lib/themes.js';
 import { axisTime, fmtNum, fmtDateTime } from '../lib/data.js';
 
 export function usePalette() {
   const { theme } = useApp();
-  /* neutral-first: the brand orange is the accent, slate for context, status colours only for state */
-  return theme === 'dark'
-    ? { c1: '#ff6a1a', c2: '#cdd2da', c3: '#fdb022', c4: '#f38fa0', c5: '#5d6675', c6: '#84caff', grid: '#22262d', axis: '#8d96a5', good: '#47cd89', bad: '#f97066', warn: '#fdb022', bg: '#131519', bar: '#c8683a', spark: '#8d96a5' }
-    : { c1: '#d04a02', c2: '#344054', c3: '#eb8c00', c4: '#db536a', c5: '#98a2b3', c6: '#175cd3', grid: '#eef0f3', axis: '#667085', good: '#079455', bad: '#d92d20', warn: '#dc6803', bg: '#ffffff', bar: '#ee9560', spark: '#667085' };
+  return themeOf(theme).chart;
 }
 
 const Tip = ({ active, payload, label, unit, days, labelFmt }) => {

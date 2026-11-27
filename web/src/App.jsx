@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database } from 'lucide-react';
+import { MessageSquare, Inbox, Folder, Zap, Layers, Settings as Cog, Plus, Search, Bell, Sparkles, Menu, Sun, Moon, LogOut, Check, ChevronDown, LayoutDashboard, Target, Wrench, IndianRupee, Eye, Gauge, Calendar, X, Database, Box, Activity, SlidersHorizontal, ClipboardList, FileSpreadsheet, Presentation, FileText, Palette as PaletteIc } from 'lucide-react';
 import { LOGIN, DEFAULT_USERS } from './config.js';
 import { usePersist, uid as newId } from './lib/store.js';
 import { getDB, DEMO_LIST, RANGES, resolveRange, fmtTime, fmtDate } from './lib/data.js';
-import { seedArtefacts } from './lib/artefacts.js';
+import { seedAll } from './shared/artefacts.js';
+import { DEMOS } from './shared/index.js';
+import { api } from './lib/api.js';
+import { THEMES } from './lib/themes.js';
 import { Av } from './components/ui.jsx';
 import Chat from './components/Chat.jsx';
 import Palette from './components/Palette.jsx';
 import CopilotPage from './pages/CopilotPage.jsx';
 import Messages from './pages/Messages.jsx';
-import Dashboards from './pages/Dashboards.jsx';
 import Artefactory, { StandaloneView } from './pages/Artefactory.jsx';
 import Autopilot from './pages/Autopilot.jsx';
 import Context from './pages/Context.jsx';
@@ -19,12 +21,12 @@ import Login from './pages/Login.jsx';
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
 
-export const DASHES = [
-  { id: 'kpis', name: 'Plant KPIs', icon: Target }, { id: 'overview', name: 'Plant overview', icon: LayoutDashboard },
-  { id: 'maintenance', name: 'Maintenance', icon: Wrench }, { id: 'cost', name: 'Cost conversion', icon: IndianRupee },
-  { id: 'quality', name: 'Quality', icon: Eye }, { id: 'energy', name: 'Energy & utilities', icon: Gauge },
-];
-const DEFAULT_PINS = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy'];
+/** Icon for an artefact (by dashboard view or type). */
+const VIEW_ICON = { kpis: Target, overview: LayoutDashboard, maintenance: Wrench, cost: IndianRupee, quality: Eye, energy: Gauge, twin: Box, realtime: Activity, setpoints: SlidersHorizontal, custom: LayoutDashboard };
+const TYPE_ICON = { xlsx: FileSpreadsheet, pptx: Presentation, docx: FileText, form: ClipboardList };
+export const artIcon = a => (a.type === 'dash' ? VIEW_ICON[a.spec?.view] || LayoutDashboard : TYPE_ICON[a.type] || FileText);
+const BUILT_IN = ['kpis', 'overview', 'maintenance', 'cost', 'quality', 'energy'];
+const newArtId = () => 'a-' + Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4);
 
 function useHash() {
   const get = () => (location.hash.replace(/^#\/?/, '') || 'copilot');
@@ -35,14 +37,18 @@ function useHash() {
 
 export default function App() {
   const [auth, setAuth] = usePersist('auth', null);
-  const [users, setUsers] = usePersist('users', DEFAULT_USERS);
+  const [storedUsers, setUsers] = usePersist('users', DEFAULT_USERS);
+  const users = useMemo(() => [...storedUsers, ...DEFAULT_USERS.filter(d => !storedUsers.find(u => u.id === d.id))], [storedUsers]); // new demo users appear for existing browsers
   const [userId, setUserId] = usePersist('user', 'master');
   const [demoPick, setDemoPick] = usePersist('demo', 'auto');
   const [anchor, setAnchor] = usePersist('anchor', null);
   const [range, setRange] = usePersist('range', { id: '30d' });
   const [theme, setTheme] = usePersist('theme', 'light');
   const [pinsByUser, setPinsByUser] = usePersist('pins', {});
-  const [arts, setArts] = usePersist('artefacts.v2', seedArtefacts);
+  const [arts, setArts] = usePersist('artefacts.v3', () => seedAll(DEMOS));
+  const [dbState, setDbState] = useState('local');
+  const [tick, setTick] = useState(0);
+  const [tickAt, setTickAt] = useState(Date.now());
   const [chats, setChats] = usePersist('chats', {});
   const [msgState, setMsgState] = usePersist('msgstate', {});
   const [extraMsgs, setExtraMsgs] = usePersist('xmsgs', []);
@@ -55,6 +61,16 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  /* Live tick: every 10 s the UI draws new live values and reloads the artefact database. */
+  const refresh = useCallback(() => api.listArtefacts().then(list => {
+    if (!Array.isArray(list)) return;
+    setArts(cur => [...cur.filter(a => a.local && !list.find(x => x.id === a.id)), ...list]); setDbState('server');
+  }).catch(() => setDbState('local')), [setArts]);
+  useEffect(() => {
+    refresh();
+    const i = setInterval(() => { setTick(t => t + 1); setTickAt(Date.now()); if (document.visibilityState === 'visible') refresh(); }, 10000);
+    return () => clearInterval(i);
+  }, [refresh]);
   useEffect(() => { setNavOpen(false); setPanel(null); document.querySelector('.content')?.scrollTo(0, 0); }, [route]);
   useEffect(() => {
     const k = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPalette(p => !p); } if (e.key === 'Escape') { setPalette(false); setPanel(null); } };
@@ -65,7 +81,9 @@ export default function App() {
   const allowed = user.demos.includes('*') ? DEMO_LIST.map(d => d.id) : user.demos;
   const demoId = allowed.includes(demoPick) ? demoPick : allowed[0];
   const ctx = getDB(demoId, anchor);
-  const pins = pinsByUser[user.id] || DEFAULT_PINS;
+  const pinKey = `${user.id}:${demoId}`;
+  const defaultPins = arts.filter(a => a.demo === demoId && a.spec?.shortcut).sort((a, b) => a.spec.shortcut - b.spec.shortcut).map(a => a.id);
+  const pins = (pinsByUser[pinKey] || defaultPins).filter(id => arts.find(a => a.id === id));
   const rng = resolveRange(range, ctx.db);
 
   const toast = useCallback(text => { const id = newId(); setToasts(t => [...t, { id, text }]); setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3200); }, []);
@@ -77,10 +95,19 @@ export default function App() {
 
   const actions = {
     createArtefact({ type, name, spec, demo, note }) {
-      const id = 'a-' + newId();
-      setArts(a => [{ id, type, name, spec, demo: demo || demoId, owner: user.id, shared: [], versions: [{ v: 1, by: `Copilot for ${user.name}`, when: Date.now(), note }] }, ...a]);
+      const id = newArtId(); const by = `Copilot for ${user.name}`;
+      const a = { id, type, name, spec, demo: demo || demoId, owner: user.id, shared: ['master'], local: true, created: Date.now(), versions: [{ v: 1, by, when: Date.now(), note: note || 'Created' }] };
+      setArts(list => [a, ...list]);
+      api.createArtefact({ id, demo: a.demo, type: type === 'dash' ? 'dashboard' : type, name, spec, owner: user.id, by, note })
+        .then(saved => setArts(list => list.map(x => (x.id === id ? saved : x)))).catch(() => { /* offline: stays local */ });
       addLog('Agents', 'artefact.create', name, `${type} v1`);
       return id;
+    },
+    addArtefact(a) { setArts(list => [a, ...list.filter(x => x.id !== a.id)]); },
+    addVersion(a, { note, spec, name }) {
+      const v = { v: a.versions[0].v + 1, by: user.name, when: Date.now(), note };
+      setArts(list => list.map(x => (x.id === a.id ? { ...x, ...(spec ? { spec } : {}), ...(name ? { name } : {}), versions: [v, ...x.versions] } : x)));
+      api.addVersion(a.id, { note, spec, name, by: user.name }).then(saved => setArts(list => list.map(x => (x.id === a.id ? saved : x)))).catch(() => {});
     },
     raiseWO(asset, title) {
       const id = `x-${newId()}`;
@@ -90,18 +117,23 @@ export default function App() {
       toast('Work order drafted in SAP PM and sent for approval. See Messages.');
     },
     setMsg(id, patch) { setMsgState(s => ({ ...s, [id]: { ...(s[id] || {}), ...patch } })); },
-    pin(key) { setPinsByUser(p => { const cur = p[user.id] || DEFAULT_PINS; return { ...p, [user.id]: cur.includes(key) ? cur.filter(x => x !== key) : [...cur, key] }; }); },
+    pin(id) { setPinsByUser(p => { const cur = p[pinKey] || defaultPins; return { ...p, [pinKey]: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] }; }); },
+    resetPins() { setPinsByUser(p => { const n = { ...p }; delete n[pinKey]; return n; }); },
   };
 
   const app = {
     user, users, setUsers, setUserId, allowed, demoId, setDemo: setDemoPick, ctx, anchor, setAnchor, range, setRange, rng, theme, setTheme,
-    pins, arts, setArts, chats, setChats, messages, unread, extraLogs, addLog, prefs, setPrefs, route, nav, toast, actions,
+    pins, arts, setArts, tick, tickAt, dbState, refresh, chats, setChats, messages, unread, extraLogs, addLog, prefs, setPrefs, route, nav, toast, actions,
     openPanel: c => setPanel(c), closePanel: () => setPanel(null), panel,
   };
 
   if (!auth) return <AppCtx.Provider value={app}><Login onLogin={(u, p) => (u === LOGIN.username && p === LOGIN.password ? (setAuth({ at: Date.now() }), true) : false)} /></AppCtx.Provider>;
 
   const [section, sub, sub2] = route.split('/');
+  if (section === 'd') { /* old dashboard links → the artefact that holds that board */
+    const to = sub === 'custom' ? `artefactory/${sub2}` : `artefactory/${demoId}-${sub || 'overview'}${sub2 ? '/' + sub2 : ''}`;
+    setTimeout(() => location.replace(`#/${to}`), 0); return null;
+  }
   if (section === 'view') return (
     <AppCtx.Provider value={app}>
       <StandaloneView id={sub} />
@@ -111,8 +143,7 @@ export default function App() {
   );
   let page;
   if (section === 'messages') page = <Messages id={sub} />;
-  else if (section === 'd') page = <Dashboards id={sub} artId={sub2} />;
-  else if (section === 'artefactory') page = <Artefactory id={sub} />;
+  else if (section === 'artefactory') page = <Artefactory id={sub} sel={sub2} />;
   else if (section === 'autopilot') page = <Autopilot />;
   else if (section === 'context') page = <Context tab={sub || 'uns'} param={sub2} />;
   else if (section === 'settings') page = <SettingsPage tab={sub || 'users'} />;
@@ -141,38 +172,40 @@ export default function App() {
 }
 
 function Sidebar({ section, sub, sub2, signOut }) {
-  const { user, users, setUserId, unread, pins, arts, nav, actions, theme, setTheme, ctx } = useApp();
+  const { user, users, setUserId, unread, pins, arts, nav, actions, theme, setTheme, ctx, dbState } = useApp();
   const [menu, setMenu] = useState(false);
   const [pinMenu, setPinMenu] = useState(false);
   const item = (to, Icon, label, on, extra) => <a href={'#/' + to} className={`nav-i ${on ? 'on' : ''}`}><Icon />{label}{extra}</a>;
-  const customs = arts.filter(a => a.type === 'dash');
-  const pinItems = pins.map(k => {
-    if (k.startsWith('custom/')) { const a = customs.find(x => x.id === k.slice(7)); return a && { to: `d/${k}`, label: a.name, icon: LayoutDashboard, on: section === 'd' && sub === 'custom' && sub2 === a.id, custom: true }; }
-    const d = DASHES.find(x => x.id === k); return d && { to: `d/${k}`, label: d.name, icon: d.icon, on: section === 'd' && sub === k };
-  }).filter(Boolean);
+  const { demoId } = ctx.demo ? { demoId: ctx.demo.id } : {};
+  const mine = arts.filter(a => a.demo === demoId);
+  const pinItems = pins.map(id => { const a = arts.find(x => x.id === id); return a && { to: `artefactory/${a.id}`, label: a.name, icon: artIcon(a), on: section === 'artefactory' && sub === a.id, custom: !a.spec?.shortcut }; }).filter(Boolean);
+  const groups = [['Dashboards', mine.filter(a => a.type === 'dash')], ['Forms', mine.filter(a => a.type === 'form')], ['Sheets, decks and documents', mine.filter(a => ['xlsx', 'pptx', 'docx'].includes(a.type))]];
   return (
     <aside className="side">
-      <div className="logo"><span className="wm">pwc</span><small><b>Connected Plant</b><br />Intelligence</small></div>
+      <div className="logo"><span className="wm">FACLON<i>LABS</i></span><small><b>Connected Plant</b><br />Intelligence</small></div>
       <div style={{ position: 'relative' }}>
         <button className="user-btn" onClick={() => setMenu(m => !m)} aria-haspopup="menu"><Av u={user} /><div className="grow"><div className="u-n ellipsis">{user.name}</div><div className="u-r ellipsis">{user.role}</div></div><ChevronDown size={15} color="var(--muted)" /></button>
         {menu && <div className="menu" style={{ left: 10, right: 10, top: 54 }} onMouseLeave={() => setMenu(false)}>
           <div className="pal-g" style={{ padding: '4px 10px' }}>Switch user</div>
           {users.map(u => <button key={u.id} className={`mi ${u.id === user.id ? 'on' : ''}`} onClick={() => { setUserId(u.id); setMenu(false); nav('copilot'); }}><Av u={u} s={22} /><span className="grow"><span className="ellipsis" style={{ display: 'block' }}>{u.name}</span><small className="muted">{u.master ? 'All demos' : DEMO_LIST.find(d => d.id === u.demos[0])?.company}</small></span>{u.id === user.id && <Check size={15} />}</button>)}
           <div className="sep" />
-          <button className="mi" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}{theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>
+          <div className="pal-g" style={{ padding: '4px 10px' }}>Theme</div>
+          <div className="theme-row">{THEMES.map(t => <button key={t.id} className={`sw ${theme === t.id ? 'on' : ''}`} title={t.name} aria-label={`${t.name} theme`} onClick={() => setTheme(t.id)} style={{ background: `linear-gradient(135deg, ${t.bg} 50%, ${t.brand} 50%)` }} />)}</div>
+          <div className="sep" />
           <button className="mi" onClick={signOut}><LogOut size={15} />Sign out</button>
         </div>}
       </div>
       <nav className="nav">
         {item('copilot', MessageSquare, 'Copilot', section === 'copilot')}
         {item('messages', Inbox, 'Messages', section === 'messages', unread ? <span className="cnt">{unread}</span> : null)}
-        <div className="nav-l">Shortcuts<button className="nav-add" onClick={() => setPinMenu(m => !m)} title="Add or remove shortcuts" aria-label="Edit shortcuts"><Plus size={14} /></button></div>
+        <div className="nav-l">Shortcuts · Artefactory<button className="nav-add" onClick={() => setPinMenu(m => !m)} title="Add or remove shortcuts" aria-label="Edit shortcuts"><Plus size={14} /></button></div>
         <div style={{ position: 'relative' }}>
           {pinMenu && <div className="menu" style={{ left: 0, right: 0, top: -4 }} onMouseLeave={() => setPinMenu(false)}>
-            <div className="pal-g" style={{ padding: '4px 10px' }}>Dashboards</div>
-            {DASHES.map(d => <button key={d.id} className="mi" onClick={() => actions.pin(d.id)}><d.icon size={15} /><span className="grow">{d.name}</span>{pins.includes(d.id) && <Check size={15} />}</button>)}
-            {customs.length > 0 && <div className="pal-g" style={{ padding: '8px 10px 4px' }}>From Artefactory</div>}
-            {customs.map(a => <button key={a.id} className="mi" onClick={() => actions.pin('custom/' + a.id)}><LayoutDashboard size={15} /><span className="grow ellipsis">{a.name}</span>{pins.includes('custom/' + a.id) && <Check size={15} />}</button>)}
+            <div style={{ maxHeight: 360, overflow: 'auto' }}>
+            {groups.filter(g => g[1].length).map(([g, list]) => <React.Fragment key={g}><div className="pal-g" style={{ padding: '6px 10px 4px' }}>{g}</div>
+              {list.map(a => { const I = artIcon(a); return <button key={a.id} className="mi" onClick={() => actions.pin(a.id)}><I size={15} /><span className="grow ellipsis">{a.name}</span>{pins.includes(a.id) && <Check size={15} />}</button>; })}</React.Fragment>)}
+            </div>
+            <div className="sep" /><button className="mi" onClick={() => { actions.resetPins(); setPinMenu(false); }}><span className="grow muted">Reset to default shortcuts</span></button>
           </div>}
           {pinItems.map(p => <a key={p.to} href={'#/' + p.to} className={`nav-i ${p.on ? 'on' : ''}`}><p.icon /><span className="ellipsis">{p.label}</span>{p.custom && <span className="dot" />}</a>)}
         </div>
@@ -182,15 +215,17 @@ function Sidebar({ section, sub, sub2, signOut }) {
         {item('context/uns', Layers, 'Context', section === 'context')}
         {item('settings/users', Cog, 'Settings', section === 'settings')}
       </nav>
-      <div className="side-foot"><div className="row"><span className="live" /> <span className="ellipsis"><b>{ctx.demo.company}</b></span></div><div className="row" style={{ marginTop: 2 }}><Database size={12} /> plantdb/{ctx.demo.id} · AI by Faclon Labs</div></div>
+      <div className="side-foot"><div className="row"><span className="live" /> <span className="ellipsis"><b>{ctx.demo.company}</b></span></div><div className="row" style={{ marginTop: 2 }}><Database size={12} /> plantdb/{ctx.demo.id} · {dbState === 'server' ? 'database live' : 'offline copy'}</div></div>
     </aside>
   );
 }
 
 function TopBar({ section, openNav, openPalette }) {
-  const { user, allowed, demoId, setDemo, ctx, range, setRange, rng, unread, nav, openPanel, route, anchor } = useApp();
+  const { user, allowed, demoId, setDemo, ctx, range, setRange, rng, unread, nav, openPanel, route, anchor, arts } = useApp();
   const [dm, setDm] = useState(false); const [custom, setCustom] = useState(false);
-  const showRange = section === 'd';
+  const [, artId] = route.split('/');
+  const art = section === 'artefactory' && arts.find(a => a.id === artId);
+  const showRange = !!art && art.type === 'dash' && (BUILT_IN.includes(art.spec?.view) || art.spec?.view === 'custom' || !art.spec?.view);
   return (
     <header className="top">
       <button className="ibtn menu-btn" onClick={openNav} aria-label="Menu"><Menu /></button>
@@ -229,6 +264,6 @@ function CustomRange({ db, range, onApply }) {
 }
 export function pageTitle(route, ctx) {
   const [s, a] = route.split('/');
-  if (s === 'd') return (DASHES.find(d => d.id === a)?.name || 'Dashboard') + ` · ${ctx.demo.company}`;
+  if (s === 'artefactory' && a) return `Artefact ${a} · ${ctx.demo.company}`;
   return ({ messages: 'Messages', artefactory: 'Artefactory', autopilot: 'Autopilot', context: 'Context', settings: 'Settings' }[s] || 'Plant') + ` · ${ctx.demo.company}`;
 }

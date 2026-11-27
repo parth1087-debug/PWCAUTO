@@ -58,29 +58,15 @@ export function runQuery(question, ctx) {
     return res('Plant Copilot · Foundry', 'Data retrieval', [{ type: 'text', md: `There are **${POLICIES.length} policies**. The ones that stop or hold agent actions:` }, { type: 'table', head: ['Policy', 'Effect', 'Approver'], rows: POLICIES.filter(x => ['Block', 'Approval', 'Draft only'].includes(x.mode)).map(x => [`${x.id} · ${x.name}`, x.mode, x.approver]) }, { type: 'actions', items: [{ label: 'Open Policies', act: { type: 'nav', to: 'context/policies' } }] }]);
   }
 
-  /* 3. build a dashboard */
-  if (has(q, /(build|create|make|new|add).*(dashboard|view)/)) {
-    const k = kpi || demo.kpis.find(x => x.group === 'energy');
-    call('uns_search', { q: k.name.split(' ')[0] }); call('get_kpi_trend', { id: k.id, days: 90 });
-    ext('iosense.dashboard.build', { kpi: k.id }, 900);
-    const id = ctx.actions?.createArtefact({ type: 'dash', name: `${k.name} · live`, spec: { kpis: [k.id], focus: k.group }, demo: demo.id, note: 'Created from prompt' });
-    return res('Plant Copilot · I/O Sense', 'Dashboards on demand', [
-      { type: 'text', md: `I built **${k.name} · live** as a dashboard and saved it in the Artefactory (v1). It shows the KPI against baseline and target, the ${k.group} tiles and the top losses.` },
-      { type: 'actions', items: [{ label: 'Open dashboard', act: { type: 'nav', to: `d/custom/${id}` }, pri: true }, { label: 'Pin to Shortcuts', act: { type: 'pin', key: `custom/${id}` } }] }]);
-  }
-
-  /* 4. write a report / deck / workbook */
-  const mk = q.match(/(write|create|generate|prepare|make|draft|export).*(report|deck|presentation|slides|workbook|excel|note|document)/);
-  if (mk) {
-    const kind = /deck|presentation|slides/.test(q) ? 'pptx' : /workbook|excel/.test(q) ? 'xlsx' : /note|document/.test(q) ? 'docx' : 'report';
-    const sub = /energy/.test(q) ? 'energy' : /asset|maintenance|health/.test(q) ? 'assets' : 'daily';
-    call('get_production', { days: 1 }); call('get_kpis', { days: 30 }); call('list_messages', {});
-    ext('artefactory.save', { type: kind }, 300);
-    const names = { report: { daily: 'Daily performance report', assets: 'Asset health report', energy: 'Energy and utilities report' }, pptx: { daily: 'Operations review', assets: 'Maintenance review', energy: 'Energy review' }, xlsx: { daily: 'KPI workbook', assets: 'Asset health workbook', energy: 'Energy workbook' }, docx: { daily: 'Value realisation note', assets: 'Maintenance note', energy: 'Energy note' } };
-    const id = ctx.actions?.createArtefact({ type: kind, name: `${names[kind][sub]} · ${fmtDate(db.anchor)}`, spec: { kind: sub }, demo: demo.id, note: 'Created from prompt' });
-    return res(agentFor(demo, 'reports'), 'Notes and reports', [
-      { type: 'text', md: `Done. **${names[kind][sub]}** is saved in the Artefactory as v1, built from live plant data.` },
-      { type: 'actions', items: [{ label: 'Open it', act: { type: 'art', id }, pri: true }] }]);
+  /* 3. create an artefact: dashboard (KPI, twin, real-time, setpoints, custom), form, sheet, presentation or document */
+  const made = createIntent(q) && buildArtefact(q, { demo, db, asset, kpi });
+  if (made) {
+    call('uns_search', { q: made.focus }); if (made.calls) made.calls.filter(([n]) => typeof ctx.tools?.[n] === 'function').forEach(([n, a]) => call(n, a));
+    ext('artefactory.create_artefact', { type: made.type, name: made.name }, 600);
+    const id = ctx.actions?.createArtefact({ type: made.type, name: made.name, spec: made.spec, demo: demo.id, note: 'Created from prompt' });
+    return res(made.agent || 'Plant Copilot · I/O Sense', 'Artefacts on demand', [
+      { type: 'text', md: `Done. I created **${made.name}** (${made.label}) and saved it in the Artefactory as v1. ${made.what}` },
+      { type: 'actions', items: [{ label: 'Open it', act: { type: 'art', id }, pri: true }, { label: 'Pin to Shortcuts', act: { type: 'pin', key: id } }, { label: 'Open in new tab', act: { type: 'tab', id } }] }]);
   }
 
   /* 5. context from the page the panel was opened on */
@@ -187,4 +173,45 @@ export function runQuery(question, ctx) {
   return res('Plant Copilot', 'Data retrieval', [
     { type: 'text', md: `I can answer questions on ${demo.company} · ${demo.site} from plant data. Try:` },
     { type: 'list', items: demo.suggestions.slice(0, 5) }]);
+}
+
+/** Is the question asking to create something in the Artefactory? */
+export function createIntent(q) {
+  return /(build|create|make|new|add|generate|prepare|draft|design|set up|setup|give me)\b.*\b(dashboard|board|view|twin|monitor|form|checklist|log ?sheet|logbook|inspection|permit|sheet|workbook|excel|spreadsheet|deck|presentation|slides|ppt|document|doc|note|report|scorecard|setpoint|advisor)/i.test(q);
+}
+
+/** Turn a request into an artefact { type, name, spec, label, what }. Uses the plant model to pick assets, KPIs and forms. */
+export function buildArtefact(q, { demo, db, asset, kpi }) {
+  const s = q.toLowerCase();
+  const date = fmtDate(db.anchor);
+  const spot = asset || db.assetById[demo.maintenance?.spotlight] || db.assets[0];
+  if (/twin/.test(s)) return { type: 'dash', name: `${spot.id} · ${spot.name} twin`, spec: { view: 'twin', asset: spot.id }, label: 'asset twin', focus: spot.id, calls: [['get_asset_health', { asset: spot.id }], ['get_data_sources', { asset: spot.id }]],
+    what: `It shows live tags every 10 seconds, the 14-day trend, the agent diagnosis, the source system and address of every tag, and the ERP, CMMS and MES records.` };
+  if (/real.?time|live|monitor|control room|war room/.test(s)) {
+    const area = db.assets.filter(a => (asset ? a.line === asset.line : true));
+    const ids = (asset ? area : db.healthAll().map(h => db.assetById[h.id])).slice(0, 8).map(a => a.id);
+    return { type: 'dash', name: asset ? `${asset.line.name} live monitor` : 'Live plant monitor', spec: { view: 'realtime', assets: ids }, label: 'real-time monitor', focus: ids[0], calls: [['get_live', { assets: ids.slice(0, 3) }]],
+      what: `It tracks ${ids.length} assets with live values, state colours and 24-hour sparklines. Values refresh every 10 seconds.` };
+  }
+  if (/setpoint|advisor|optimi/.test(s)) return { type: 'dash', name: 'Setpoint advisor', spec: { view: 'setpoints' }, label: 'setpoint board', focus: 'setpoints', calls: [['get_setpoints', {}]],
+    what: `It lists ${(demo.setpoints || []).length} recommendations with current and recommended values, expected gain and evidence. Approval raises a change request (P-02); nothing is written to control.` };
+  if (/form|checklist|log ?sheet|logbook|inspection|permit|round|audit/.test(s)) {
+    const f = (demo.forms || []).find(x => s.split(/\W+/).some(w => w.length > 3 && x.name.toLowerCase().includes(w)));
+    if (f) return { type: 'form', name: f.name, spec: { form: f.id }, label: 'form', focus: f.name, what: `It has ${f.sections.length} sections. Submissions are saved in the plant database with name and time.` };
+    const target = asset ? `${asset.id} ` : '';
+    const form = { name: `${target}${/permit/.test(s) ? 'Work permit' : /round|inspection/.test(s) ? 'Inspection round' : 'Shift checklist'}`, sections: [
+      { title: 'Details', fields: [{ id: 'asset', label: 'Asset', type: 'asset', required: true }, { id: 'when', label: 'Date and time', type: 'datetime', required: true }, { id: 'shift', label: 'Shift', type: 'radio', options: ['A', 'B', 'C'], required: true }] },
+      { title: 'Checks', fields: [{ id: 'checks', label: 'Checks done', type: 'checklist', options: ['Guards in place', 'No abnormal noise', 'No leaks', 'Lubrication OK', 'Area clean'] }, { id: 'reading', label: 'Key reading', type: 'number', unit: asset ? db.tagDef(asset.id, demo.classes[asset.cls].tags[0][0]).unit : '' }, { id: 'condition', label: 'Overall condition', type: 'rating' }] },
+      { title: 'Sign-off', fields: [{ id: 'remarks', label: 'Remarks', type: 'textarea' }, { id: 'sign', label: 'Signature', type: 'signature', required: true }] }] };
+    return { type: 'form', name: form.name, spec: { form }, label: 'form', focus: form.name, what: 'It has 3 sections (details, checks, sign-off) with an asset picker, checklist, rating and signature. Submissions are saved in the plant database.' };
+  }
+  if (/sheet|workbook|excel|spreadsheet/.test(s)) { const kind = /energy/.test(s) ? 'energy' : 'daily'; return { type: 'xlsx', name: `${kind === 'energy' ? 'Energy' : 'KPI and losses'} sheet · ${date}`, spec: { kind }, label: 'sheet', focus: 'kpis', calls: [['get_kpis', { days: 30 }], ['get_production', { days: 30 }]], what: 'It has KPI, production and line sheets with live formulas and downloads as .xlsx.' }; }
+  if (/deck|presentation|slides|ppt/.test(s)) return { type: 'pptx', name: `Operations review · ${date}`, spec: { kind: 'monthly' }, label: 'presentation', focus: 'kpis', calls: [['get_kpis', { days: 30 }]], what: 'It has the KPI summary, losses, asset health and decisions slides.' };
+  if (/document|doc\b|note|report/.test(s)) { const rep = /report|daily|shift/.test(s); return { type: 'docx', name: rep ? `Daily performance report · ${date}` : `Value realisation note · ${date}`, spec: { kind: rep ? 'report' : 'note' }, label: 'document', focus: 'kpis', calls: [['get_production', { days: 1 }], ['get_kpis', { days: 30 }]], what: 'It is built from live plant data and downloads as a Word file.' }; }
+  if (/kpi|scorecard/.test(s) && !kpi) return { type: 'dash', name: 'KPI scorecard', spec: { view: 'kpis' }, label: 'KPI dashboard', focus: 'kpis', what: 'It shows every KPI against baseline and target with value realised.' };
+  const k = kpi || demo.kpis.find(x => x.group === 'energy') || demo.kpis[0];
+  const top = db.healthAll()[0];
+  return { type: 'dash', name: `${k.name} · live`, label: 'dashboard', focus: k.name, calls: [['get_kpi_trend', { id: k.id, days: 90 }]],
+    spec: { view: 'custom', widgets: [{ type: 'kpis', ids: [k.id, ...demo.overview.filter(x => x !== k.id).slice(0, 3)] }, { type: 'kpi_trend', id: k.id }, { type: 'live', assets: [top.id, ...db.assets.slice(0, 2).map(a => a.id)] }, { type: 'losses' }, { type: 'alerts' }, { type: 'setpoints' }] },
+    what: `It shows ${k.name} against baseline and target, live values, top losses, alerts and setpoint recommendations.` };
 }

@@ -16,7 +16,9 @@ RUN cd mcp && npm ci --omit=dev && npm cache clean --force
 COPY web/package.json ./web/package.json
 COPY web/src/shared ./web/src/shared
 COPY --from=web /src/web/dist ./web/dist
-COPY mcp/server.mjs mcp/agent.mjs mcp/bruce.mjs ./mcp/
+COPY mcp/server.mjs mcp/agent.mjs mcp/bruce.mjs mcp/store.mjs ./mcp/
+RUN mkdir -p /data && chown node:node /data
+ENV DATA_DIR=/data
 ENV NODE_ENV=production
 EXPOSE 8787
 USER node

@@ -11,16 +11,16 @@ export default function Login({ onLogin }) {
   return (
     <div className="auth">
       <section className="auth-l" aria-hidden="false">
-        <div className="logo" style={{ padding: 0 }}><span className="wm">pwc</span><small style={{ borderColor: 'rgba(255,255,255,.15)', color: '#aab2c0' }}><b style={{ color: '#fff' }}>Connected Plant</b><br />Intelligence</small></div>
+        <div className="logo" style={{ padding: 0 }}><span className="wm">FACLON<i>LABS</i></span><small style={{ borderColor: 'rgba(255,255,255,.15)', color: '#aab2c0' }}><b style={{ color: '#fff' }}>Connected Plant</b><br />Intelligence</small></div>
         <h1>Every machine, KPI and decision, <span>in one intelligent plant.</span></h1>
         <p className="lead">Asset health, cost conversion, AI vision quality and energy, connected through one plant model and run by AI agents your teams can trust.</p>
         <div className="auth-feats">
-          <div><b><Activity size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#ff8540' }} />Live plant model</b>ISA-95 namespace across every line, asset and tag.</div>
-          <div><b><Bot size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#ff8540' }} />Agents on Bruce</b>Copilot answers with evidence, drafts actions for approval.</div>
-          <div><b><Gauge size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#ff8540' }} />Value against baseline</b>Every KPI tracked from go-live, in ₹ per year.</div>
-          <div><b><ShieldCheck size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#ff8540' }} />Governed by policy</b>No writes to control systems. Full audit trail.</div>
+          <div><b><Activity size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#6F90FF' }} />Live plant model</b>ISA-95 namespace across every line, asset and tag.</div>
+          <div><b><Bot size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#6F90FF' }} />Agents on Bruce</b>Copilot answers with evidence, drafts actions for approval.</div>
+          <div><b><Gauge size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#6F90FF' }} />Value against baseline</b>Every KPI tracked from go-live, in ₹ per year.</div>
+          <div><b><ShieldCheck size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#6F90FF' }} />Governed by policy</b>No writes to control systems. Full audit trail.</div>
         </div>
-        <div className="auth-foot"><span>© PwC. All rights reserved.</span><span>AI agents powered by Faclon Labs</span><span>Demo environment · sample data</span></div>
+        <div className="auth-foot"><span>© Faclon Labs Pvt Ltd · faclon.com</span><span>Agents on Bruce AI</span><span>Demo environment · sample data</span></div>
       </section>
       <section className="auth-r">
         <form onSubmit={submit} className="auth-card" noValidate>

@@ -32,7 +32,11 @@ export function createDB(demo, opts = {}) {
   const anchorMs = Math.floor((opts.anchor ? new Date(opts.anchor).getTime() : Date.now()) / H) * H;
   const cache = new Map();
   const assets = [];
-  demo.areas.forEach(a => a.lines.forEach(l => l.assets.forEach(x => assets.push({ id: x[0], name: x[1], cls: x[2], crit: x[3], area: a, line: l }))));
+  /* sites: one by default; multi-plant demos give each area a site { slug, name, location } */
+  const siteOf = a => a.site || { slug: demo.siteSlug, name: demo.site, location: demo.location };
+  const sites = [];
+  demo.areas.forEach(a => { const st = siteOf(a); if (!sites.find(x => x.slug === st.slug)) sites.push(st); });
+  demo.areas.forEach(a => a.lines.forEach(l => l.assets.forEach(x => assets.push({ id: x[0], name: x[1], cls: x[2], crit: x[3], area: a, line: l, site: siteOf(a) }))));
   const assetById = Object.fromEntries(assets.map(a => [a.id, a]));
   const eventsByAsset = {};
   (demo.events || []).forEach(e => { (eventsByAsset[e.asset] = eventsByAsset[e.asset] || []).push(e); });
@@ -44,7 +48,7 @@ export function createDB(demo, opts = {}) {
   function tagDef(assetId, tagKey) {
     const a = assetById[assetId]; if (!a) return null;
     const t = (demo.classes[a.cls].tags || []).find(x => x[0] === tagKey);
-    return t ? { key: t[0], name: t[1], unit: t[2], base: t[3], noise: t[4], cycle: t[5] || 0, lo: t[6], hi: t[7] } : null;
+    return t ? { key: t[0], name: t[1], unit: t[2], base: t[3], noise: t[4], cycle: t[5] || 0, lo: t[6], hi: t[7], src: t[8] || demo.classes[a.cls].src || 'plc' } : null;
   }
 
   /** hourly series, HOURS points, ending at the anchor hour */
@@ -60,7 +64,8 @@ export function createDB(demo, opts = {}) {
       const dow = new Date(tsHour(i)).getDay();
       ar = ar * 0.8 + (r() - 0.5) * t.noise;
       let v = t.base + ar;
-      if (t.cycle) v += t.cycle * Math.sin(((hourOfDay - 6) / 24) * 2 * Math.PI) + (dow === 0 ? -Math.abs(t.cycle) * 1.5 : 0);
+      if (t.cycle) v += t.cycle * Math.sin(((hourOfDay - 6) / 24) * 2 * Math.PI) + (dow === 0 && !demo.continuous ? -Math.abs(t.cycle) * 1.5 : 0);
+      if (demo.continuous && t.base >= 0 && v < 0) v = 0;   // 24x7 assets: no weekly stop; power and irradiance never go below zero
       out[i] = v;
     }
     (eventsByAsset[assetId] || []).filter(e => e.tag === tagKey).forEach(e => {
@@ -102,6 +107,12 @@ export function createDB(demo, opts = {}) {
     return { asset: assetId, tag: tagKey, unit: tagDef(assetId, tagKey).unit, agg: mode, points: pts };
   }
   const latest = (assetId, tagKey) => { const s = series(assetId, tagKey); return s ? s[HOURS - 1] : null; };
+  /** live reading for a UI tick (every 10 s): the latest value plus small seeded movement, stored data unchanged */
+  function live(assetId, tagKey, tick = 0) {
+    const v = latest(assetId, tagKey); const t = tagDef(assetId, tagKey); if (v == null || !t) return null;
+    const r = rng(hash(demo.id + assetId + tagKey + ':' + tick));
+    return round(v + (r() - 0.5) * t.noise * 0.6, decFor(t.base));
+  }
 
   /* ---------- KPIs: daily, baseline before go-live, improvement after ---------- */
   function kpiDaily(id) {
@@ -139,7 +150,7 @@ export function createDB(demo, opts = {}) {
     const all = [];
     for (let i = 0; i < DAYS; i++) {
       const t = tsDay(i); const dow = new Date(t).getDay();
-      const p = dow === 0 ? Math.round(plan * 0.35) : plan;
+      const p = dow === 0 && !demo.continuous ? Math.round(plan * 0.35) : plan;
       const eff = i < DAYS - GO_LIVE_DAYS_AGO ? 0.9 : 0.9 + 0.06 * Math.min(1, (i - (DAYS - GO_LIVE_DAYS_AGO)) / 60);
       all.push({ t, plan: p, actual: Math.round(p * (eff + (r() - 0.5) * 0.08)) });
     }
@@ -152,7 +163,7 @@ export function createDB(demo, opts = {}) {
     const ev = (eventsByAsset[assetId] || []).find(e => e.health != null);
     const r = rng(hash(demo.id + 'health' + assetId));
     const h = ev ? ev.health : Math.round(76 + r() * 20);
-    return { id: a.id, name: a.name, cls: demo.classes[a.cls].label, crit: a.crit, area: a.area.name, line: a.line.name, health: h,
+    return { id: a.id, name: a.name, cls: demo.classes[a.cls].label, crit: a.crit, site: a.site.name, area: a.area.name, line: a.line.name, health: h,
       state: h < 50 ? 'Alarm' : h < 75 ? 'Watch' : 'Normal', rulDays: ev ? ev.rulDays : Math.round(90 + r() * 120), finding: ev ? ev.finding : null,
       uns: unsPath(a) };
   }
@@ -161,13 +172,13 @@ export function createDB(demo, opts = {}) {
   /* ---------- UNS (ISA-95 namespace) ---------- */
   const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   function unsPath(a, tag) {
-    return [demo.companySlug, demo.siteSlug, a.area.id, a.line.id, a.id.toLowerCase()].join('/') + (tag ? '/' + tag : '');
+    return [demo.companySlug, a.site.slug, a.area.id, a.line.id, a.id.toLowerCase()].join('/') + (tag ? '/' + tag : '');
   }
   function unsTree() {
-    return { name: demo.companySlug, level: 'Enterprise', label: demo.company, children: [{ name: demo.siteSlug, level: 'Site', label: demo.site,
-      children: demo.areas.map(a => ({ name: a.id, level: 'Area', label: a.name, children: a.lines.map(l => ({ name: l.id, level: 'Work center', label: l.name,
+    return { name: demo.companySlug, level: 'Enterprise', label: demo.company, children: sites.map(st => ({ name: st.slug, level: 'Site', label: st.name,
+      children: demo.areas.filter(a => siteOf(a).slug === st.slug).map(a => ({ name: a.id, level: 'Area', label: a.name, children: a.lines.map(l => ({ name: l.id, level: 'Work center', label: l.name,
         children: l.assets.map(x => ({ name: x[0].toLowerCase(), level: 'Work unit', label: x[1], asset: x[0],
-          children: (demo.classes[x[2]].tags || []).map(t => ({ name: t[0], level: 'Tag', label: t[1], unit: t[2], asset: x[0], tag: t[0] })) })) })) })) }] };
+          children: (demo.classes[x[2]].tags || []).map(t => ({ name: t[0], level: 'Tag', label: t[1], unit: t[2], asset: x[0], tag: t[0] })) })) })) })) })) };
   }
   function resolve(path) {
     const parts = path.replace(/^\/+|\/+$/g, '').split('/');
@@ -182,7 +193,7 @@ export function createDB(demo, opts = {}) {
 
   return {
     demo, anchor: anchorMs, now: nowMs, goLive: goLiveMs, baselineFrom: tsDay(0), baselineTo: goLiveMs - D,
-    assets, assetById, tagDef, series, history, latest, kpiDaily, kpiSummary, production, health, healthAll,
+    assets, assetById, sites, tagDef, series, history, latest, live, kpiDaily, kpiSummary, production, health, healthAll,
     unsPath, unsTree, resolve, slug, at, tsDay, tsHour,
     stats: () => ({ assets: assets.length, tags: assets.reduce((n, a) => n + demo.classes[a.cls].tags.length, 0), hours: HOURS, days: DAYS,
       points: assets.reduce((n, a) => n + demo.classes[a.cls].tags.length, 0) * HOURS }),

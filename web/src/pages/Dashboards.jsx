@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Star, Folder, Sparkles, Wrench } from 'lucide-react';
-import { useApp, DASHES } from '../App.jsx';
+import { useApp } from '../App.jsx';
+import { dashName } from '../shared/artefacts.js';
 import { Card, Kpi, PageHead, HealthBar, Tag, Empty } from '../components/ui.jsx';
 import { Trend, Bars, Waterfall, Donut, Spark, Heat, BarList, usePalette } from '../components/charts.jsx';
 import { fmtNum, fmtRel, fmtTime, fmtDateTime, statusCls, getDB } from '../lib/data.js';
@@ -10,29 +11,23 @@ const kpiSpark = (db, id, R) => db.kpiDaily(id).filter(p => p.t >= R.from - D).m
 
 function KpiRow({ c, ids, R }) {
   const { nav } = useApp();
-  return <div className="kpis">{ids.map(id => { const k = c.db.kpiSummary(id, R.from, R.to); return <Kpi key={id} k={k} onClick={() => nav('d/kpis/' + id)} spark={<Spark data={kpiSpark(c.db, id, R)} />} />; })}</div>;
+  return <div className="kpis">{ids.map(id => { const k = c.db.kpiSummary(id, R.from, R.to); return <Kpi key={id} k={k} onClick={() => nav(`artefactory/${c.demo.id}-kpis/${id}`)} spark={<Spark data={kpiSpark(c.db, id, R)} />} />; })}</div>;
 }
 
-export default function Dashboards({ id = 'overview', artId }) {
+/** A built-in board's content (no page header): used inside the Artefactory viewer. */
+export function DashBody({ view = 'overview', sel, c: cIn }) {
   const app = useApp();
-  const c = app.ctx, R = app.rng;
-  if (id === 'custom') return <CustomDash artId={artId} />;
-  const head = DASHES.find(d => d.id === id) || DASHES[1];
-  const pinned = app.pins.includes(id);
-  return (
-    <div className="page">
-      <PageHead title={head.name} sub={`${c.demo.company} · ${c.demo.site} · ${R.label} · updated ${fmtTime(c.db.now)} IST`}>
-        <button className="btn" onClick={() => { app.actions.pin(id); app.toast(pinned ? 'Removed from Shortcuts' : 'Added to Shortcuts'); }}><Star />{pinned ? 'Pinned' : 'Pin'}</button>
-      </PageHead>
-      {id === 'overview' && <Overview c={c} R={R} />}
-      {id === 'kpis' && <Kpis c={c} R={R} sel={artId} />}
-      {id === 'maintenance' && <Maintenance c={c} R={R} sel={artId} />}
-      {id === 'cost' && <Cost c={c} R={R} />}
-      {id === 'quality' && <Quality c={c} R={R} />}
-      {id === 'energy' && <Energy c={c} R={R} />}
-    </div>
-  );
+  const c = cIn || app.ctx; const R = { ...app.rng, from: c.db.anchor - app.rng.days * D, to: c.db.anchor };
+  return <>
+    {view === 'overview' && <Overview c={c} R={R} />}
+    {view === 'kpis' && <Kpis c={c} R={R} sel={sel} />}
+    {view === 'maintenance' && <Maintenance c={c} R={R} sel={sel} />}
+    {view === 'cost' && <Cost c={c} R={R} />}
+    {view === 'quality' && <Quality c={c} R={R} />}
+    {view === 'energy' && <Energy c={c} R={R} />}
+  </>;
 }
+
 
 /* ---------- Overview ---------- */
 function Overview({ c, R }) {
@@ -57,7 +52,7 @@ function Overview({ c, R }) {
     </div>
     <div className="grid g21 mt">
       <Card title={(n => `${n} ${n === 1 ? 'asset' : 'assets'} in alarm across ${areas.length} areas`)(areas.reduce((a, x) => a + x.alarms, 0))} sub="Lowest health per area" flush csv={{ name: 'areas', rows: () => areas.map(a => ({ area: a.name, assets: a.n, alarms: a.alarms, watch: a.watch, lowest: a.low?.id, health: a.low?.health })) }}>
-        <div className="scroll-x"><table className="t"><thead><tr><th>Area</th><th className="r">Assets</th><th>Status</th><th>Lowest health</th></tr></thead><tbody>{areas.map(a => <tr key={a.name} className="click" onClick={() => nav('d/maintenance/' + a.low.id)}>
+        <div className="scroll-x"><table className="t"><thead><tr><th>Area</th><th className="r">Assets</th><th>Status</th><th>Lowest health</th></tr></thead><tbody>{areas.map(a => <tr key={a.name} className="click" onClick={() => nav(`artefactory/${c.demo.id}-twin/` + a.low.id)}>
           <td className="b">{a.name}</td><td className="r num">{a.n}</td><td>{a.alarms ? <Tag c="bad">{a.alarms} alarm</Tag> : a.watch ? <Tag c="warn">{a.watch} watch</Tag> : <Tag c="good">Normal</Tag>}</td><td><div className="row"><HealthBar v={a.low.health} w={90} /><span className="muted mono">{a.low.id}</span></div></td></tr>)}</tbody></table></div>
       </Card>
       <Card title="Agent activity" sub="latest" flush>
@@ -89,7 +84,7 @@ function Kpis({ c, R, sel }) {
     <Card title="Scorecard" sub={`Measured over ${R.label}`} flush className="mt" csv={{ name: 'kpis', rows: () => all.map(x => ({ kpi: x.name, unit: x.unit, baseline: x.base, value: x.value, target: x.target, change_pct: x.improvePct, status: x.status })) }}>
       <div className="scroll-x"><table className="t"><thead><tr><th>KPI</th><th className="r">Baseline</th><th className="r">Current</th><th className="r">Target</th><th className="r">vs baseline</th><th>Progress</th><th>Status</th><th className="r">₹ L/yr</th></tr></thead>
         <tbody>{groups.map(g => <React.Fragment key={g}><tr><td colSpan={8} className="muted" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '.06em', background: 'var(--bg-2)' }}>{gName[g]}</td></tr>
-          {all.filter(x => x.group === g).map(x => <tr key={x.id} className={`click ${x.id === k.id ? 'on' : ''}`} onClick={() => nav('d/kpis/' + x.id)}>
+          {all.filter(x => x.group === g).map(x => <tr key={x.id} className={`click ${x.id === k.id ? 'on' : ''}`} onClick={() => nav(`artefactory/${c.demo.id}-kpis/` + x.id)}>
             <td className="b">{x.name} <span className="muted" style={{ fontWeight: 400 }}>{x.unit}</span></td><td className="r num">{fmtNum(x.base, x.dec)}</td><td className="r num b">{fmtNum(x.value, x.dec)}</td><td className="r num muted">{fmtNum(x.target, x.dec)}</td>
             <td className="r num" style={{ color: x.improvePct >= 0 ? 'var(--good)' : 'var(--bad)' }}>{x.improvePct >= 0 ? '▲' : '▼'} {Math.abs(x.improvePct)} %</td>
             <td><div className="bar" style={{ width: 120 }}><div className="tr"><div className="fl brand" style={{ width: `${x.progress * 100}%` }} /></div><span className="num muted">{Math.round(x.progress * 100)}%</span></div></td>
@@ -114,14 +109,14 @@ function Maintenance({ c, R, sel }) {
   const soon = health.filter(x => x.rulDays <= 60).sort((x, y) => x.rulDays - y.rulDays);
   return <>
     <div className="kpis" style={{ gridTemplateColumns: `repeat(${ids.length + 2}, minmax(0,1fr))` }}>
-      {ids.map(id => { const k = c.db.kpiSummary(id, R.from, R.to); return <Kpi key={id} k={k} onClick={() => nav('d/kpis/' + id)} spark={<Spark data={kpiSpark(c.db, id, R)} />} />; })}
+      {ids.map(id => { const k = c.db.kpiSummary(id, R.from, R.to); return <Kpi key={id} k={k} onClick={() => nav(`artefactory/${c.demo.id}-kpis/` + id)} spark={<Spark data={kpiSpark(c.db, id, R)} />} />; })}
       <div className="kpi"><div className="l">Assets in alarm</div><div className="v" style={{ color: 'var(--bad)' }}>{health.filter(x => x.health < 50).length}<small>of {health.length}</small></div><div className="f">{health.filter(x => x.health < 50).map(x => x.id).join(', ') || 'none'}</div></div>
       <div className="kpi"><div className="l">Failures forecast, 30 days</div><div className="v">{health.filter(x => x.rulDays <= 30).length}<small>assets</small></div><div className="f">by remaining-life model</div></div>
     </div>
     <div className="grid g2">
       <Card title="Asset risk" sub="lowest health first · select an asset" flush csv={{ name: 'asset-health', rows: () => health.map(x => ({ asset: x.id, name: x.name, area: x.area, health: x.health, life_left_days: x.rulDays, finding: x.finding || '' })) }}>
         <div className="scroll-x" style={{ maxHeight: 520, overflowY: 'auto' }}><table className="t"><thead><tr><th>Asset</th><th>Health</th><th className="r">Life left</th><th>Finding</th></tr></thead><tbody>
-          {health.map(x => <tr key={x.id} className={`click ${x.id === a.id ? 'on' : ''}`} onClick={() => nav('d/maintenance/' + x.id)}><td><div className="b">{x.id} <Tag c="line">{x.crit}</Tag></div><div className="muted" style={{ fontSize: 11.5 }}>{x.name} · {x.line}</div></td><td><HealthBar v={x.health} w={100} /></td><td className="r num" style={{ color: x.rulDays < 15 ? 'var(--bad)' : undefined, fontWeight: x.rulDays < 15 ? 600 : 400 }}>{x.rulDays} d</td><td className="muted">{x.finding || '—'}</td></tr>)}
+          {health.map(x => <tr key={x.id} className={`click ${x.id === a.id ? 'on' : ''}`} onClick={() => nav(`artefactory/${c.demo.id}-maintenance/` + x.id)}><td><div className="b">{x.id} <Tag c="line">{x.crit}</Tag></div><div className="muted" style={{ fontSize: 11.5 }}>{x.name} · {x.line}</div></td><td><HealthBar v={x.health} w={100} /></td><td className="r num" style={{ color: x.rulDays < 15 ? 'var(--bad)' : undefined, fontWeight: x.rulDays < 15 ? 600 : 400 }}>{x.rulDays} d</td><td className="muted">{x.finding || '—'}</td></tr>)}
         </tbody></table></div>
       </Card>
       <Card title={`${a.id} · ${a.name}`} sub={`${a.line} · health ${a.health} · ${a.rulDays} days of life left`} ask={{ kind: 'card', title: `${a.id} · ${a.name}`, summary: ev ? [`${ev.diagnosis.title}. ${ev.diagnosis.reco}`, ...ev.diagnosis.points] : [`${a.id} is healthy (score ${a.health}).`] }}
@@ -226,24 +221,6 @@ function Energy({ c, R }) {
   </>;
 }
 
-/* ---------- Custom dashboard from the Artefactory ---------- */
-function CustomDash({ artId }) {
-  const app = useApp();
-  const a = app.arts.find(x => x.id === artId);
-  if (!a) return <div className="page"><Empty>Dashboard not found.</Empty></div>;
-  const c = getDB(a.demo, app.anchor); const R = { ...app.rng, from: c.db.anchor - app.rng.days * D, to: c.db.anchor };
-  const pinned = app.pins.includes('custom/' + a.id);
-  const ids = (a.spec?.kpis || c.demo.overview).filter(id => c.demo.kpis.find(k => k.id === id));
-  return (
-    <div className="page">
-      <PageHead title={a.name} sub={`Custom dashboard · v${a.versions[0].v} · ${c.demo.company} · ${R.label}`}>
-        <button className="btn" onClick={() => { app.actions.pin('custom/' + a.id); app.toast(pinned ? 'Removed from Shortcuts' : 'Added to Shortcuts'); }}><Star />{pinned ? 'Pinned' : 'Pin'}</button>
-        <button className="btn" onClick={() => app.nav('artefactory/' + a.id)}><Folder />Versions</button>
-      </PageHead>
-      <CustomDashBody a={a} />
-    </div>
-  );
-}
 
 /** The dashboard itself (KPI row and trend cards), also shown in the Artefactory viewer. */
 export function CustomDashBody({ a }) {

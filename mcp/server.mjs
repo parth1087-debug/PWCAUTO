@@ -27,6 +27,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runAgent, errorText, liveEnabled, MODEL } from './agent.mjs';
 import { runBruce, bruceDemos, COPILOTS } from './bruce.mjs';
+import * as store from './store.mjs';
+import { ARTEFACT_HELP } from '../web/src/shared/artefacts.js';
+import { assetSources, sourceSummary } from '../web/src/shared/sources.js';
 import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../web/src/shared/index.js';
 
 const allowed = (process.env.PLANTDB_DEMOS || Object.keys(DEMOS).join(',')).split(',').map(s => s.trim()).filter(id => DEMOS[id]);
@@ -49,6 +52,29 @@ function buildServer() {
       async ({ demo, ...args }) => json(dbFor(demo).tools[spec.name](args)));
   }
 
+  /* ---------- Artefactory (shared database) ---------- */
+  const typeArg = z.enum(['dashboard', 'sheet', 'presentation', 'document', 'form']);
+  const T2 = { dash: 'dashboard', xlsx: 'sheet', pptx: 'presentation', docx: 'document', form: 'form' };
+  const brief = a => ({ id: a.id, type: T2[a.type], name: a.name, demo: a.demo, version: a.versions[0].v, updated: new Date(a.versions[0].when).toISOString(), view: a.spec?.view, open: `#/artefactory/${a.id}` });
+  server.registerTool('list_artefacts', { title: 'List artefacts', description: 'Dashboards, sheets, presentations, documents and forms in the Artefactory for a demo.', inputSchema: { demo: demoArg, type: typeArg.optional() } },
+    async ({ demo, type }) => json(store.listArtefacts({ demo, type: type && Object.keys(T2).find(k => T2[k] === type) }).map(brief)));
+  server.registerTool('get_artefact', { title: 'Get artefact', description: 'One artefact with its spec and version history.', inputSchema: { id: z.string() } },
+    async ({ id }) => json(store.getArtefact(id) || { error: 'Artefact not found' }));
+  server.registerTool('create_artefact', { title: 'Create artefact', description: `Create an artefact in the Artefactory (it appears in the app at once). ${ARTEFACT_HELP}`,
+    inputSchema: { demo: demoArg, type: typeArg, name: z.string(), spec: z.record(z.any()).optional(), note: z.string().optional() } },
+    async ({ demo, type, name, spec, note }) => { try { return json(brief(store.createArtefact({ demo, type, name, spec: spec || {}, by: 'Agent via MCP', note: note || 'Created by an agent' }))); } catch (e) { return json({ error: e.message }); } });
+  server.registerTool('update_artefact', { title: 'Update artefact', description: 'Save a new version of an artefact: new name and/or spec. Earlier versions are kept.',
+    inputSchema: { id: z.string(), name: z.string().optional(), spec: z.record(z.any()).optional(), note: z.string() } },
+    async ({ id, name, spec, note }) => { try { return json(brief(store.addVersion(id, { name, spec, note, by: 'Agent via MCP' }))); } catch (e) { return json({ error: e.message }); } });
+  server.registerTool('submit_form', { title: 'Submit form', description: 'Submit values to a form artefact (field id → value).', inputSchema: { id: z.string(), values: z.record(z.any()) } },
+    async ({ id, values }) => { try { return json(store.submitForm(id, { values, by: 'Agent via MCP' })); } catch (e) { return json({ error: e.message }); } });
+  server.registerTool('list_form_submissions', { title: 'List form submissions', description: 'Submissions of a form artefact, newest first.', inputSchema: { id: z.string() } },
+    async ({ id }) => json(store.listSubmissions(id)));
+  server.registerTool('get_setpoints', { title: 'Setpoint recommendations', description: 'Setpoint recommendations with current value, recommended value, expected gain, evidence and approval status.', inputSchema: { demo: demoArg } },
+    async ({ demo }) => json(store.setpointsFor(demo)));
+  server.registerTool('get_data_sources', { title: 'Data sources', description: 'Source systems feeding the plant model, or for one asset: each tag\'s source system, protocol address and historian path, plus ERP, CMMS and MES records.', inputSchema: { demo: demoArg, asset: z.string().optional() } },
+    async ({ demo, asset }) => { const { db } = dbFor(demo); return json(asset ? (assetSources(db, asset) || { error: 'Unknown asset' }) : sourceSummary(db)); });
+
   server.registerTool('list_agents', { title: 'List Bruce agents', description: 'Bruce agent definitions configured for a demo.', inputSchema: { demo: demoArg } },
     async ({ demo }) => json(DEMOS[demo].agents));
   server.registerTool('get_policy', { title: 'Get policy', description: 'Policy rule by id (for example P-03) or all policies.', inputSchema: { id: z.string().optional() } },
@@ -59,11 +85,11 @@ function buildServer() {
 /* ---------- live chat (/api/chat): POST {demo, agent, messages, context?, anchor?} -> text/event-stream ---------- */
 const hits = new Map();
 const LIMIT = Number(process.env.CHAT_LIMIT || 30);
-function limited(ip) {
+function limited(ip, max = LIMIT) {
   const now = Date.now(), win = 10 * 60e3;
   const list = (hits.get(ip) || []).filter(t => now - t < win);
   list.push(now); hits.set(ip, list);
-  return list.length > LIMIT;
+  return list.length > max;
 }
 function readJson(req, max = 64e3) {
   return new Promise((resolve, reject) => {
@@ -128,6 +154,39 @@ function serveApp(req, res) {
   fs.createReadStream(file).pipe(res);
 }
 
+/* ---------- REST for the app: artefacts, forms, setpoints, data sources ---------- */
+async function rest(req, res) {
+  const send = (code, v) => res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify(v));
+  const u = new URL(req.url, 'http://x'); const p = u.pathname.split('/').filter(Boolean); // ['api', ...]
+  try {
+    if (p[1] === 'artefacts') {
+      if (req.method === 'GET' && !p[2]) return send(200, store.listArtefacts({ demo: u.searchParams.get('demo') || undefined }));
+      if (req.method === 'GET' && p[2] && !p[3]) { const a = store.getArtefact(p[2]); return a ? send(200, a) : send(404, { error: 'Not found' }); }
+      if (req.method === 'GET' && p[3] === 'submissions') return send(200, store.listSubmissions(p[2]));
+      if (req.method !== 'POST') return send(405, { error: 'Method not allowed' });
+      const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+      if (limited("w:" + ip, 120)) return send(429, { error: 'Too many changes in a short time.' });
+      const body = await readJson(req, 200e3);
+      if (!p[2]) return send(201, store.createArtefact(body));
+      if (p[3] === 'versions') return send(200, store.addVersion(p[2], body));
+      if (p[3] === 'submissions') return send(201, store.submitForm(p[2], body));
+      if (p[3] === 'archive') return send(200, store.archiveArtefact(p[2], body.by));
+      return send(404, { error: 'Not found' });
+    }
+    if (p[1] === 'setpoints') {
+      if (req.method === 'GET') return send(200, store.setpointsFor(u.searchParams.get('demo')));
+      if (req.method === 'POST') return send(200, store.decideSetpoint(await readJson(req)));
+    }
+    if (p[1] === 'sources' && req.method === 'GET') {
+      const demo = u.searchParams.get('demo'); if (!allowed.includes(demo)) return send(400, { error: 'Unknown demo' });
+      const { db } = dbFor(demo); const asset = u.searchParams.get('asset');
+      return send(200, asset ? assetSources(db, asset) : sourceSummary(db));
+    }
+    if (p[1] === 'store') return send(200, store.storeInfo());
+    return send(404, { error: 'Not found' });
+  } catch (e) { return send(400, { error: e.message }); }
+}
+
 const httpIdx = process.argv.indexOf('--http');
 if (httpIdx > -1) {
   const port = Number(process.argv[httpIdx + 1] || process.env.PORT || 8787);
@@ -151,6 +210,7 @@ if (httpIdx > -1) {
       return;
     }
     if (req.url === '/api/chat') { chat(req, res); return; }
+    if (req.url.startsWith('/api/')) { rest(req, res); return; }
     if (!req.url.startsWith('/mcp')) { serveApp(req, res); return; }
     if (req.method !== 'POST') { res.writeHead(405, { Allow: 'POST' }).end('Use POST (stateless Streamable HTTP)'); return; }
     if (process.env.PLANTDB_TOKEN && req.headers.authorization !== `Bearer ${process.env.PLANTDB_TOKEN}`) { res.writeHead(401).end('Unauthorized'); return; }
