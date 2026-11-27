@@ -86,7 +86,7 @@ export function visualFor(name, input, out) {
     switch (name) {
       case 'get_kpi_trend':
         return { type: 'chart', kind: 'trend', title: `${out.name}, daily`, unit: out.unit, days: out.points.length, data: out.points.map(ts), series: [{ key: 'v', name: out.name }],
-          refs: [{ y: out.baseline, label: 'Baseline', color: '#8a8884' }, { y: out.target, label: 'Target', color: '#16794c' }], xRefs: out.go_live ? [{ x: new Date(out.go_live).getTime(), label: 'Go-live' }] : [] };
+          refs: [{ y: out.baseline, label: 'Baseline', color: '#98a2b3' }, { y: out.target, label: 'Target', color: '#079455' }], xRefs: out.go_live ? [{ x: new Date(out.go_live).getTime(), label: 'Go-live' }] : [] };
       case 'get_tag_history':
         return out.points?.length ? { type: 'chart', kind: 'trend', title: `${out.name || 'Tag'}${out.unit ? ` (${out.unit})` : ''}`, unit: out.unit, days: Math.max(1, Math.round((new Date(out.points.at(-1).t) - new Date(out.points[0].t)) / 864e5)), data: out.points.map(ts), series: [{ key: 'v', name: out.name || 'Value', type: 'area' }],
           refs: [out.limits?.hi != null && out.limits.hi > 0 ? { y: out.limits.hi, label: `Limit ${out.limits.hi}` } : null, out.limits?.lo != null && out.limits.lo !== 0 ? { y: out.limits.lo, label: `Limit ${out.limits.lo}` } : null].filter(Boolean) } : null;

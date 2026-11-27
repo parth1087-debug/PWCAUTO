@@ -142,7 +142,7 @@ export function runQuery(question, ctx) {
     const s = db.kpiSummary(kpi.id, db.anchor - Math.min(days, 30) * D, db.anchor);
     return res(agentFor(demo, kpi.group), 'Data retrieval', [
       { type: 'text', md: `**${kpi.name}** averaged **${fmtNum(s.value, kpi.dec)} ${kpi.unit}** over the last ${Math.min(days, 30)} days. Baseline ${fmtNum(kpi.base, kpi.dec)}, target ${fmtNum(kpi.target, kpi.dec)}: that is **${s.improvePct > 0 ? 'better' : 'worse'} by ${Math.abs(s.improvePct)} %**, ${s.status.toLowerCase()}.` },
-      { type: 'chart', kind: 'trend', title: `${kpi.name}, daily`, unit: kpi.unit, days: 120, data: tr.points.map(p => ({ t: new Date(p.t).getTime(), v: p.v })), series: [{ key: 'v', name: kpi.name }], refs: [{ y: kpi.base, label: 'Baseline', color: '#8a8884' }, { y: kpi.target, label: 'Target', color: '#16794c' }], xRefs: [{ x: db.goLive, label: 'Go-live' }] },
+      { type: 'chart', kind: 'trend', title: `${kpi.name}, daily`, unit: kpi.unit, days: 120, data: tr.points.map(p => ({ t: new Date(p.t).getTime(), v: p.v })), series: [{ key: 'v', name: kpi.name }], refs: [{ y: kpi.base, label: 'Baseline', color: '#98a2b3' }, { y: kpi.target, label: 'Target', color: '#079455' }], xRefs: [{ x: db.goLive, label: 'Go-live' }] },
       { type: 'evidence', items: ['plantdb.get_kpi_trend', `Baseline ${fmtDate(db.baselineFrom)} – ${fmtDate(db.baselineTo)}`] }]);
   }
 
@@ -179,7 +179,7 @@ export function runQuery(question, ctx) {
     const p = call('get_production', { days });
     return res(agentFor(demo, 'cost'), 'Data retrieval', [
       { type: 'text', md: `Output over ${days} days: **${fmtNum(p.actual)} ${p.unit}** against a plan of ${fmtNum(p.plan)} (${p.attainment_pct} %).` },
-      { type: 'chart', kind: 'trend', title: 'Plan vs actual', unit: p.unit, days, data: p.days.map(x => ({ t: new Date(x.t).getTime(), actual: x.actual, plan: x.plan })), series: [{ key: 'actual', name: 'Actual', type: 'bar' }, { key: 'plan', name: 'Plan', dash: '4 3', color: '#8a8884' }] }]);
+      { type: 'chart', kind: 'trend', title: 'Plan vs actual', unit: p.unit, days, data: p.days.map(x => ({ t: new Date(x.t).getTime(), actual: x.actual, plan: x.plan })), series: [{ key: 'actual', name: 'Actual', type: 'bar' }, { key: 'plan', name: 'Plan', dash: '4 3', color: '#98a2b3' }] }]);
   }
 
   /* fallback */

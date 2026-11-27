@@ -48,7 +48,7 @@ function Overview({ c, R }) {
     <div className="grid g21">
       <Card title={`Output at ${p.attainment_pct} % of plan`} sub={`${fmtNum(p.actual)} of ${fmtNum(p.plan)} ${p.unit} · daily`} ask={{ kind: 'card', title: 'Production vs plan', summary: [`Output was ${fmtNum(p.actual)} ${p.unit} against ${fmtNum(p.plan)} (${p.attainment_pct} %) over ${R.label}.`] }}
         csv={{ name: 'production', rows: () => days.map(d => ({ date: d.t, plan: d.plan, actual: d.actual })) }}>
-        <Trend data={days.map(d => ({ t: new Date(d.t).getTime(), actual: d.actual, plan: d.plan }))} series={[{ key: 'actual', name: 'Actual', type: 'bar' }, { key: 'plan', name: 'Plan', dash: '4 3', color: '#8a8884' }]} unit={p.unit} days={30} height={240} />
+        <Trend data={days.map(d => ({ t: new Date(d.t).getTime(), actual: d.actual, plan: d.plan }))} series={[{ key: 'actual', name: 'Actual', type: 'bar' }, { key: 'plan', name: 'Plan', dash: '4 3', color: '#98a2b3' }]} unit={p.unit} days={30} height={240} />
       </Card>
       <Card title="Needs attention" sub={`${open.length} open`} flush>
         {open.map(m => <button key={m.id} className="feed-i" onClick={() => nav('messages/' + m.id)}><span className={`rail ${m.sev}`} /><span><span className="row" style={{ fontSize: 11.5 }}><b style={{ color: m.type === 'alert' ? 'var(--bad)' : 'var(--brand)' }}>{m.type === 'alert' ? 'Alert' : 'Approval'}</b><span className="muted">{m.from}</span><span className="muted right">{fmtRel(m.time)}</span></span><span style={{ display: 'block', fontSize: 13, marginTop: 2 }}>{m.title}</span></span></button>)}
@@ -240,11 +240,21 @@ function CustomDash({ artId }) {
         <button className="btn" onClick={() => { app.actions.pin('custom/' + a.id); app.toast(pinned ? 'Removed from Shortcuts' : 'Added to Shortcuts'); }}><Star />{pinned ? 'Pinned' : 'Pin'}</button>
         <button className="btn" onClick={() => app.nav('artefactory/' + a.id)}><Folder />Versions</button>
       </PageHead>
-      <KpiRow c={c} ids={ids} R={R} />
-      <div className="grid g2">{ids.map(id => { const k = c.demo.kpis.find(x => x.id === id); const s = c.db.kpiSummary(id, R.from, R.to);
-        return <Card key={id} title={`${k.name}: ${fmtNum(s.value, k.dec)} ${k.unit}`} sub={`baseline ${k.base} · target ${k.target}`} ask={{ kind: 'card', title: k.name, summary: [`${k.name} ${s.value} ${k.unit}, ${s.status}.`] }}>
-          <Trend data={c.db.kpiDaily(id).filter(p => p.t >= R.from - D)} series={[{ key: 'v', name: k.name, type: 'area' }]} unit={k.unit} days={R.days} height={180} refs={[{ y: k.base, label: 'Baseline', color: '#8a8884' }, { y: k.target, label: 'Target', color: '#16794c' }]} />
-        </Card>; })}</div>
+      <CustomDashBody a={a} />
     </div>
   );
+}
+
+/** The dashboard itself (KPI row and trend cards), also shown in the Artefactory viewer. */
+export function CustomDashBody({ a }) {
+  const app = useApp();
+  const c = getDB(a.demo, app.anchor); const R = { ...app.rng, from: c.db.anchor - app.rng.days * D, to: c.db.anchor };
+  const ids = (a.spec?.kpis || c.demo.overview).filter(id => c.demo.kpis.find(k => k.id === id));
+  return <>
+    <KpiRow c={c} ids={ids} R={R} />
+    <div className="grid g2">{ids.map(id => { const k = c.demo.kpis.find(x => x.id === id); const s = c.db.kpiSummary(id, R.from, R.to);
+      return <Card key={id} title={`${k.name}: ${fmtNum(s.value, k.dec)} ${k.unit}`} sub={`baseline ${k.base} · target ${k.target}`} ask={{ kind: 'card', title: k.name, summary: [`${k.name} ${s.value} ${k.unit}, ${s.status}.`] }}>
+        <Trend data={c.db.kpiDaily(id).filter(p => p.t >= R.from - D)} series={[{ key: 'v', name: k.name, type: 'area' }]} unit={k.unit} days={R.days} height={180} refs={[{ y: k.base, label: 'Baseline', color: '#98a2b3' }, { y: k.target, label: 'Target', color: '#079455' }]} />
+      </Card>; })}</div>
+  </>;
 }

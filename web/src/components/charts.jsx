@@ -5,9 +5,10 @@ import { axisTime, fmtNum, fmtDateTime } from '../lib/data.js';
 
 export function usePalette() {
   const { theme } = useApp();
+  /* neutral-first: the brand orange is the accent, slate for context, status colours only for state */
   return theme === 'dark'
-    ? { c1: '#fd6412', c2: '#d9d9d6', c3: '#ffb600', c4: '#f0768a', c5: '#77767a', c6: '#6ea6ee', grid: '#2a2a2a', axis: '#8e8d8a', good: '#3fbf7f', bad: '#ff5d52', warn: '#f0a13b', bg: '#141414' }
-    : { c1: '#d04a02', c2: '#1d1d1b', c3: '#eb8c00', c4: '#db536a', c5: '#b5b3ae', c6: '#2459a6', grid: '#f0efec', axis: '#8a8884', good: '#16794c', bad: '#c92a1f', warn: '#b8690b', bg: '#ffffff' };
+    ? { c1: '#ff6a1a', c2: '#cdd2da', c3: '#fdb022', c4: '#f38fa0', c5: '#5d6675', c6: '#84caff', grid: '#22262d', axis: '#8d96a5', good: '#47cd89', bad: '#f97066', warn: '#fdb022', bg: '#131519', bar: '#c8683a', spark: '#8d96a5' }
+    : { c1: '#d04a02', c2: '#344054', c3: '#eb8c00', c4: '#db536a', c5: '#98a2b3', c6: '#175cd3', grid: '#eef0f3', axis: '#667085', good: '#079455', bad: '#d92d20', warn: '#dc6803', bg: '#ffffff', bar: '#ee9560', spark: '#667085' };
 }
 
 const Tip = ({ active, payload, label, unit, days, labelFmt }) => {
@@ -26,6 +27,7 @@ export function Trend({ data, series, unit, days = 7, height = 220, refs = [], x
   return (
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>{series.filter(s => s.type === 'area').map(s => <linearGradient key={s.key} id={`g-${s.key}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={s.color || p.c1} stopOpacity={0.22} /><stop offset="100%" stopColor={s.color || p.c1} stopOpacity={0.01} /></linearGradient>)}</defs>
         <CartesianGrid stroke={p.grid} vertical={false} />
         <XAxis dataKey={xKey} type={categorical ? 'category' : 'number'} scale={categorical ? 'band' : 'time'} domain={['dataMin', 'dataMax']} tickFormatter={categorical ? undefined : t => axisTime(t, days)} stroke={p.axis} tickLine={false} axisLine={false} minTickGap={36} fontSize={11} />
         <YAxis stroke={p.axis} tickLine={false} axisLine={false} width={56} fontSize={11} domain={yDomain || ['auto', 'auto']} tickFormatter={v => fmtNum(v, Math.abs(v) < 10 ? 1 : 0)} />
@@ -34,10 +36,10 @@ export function Trend({ data, series, unit, days = 7, height = 220, refs = [], x
         {refs.map((r, i) => <ReferenceLine key={i} y={r.y} stroke={r.color || p.bad} strokeDasharray={r.solid ? undefined : '4 3'} label={{ value: r.label, position: 'insideTopRight', fontSize: 10, fill: r.color || p.bad }} />)}
         {xRefs.map((r, i) => <ReferenceLine key={'x' + i} x={r.x} stroke={p.c1} strokeDasharray="2 2" label={{ value: r.label, position: 'insideTopLeft', fontSize: 10, fill: p.c1 }} />)}
         {series.map(s => s.type === 'bar'
-          ? <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color || p.c1} radius={[3, 3, 0, 0]} maxBarSize={28} stackId={s.stack} isAnimationActive={false} />
+          ? <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color || p.bar} radius={[4, 4, 0, 0]} maxBarSize={26} stackId={s.stack} isAnimationActive={false} />
           : s.type === 'area'
-            ? <Area key={s.key} dataKey={s.key} name={s.name} stroke={s.color || p.c1} fill={s.color || p.c1} fillOpacity={0.08} strokeWidth={1.8} dot={false} isAnimationActive={false} />
-            : <Line key={s.key} dataKey={s.key} name={s.name} stroke={s.color || p.c1} strokeWidth={s.width || 1.8} strokeDasharray={s.dash} dot={false} isAnimationActive={false} />)}
+            ? <Area key={s.key} dataKey={s.key} name={s.name} stroke={s.color || p.c1} fill={`url(#g-${s.key})`} fillOpacity={1} strokeWidth={2} dot={false} activeDot={{ r: 3.5, strokeWidth: 2, stroke: p.bg }} isAnimationActive={false} />
+            : <Line key={s.key} dataKey={s.key} name={s.name} stroke={s.color || p.c1} strokeWidth={s.width || 2} strokeDasharray={s.dash} dot={false} activeDot={{ r: 3.5, strokeWidth: 2, stroke: p.bg }} isAnimationActive={false} />)}
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -56,8 +58,8 @@ export function Bars({ data, series, unit, height = 220, stacked, refs = [], hor
         <Tooltip content={<Tip unit={unit} labelFmt={l => l} />} cursor={{ fill: p.grid }} />
         {refs.map((r, i) => <ReferenceLine key={i} y={r.y} stroke={r.color || p.good} strokeDasharray="4 3" label={{ value: r.label, position: 'insideTopRight', fontSize: 10, fill: r.color || p.good }} />)}
         {series.map((s, si) => (
-          <Bar key={s.key} dataKey={s.key} name={s.name} stackId={stacked ? 'a' : undefined} fill={s.color || p.c1} radius={stacked ? 0 : horizontal ? [0, 3, 3, 0] : [3, 3, 0, 0]} maxBarSize={horizontal ? 18 : 36} isAnimationActive={false}>
-            {colorFn && data.map((d, i) => <Cell key={i} fill={colorFn(d, si) || s.color || p.c1} />)}
+          <Bar key={s.key} dataKey={s.key} name={s.name} stackId={stacked ? 'a' : undefined} fill={s.color || p.bar} radius={stacked ? 0 : horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]} maxBarSize={horizontal ? 16 : 34} isAnimationActive={false}>
+            {colorFn && data.map((d, i) => <Cell key={i} fill={colorFn(d, si) || s.color || p.bar} />)}
           </Bar>
         ))}
       </BarChart>
@@ -80,7 +82,7 @@ export function Waterfall({ start, steps, startLabel = 'Budget', endLabel = 'Act
         <YAxis stroke={p.axis} tickLine={false} axisLine={false} width={52} fontSize={11} domain={[Math.floor(min), 'auto']} allowDataOverflow />
         <Tooltip content={({ active, payload }) => active && payload?.length ? <div className="tt"><b>{payload[0].payload.name}</b><div className="num">{payload[0].payload.kind === 'total' ? fmtNum(payload[0].payload.v) : (payload[0].payload.d > 0 ? '+' : '') + fmtNum(payload[0].payload.d)} {unit}</div></div> : null} cursor={{ fill: p.grid }} />
         <Bar dataKey="base" stackId="w" fill="transparent" isAnimationActive={false} />
-        <Bar dataKey="v" stackId="w" isAnimationActive={false} radius={[3, 3, 0, 0]} maxBarSize={44}
+        <Bar dataKey="v" stackId="w" isAnimationActive={false} radius={[4, 4, 0, 0]} maxBarSize={44}
           label={{ position: 'top', fontSize: 10.5, fill: p.axis, formatter: v => fmtNum(v) }}>
           {data.map((d, i) => <Cell key={i} fill={d.kind === 'total' ? p.c2 : d.kind === 'up' ? p.bad : p.good} />)}
         </Bar>
@@ -96,9 +98,9 @@ export function Donut({ items, center, sub, height = 180 }) {
   return (
     <div className="row" style={{ gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
       <div style={{ width: height, height, position: 'relative', flex: 'none' }}>
-        <ResponsiveContainer><PieChart><Pie data={items} dataKey="value" nameKey="name" innerRadius="64%" outerRadius="96%" stroke="none" isAnimationActive={false}>
+        <ResponsiveContainer><PieChart><Pie data={items} dataKey="value" nameKey="name" innerRadius="68%" outerRadius="96%" stroke={p.bg} strokeWidth={2} paddingAngle={1} isAnimationActive={false}>
           {items.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}</Pie></PieChart></ResponsiveContainer>
-        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center' }}><div><div style={{ fontSize: 20, fontWeight: 500 }}>{center}</div><div className="muted" style={{ fontSize: 11 }}>{sub}</div></div></div>
+        <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center' }}><div><div style={{ fontSize: 22, fontWeight: 650, letterSpacing: '-.02em' }}>{center}</div><div className="muted" style={{ fontSize: 11 }}>{sub}</div></div></div>
       </div>
       <div className="grow" style={{ minWidth: 160 }}>{items.map((it, i) => (
         <div key={it.name} className="row" style={{ padding: '3px 0', fontSize: 12.5 }}><span className="dotc" style={{ background: colors[i % colors.length], borderRadius: 2 }} /><span className="grow ellipsis">{it.name}</span><span className="num">{it.display ?? fmtNum(it.value)}</span><span className="muted num" style={{ width: 38, textAlign: 'right' }}>{Math.round((it.value / total) * 100)}%</span></div>))}</div>
@@ -110,7 +112,7 @@ export function Spark({ data, color, height = 26 }) {
   const p = usePalette();
   return (
     <div style={{ height, marginTop: 4 }}>
-      <ResponsiveContainer><LineChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}><Line dataKey="v" stroke={color || p.c1} strokeWidth={1.5} dot={false} isAnimationActive={false} /><YAxis hide domain={['auto', 'auto']} /></LineChart></ResponsiveContainer>
+      <ResponsiveContainer><LineChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}><Line dataKey="v" stroke={color || p.spark} strokeWidth={1.5} dot={false} isAnimationActive={false} /><YAxis hide domain={['auto', 'auto']} /></LineChart></ResponsiveContainer>
     </div>
   );
 }
@@ -134,7 +136,7 @@ export function BarList({ items, unit, color }) {
   return <div>{items.map(i => (
     <div key={i.name} className="row" style={{ padding: '5px 0', fontSize: 12.5 }}>
       <span className="ellipsis" style={{ width: 150, flex: 'none' }}>{i.name}</span>
-      <div className="grow" style={{ height: 8, background: 'var(--bg-3)', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${(i.value / mx) * 100}%`, height: '100%', background: i.color || color || p.c1, borderRadius: 4 }} /></div>
+      <div className="grow" style={{ height: 8, background: 'var(--bg-3)', borderRadius: 4, overflow: 'hidden' }}><div style={{ width: `${(i.value / mx) * 100}%`, height: '100%', background: i.color || color || p.bar, borderRadius: 4 }} /></div>
       <span className="num" style={{ width: 70, textAlign: 'right' }}>{fmtNum(i.value)}{unit ? ' ' + unit : ''}</span>
     </div>))}</div>;
 }

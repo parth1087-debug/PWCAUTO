@@ -36,7 +36,7 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
   const [pending, setPending] = useState(null);
   const [text, setText] = useState('');
   const body = useRef(null);
-  useEffect(() => { body.current && (body.current.scrollTop = body.current.scrollHeight); }, [turns, pending]);
+  useEffect(() => { if (body.current && (turns.length || pending)) body.current.scrollTop = body.current.scrollHeight; }, [turns, pending]);
 
   const act = a => {
     if (!a) return;
@@ -128,12 +128,12 @@ export default function Chat({ turns: extTurns, onTurns, context, compact, hello
   return (
     <div className="chat">
       <div className="chat-body" ref={body}>
-        {!turns.length && !pending && (hello || <div className="hello"><Bot size={26} color="var(--brand)" /><h2 style={{ fontSize: 18 }}>Ask about {context ? 'this view' : 'the plant'}</h2><p className="muted">Answers use live plant data through the plantdb MCP server.</p></div>)}
+        {!turns.length && !pending && ((typeof hello === 'function' ? hello(send) : hello) || <div className="hello"><Bot size={26} color="var(--brand)" /><h2 style={{ fontSize: 18 }}>Ask about {context ? 'this view' : 'the plant'}</h2><p className="muted">Answers use live plant data through the plantdb MCP server.</p></div>)}
         {turns.map((t, i) => <Turn key={i} t={t} onAct={act} />)}
         {pending && <Turn t={pending} running onAct={act} />}
       </div>
       <div className="chat-foot">
-        <div className="sugg">{sugg.map(s => <button key={s} onClick={() => send(s)}>{s}</button>)}</div>
+        {(turns.length > 0 || pending || !hello) && <div className="sugg">{sugg.map(s => <button key={s} onClick={() => send(s)}>{s}</button>)}</div>}
         <div className="composer">
           <textarea value={text} onChange={e => setText(e.target.value)} placeholder={compact ? 'Ask about this…' : 'Ask about any asset, KPI, report or policy'} rows={1}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} aria-label="Message" />

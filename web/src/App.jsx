@@ -10,7 +10,7 @@ import Palette from './components/Palette.jsx';
 import CopilotPage from './pages/CopilotPage.jsx';
 import Messages from './pages/Messages.jsx';
 import Dashboards from './pages/Dashboards.jsx';
-import Artefactory from './pages/Artefactory.jsx';
+import Artefactory, { StandaloneView } from './pages/Artefactory.jsx';
 import Autopilot from './pages/Autopilot.jsx';
 import Context from './pages/Context.jsx';
 import SettingsPage from './pages/Settings.jsx';
@@ -102,6 +102,13 @@ export default function App() {
   if (!auth) return <AppCtx.Provider value={app}><Login onLogin={(u, p) => (u === LOGIN.username && p === LOGIN.password ? (setAuth({ at: Date.now() }), true) : false)} /></AppCtx.Provider>;
 
   const [section, sub, sub2] = route.split('/');
+  if (section === 'view') return (
+    <AppCtx.Provider value={app}>
+      <StandaloneView id={sub} />
+      {panel && <aside className="panel" role="dialog" aria-label="Copilot"><div className="panel-h"><Sparkles size={16} color="var(--brand)" /><b>Copilot</b><button className="ibtn right" onClick={() => setPanel(null)} aria-label="Close"><X /></button></div><div style={{ flex: 1, minHeight: 0 }}><Chat key={panel.title} context={panel} compact /></div></aside>}
+      <div className="toasts">{toasts.map(t => <div key={t.id} className="toast">{t.text}</div>)}</div>
+    </AppCtx.Provider>
+  );
   let page;
   if (section === 'messages') page = <Messages id={sub} />;
   else if (section === 'd') page = <Dashboards id={sub} artId={sub2} />;

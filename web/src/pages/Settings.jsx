@@ -111,7 +111,7 @@ function Usage() {
   return <>
     <div className="kpis">{[['Copilot sessions', '1,842', 'this month'], ['Active users', '86', 'of 112'], ['Autopilot runs', '5,310', 'schedules + workflows'], ['Tokens', '41.6 M', '62 % on local LLM'], ['AI cost', '₹1.84 L', 'budget ₹2.50 L'], ['Answers rated useful', '92 %', '1,206 ratings']].map(k => <div key={k[0]} className="kpi"><div className="l">{k[0]}</div><div className="v">{k[1]}</div><div className="f">{k[2]}</div></div>)}</div>
     <div className="grid g21">
-      <Card title="Sessions per day"><Trend data={days} series={[{ key: 'copilot', name: 'Copilot', type: 'bar', stack: 's' }, { key: 'autopilot', name: 'Autopilot', type: 'bar', stack: 's', color: '#b5b3ae' }]} days={14} height={220} /></Card>
+      <Card title="Sessions per day"><Trend data={days} series={[{ key: 'copilot', name: 'Copilot', type: 'bar', stack: 's' }, { key: 'autopilot', name: 'Autopilot', type: 'bar', stack: 's', color: '#d0d5dd' }]} days={14} height={220} /></Card>
       <Card title="Runs by agent"><Bars data={byAgent} series={[{ key: 'runs', name: 'Runs' }]} horizontal height={Math.max(180, byAgent.length * 34)} /></Card>
     </div>
   </>;
