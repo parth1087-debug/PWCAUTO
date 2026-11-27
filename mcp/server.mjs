@@ -22,6 +22,9 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { runAgent, errorText, liveEnabled, MODEL } from './agent.mjs';
 import { runBruce, bruceDemos, COPILOTS } from './bruce.mjs';
 import { DEMOS, DEMO_LIST, createDB, createTools, TOOL_SPECS, POLICIES } from '../web/src/shared/index.js';
@@ -108,6 +111,23 @@ async function chat(req, res) {
   }
 }
 
+/* ---------- the web app (built into web/dist), served at / ---------- */
+const DIST = process.env.WEB_DIST || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../web/dist');
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8' };
+function serveApp(req, res) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
+  let rel;
+  try { rel = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400).end(); return; }
+  let file = path.resolve(DIST, '.' + rel);
+  if (!file.startsWith(DIST + path.sep) && file !== DIST) { res.writeHead(403).end(); return; }
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(DIST, 'index.html');
+  if (!fs.existsSync(file)) { res.writeHead(404, { 'Content-Type': 'text/plain' }).end('Web app not built'); return; }
+  const isAsset = file.includes(`${path.sep}assets${path.sep}`);
+  res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': isAsset ? 'public, max-age=31536000, immutable' : 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+  if (req.method === 'HEAD') { res.end(); return; }
+  fs.createReadStream(file).pipe(res);
+}
+
 const httpIdx = process.argv.indexOf('--http');
 if (httpIdx > -1) {
   const port = Number(process.argv[httpIdx + 1] || process.env.PORT || 8787);
@@ -115,7 +135,7 @@ if (httpIdx > -1) {
   http.createServer(async (req, res) => {
     Object.entries(cors).forEach(([k, v]) => res.setHeader(k, v));
     if (req.method === 'OPTIONS') { res.writeHead(204).end(); return; }
-    if (req.url === '/' || req.url === '/health') {
+    if (req.url === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ name: 'plantdb', status: 'ok', mcp: '/mcp', demos: allowed, anchor: anchor || 'now' }));
       return;
     }
@@ -131,7 +151,7 @@ if (httpIdx > -1) {
       return;
     }
     if (req.url === '/api/chat') { chat(req, res); return; }
-    if (!req.url.startsWith('/mcp')) { res.writeHead(404).end(); return; }
+    if (!req.url.startsWith('/mcp')) { serveApp(req, res); return; }
     if (req.method !== 'POST') { res.writeHead(405, { Allow: 'POST' }).end('Use POST (stateless Streamable HTTP)'); return; }
     if (process.env.PLANTDB_TOKEN && req.headers.authorization !== `Bearer ${process.env.PLANTDB_TOKEN}`) { res.writeHead(401).end('Unauthorized'); return; }
     let body = '';

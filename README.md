@@ -81,7 +81,7 @@ cd mcp && npm run start:http
 
 Tools: `list_demos`, `uns_browse`, `uns_search`, `get_tag_history`, `get_kpis`, `get_kpi_trend`, `get_asset_health`, `diagnose_asset`, `get_production`, `get_oee_losses`, `get_energy`, `get_quality`, `list_messages`, `search_docs`, `list_agents`, `get_policy`. Every data tool takes a `demo` argument.
 
-**Live:** `https://pwc-plantdb.us.iosense.io/mcp` (Streamable HTTP, stateless, no key; health at `/`). Hosted on Faclon Forge, project `pwc-plantdb-mcp`, deployment `dep-pwc-plantdb-mcp-adf6ef`, built from `main` with `mcp/Dockerfile`. After changing the server, redeploy with Forge `fg_deploy_revision` (deployment `dep-pwc-plantdb-mcp-adf6ef`). The contract is in `mcp/forge-contract.json`.
+**The app is live at https://pwc-plantdb.us.iosense.io/** (served by the same service). **MCP:** `https://pwc-plantdb.us.iosense.io/mcp` (Streamable HTTP, stateless, no key; health at `/`). Hosted on Faclon Forge, project `pwc-plantdb-mcp`, deployment `dep-pwc-plantdb-mcp-adf6ef`, built from `main` with `mcp/Dockerfile`. After changing the server, redeploy with Forge `fg_deploy_revision` (deployment `dep-pwc-plantdb-mcp-adf6ef`). The contract is in `mcp/forge-contract.json`.
 
 ```json
 { "mcpServers": { "plantdb": { "type": "http", "url": "https://pwc-plantdb.us.iosense.io/mcp" } } }
