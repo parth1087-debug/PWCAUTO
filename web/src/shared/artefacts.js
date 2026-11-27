@@ -60,6 +60,10 @@ export const EXTRA = {
     { key: 'd-demand', name: 'Demand, PF and tariff', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['md', 'pf', 'cost', 're'] }, { type: 'energy' }, { type: 'tag_trend', asset: 'GRID-01', tag: 'pf' }, { type: 'tag_trend', asset: 'SOL-01', tag: 'ac_kw' }, { type: 'live', assets: ['GRID-01', 'TR-01', 'TR-02', 'SOL-01'] }, { type: 'alerts' }] } },
     { key: 'd-transformers', name: 'Transformers and DG sets', spec: { view: 'custom', widgets: [{ type: 'live', assets: ['TR-01', 'TR-02', 'DG-01', 'DG-02'] }, { type: 'tag_trend', asset: 'TR-02', tag: 'wind_temp' }, { type: 'tag_trend', asset: 'TR-01', tag: 'oil_temp' }, { type: 'tag_trend', asset: 'DG-01', tag: 'sfc' }, { type: 'asset_health' }, { type: 'kpi_trend', id: 'dgsfc' }] } },
   ],
+  power: [
+    { key: 'd-heatrate', name: 'Heat rate deviation and losses', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['nhr', 'beff', 'apc', 'scc', 'ubc', 'spray'] }, { type: 'kpi_trend', id: 'nhr' }, { type: 'losses' }, { type: 'tag_trend', asset: 'APH-01', tag: 'gas_out' }, { type: 'tag_trend', asset: 'COND-01', tag: 'back_pressure' }, { type: 'tag_trend', asset: 'ATT-01', tag: 'sh_spray' }, { type: 'setpoints' }] } },
+    { key: 'd-apc', name: 'Auxiliary power consumption', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['apc', 'plf'] }, { type: 'kpi_trend', id: 'apc' }, { type: 'live', assets: ['ID-A', 'ID-B', 'FD-A', 'PA-A', 'BFP-A', 'BFP-B'] }, { type: 'tag_trend', asset: 'UAT-01', tag: 'apc' }, { type: 'tag_trend', asset: 'BFP-A', tag: 'recirc_flow' }, { type: 'alerts' }] } },
+  ],
   steel: [{ key: 'd-mill', name: 'Mill war room', spec: { view: 'custom', widgets: [{ type: 'kpis', ids: ['yield', 'util', 'cobbles', 'udt'] }, { type: 'live', assets: ['RS-01', 'IS-01', 'FS-01', 'RHF-01'] }, { type: 'losses' }, { type: 'alerts' }] } }],
 };
 

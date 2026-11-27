@@ -11,8 +11,10 @@ import wind from './wind.jsx';
 import ems from './ems.jsx';
 import emsUtil from './ems-utilities.jsx';
 import pipes from './pipes.jsx';
+import powerUnit from './power-unit.jsx';
+import powerOps from './power-ops.jsx';
 
-export const DRAWINGS = { ...auto, ...cement, ...steel, ...pharma, ...solar, ...wind, ...ems, ...emsUtil, ...pipes };
+export const DRAWINGS = { ...auto, ...cement, ...steel, ...pharma, ...solar, ...wind, ...ems, ...emsUtil, ...pipes, ...powerUnit, ...powerOps };
 
 /** Body of a mimic artefact: spec { view: 'mimic', mimic: '<id>' }. */
 export function MimicView({ c, id }) {
