@@ -49,7 +49,7 @@ function Agents() {
   const [sel, setSel] = useState(ctx.demo.agents[0].id);
   const a = ctx.demo.agents.find(x => x.id === sel) || ctx.demo.agents[0];
   const live = DEPLOYED[ctx.demo.id] || { agents: {} };
-  const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `PwC ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
+  const json = JSON.stringify({ bruce_agent_id: live.agents[a.id] || null, bruce_name: `PwC ${ctx.demo.name.split(' ')[0]} · ${a.name}`, bruce_skills: [`pwc-${ctx.demo.id}-plant-knowledge`, ...a.skills.map(s => `pwc-${ctx.demo.id}-${s}`)], bruce_connectors: ['UNS Graph', 'Plant Data'], uns_workspace: live.uns?.workspace, ...a }, null, 2);
   return <div className="grid" style={{ gap: 16 }}>
     <Card title="Agents on Bruce" sub={`${ctx.demo.agents.length} live in Bruce · UNS ${live.uns?.workspace || '—'}`} flush>
       <div className="scroll-x"><table className="t"><thead><tr><th>Agent</th><th>Bruce ID</th><th>Version</th><th>Model</th><th>Triggers</th><th className="r">Tools</th><th>Skills</th><th>Autonomy</th><th>Policies</th><th>Status</th></tr></thead><tbody>
