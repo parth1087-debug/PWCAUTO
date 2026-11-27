@@ -111,7 +111,16 @@ export default function TrendExplorer({ c }) {
   const events = useMemo(() => (c.demo.events || []).filter(e => sel.some(s => s.a === e.asset) && (e.title || sel.some(s => s.a === e.asset && s.t === e.tag)))
     .map(e => ({ ...e, t: db.anchor - e.startHoursAgo * H, tagName: db.tagDef(e.asset, e.tag)?.name }))
     .filter(e => e.t >= rng.from && e.t <= rng.to).sort((a, b) => a.t - b.t), [c.demo, sel, db, rng.from, rng.to]);
-  const evMarks = (filterFn = () => true) => (showEv ? events.filter(filterFn).map(e => ({ t: e.t, label: `${e.asset} ${e.title ? '▲' : '·'}`, color: e.severity === 'bad' ? p.bad : p.warn })) : []);
+  /* one marker per start time; label names the assets (▲ = titled alert) */
+  const evMarks = (filterFn = () => true) => {
+    if (!showEv) return [];
+    const m = new Map();
+    events.filter(filterFn).forEach(e => {
+      const x = m.get(e.t) || { t: e.t, assets: new Set(), bad: false, titled: false };
+      x.assets.add(e.asset); x.bad = x.bad || e.severity === 'bad'; x.titled = x.titled || !!e.title; m.set(e.t, x);
+    });
+    return [...m.values()].map(x => ({ t: x.t, label: `${[...x.assets].join(', ')}${x.titled ? ' ▲' : ''}`, color: x.bad ? p.bad : p.warn }));
+  };
 
   const csv = () => [['Time (ISO)', ...series.map(s => `${s.a} ${s.def.name} (${s.unit || '-'})`)], ...rows.map(r => [new Date(r.t).toISOString(), ...series.map(s => {
     const v = r[s.key]; return v == null ? '' : mode === 'overlay' && !sameUnit ? +(v * scaleOf(s) / 100).toFixed(4) : v; })])];

@@ -92,7 +92,7 @@ export function irr(capex, annual, years = NOTES.years, degrade = 0) {
 /* ======================================================================
    CAPEX · ECM register
    ====================================================================== */
-const DECISION = { now: 'Approve now', pilot: 'Pilot first', later: 'Next budget / later' };
+const DECISION = { now: 'Approve now', pilot: 'Pilot first', later: 'Later' };
 export { DECISION };
 
 /** ECM register for the selected baseline period R. ₹ in lakh, energy in kWh/yr, fuel in Sm³/yr. */
@@ -114,7 +114,7 @@ export function capexModel(db, demo, R) {
   {
     const leak = A('AR-01', 'leak_pct'), flow = A('AR-01', 'flow'), sp = A('AR-01', 'plant_sp');
     const tgt = 10, dq = Math.max(0, flow * (leak - tgt) / 100), kw = dq * sp * 0.85;
-    add({ id: 'air-leak', area: 'Compressed air', asset: 'AR-01', name: 'Compressed air leak programme: ultrasonic survey, repair, zone isolation valves',
+    add({ id: 'air-leak', short: 'Air leak programme', area: 'Compressed air', asset: 'AR-01', name: 'Compressed air leak programme: ultrasonic survey, repair, zone isolation valves',
       base: `Leak load ${r(leak)} % of ${r(flow)} m³/min (${r(flow * leak / 100, 1)} m³/min)`, prop: `≤ ${tgt} % with quarterly survey; isolate idle headers on weekends`,
       kwh: kw * N.hours, capex: 6.5, opex: 1.5, conf: leak > 18 ? 'High' : 'Medium',
       evidence: [ev('AR-01', 'leak_pct'), ev('AR-01', 'flow'), ev('AR-01', 'plant_sp'), ev('AC-03', 'kw')],
@@ -125,7 +125,7 @@ export function capexModel(db, demo, R) {
   {
     const k1 = A('AC-01', 'kw'), k2 = A('AC-02', 'kw'), k3 = A('AC-03', 'kw'), lp = A('AC-01', 'load_pct');
     const kw = 0.04 * (k1 + k2 + k3);
-    add({ id: 'air-seq', area: 'Compressed air', asset: 'AC-01…04', name: 'Central compressor sequencer with narrow pressure band (AC-01…AC-04)',
+    add({ id: 'air-seq', short: 'Compressor sequencer', area: 'Compressed air', asset: 'AC-01…04', name: 'Central compressor sequencer with narrow pressure band (AC-01…AC-04)',
       base: `Fixed-speed AC-01/02 ${r(lp)} % loaded, cascade band 7.3/6.9 bar`, prop: 'One master controller, AC-03 VSD always trim, band ±0.2 bar',
       kwh: kw * N.hours, capex: 6.0, conf: 'High',
       evidence: [ev('AC-01', 'load_pct'), ev('AC-01', 'kw'), ev('AC-02', 'kw'), ev('AC-03', 'kw'), ev('AR-01', 'header_pressure')],
@@ -135,7 +135,7 @@ export function capexModel(db, demo, R) {
   /* 3 · replace AC-02 with VSD */
   {
     const k2 = A('AC-02', 'kw'), kw = 0.12 * k2;
-    add({ id: 'air-vsd', area: 'Compressed air', asset: 'AC-02', name: 'Replace AC-02 (160 kW fixed speed) with a 132 kW VSD compressor',
+    add({ id: 'air-vsd', short: 'VSD compressor for AC-02', area: 'Compressed air', asset: 'AC-02', name: 'Replace AC-02 (160 kW fixed speed) with a 132 kW VSD compressor',
       base: `AC-02 ${r(k2)} kW avg on load/unload`, prop: 'Second VSD as trim after leaks are fixed, right-sized to the new demand',
       kwh: kw * N.hours, capex: 36, conf: 'Medium',
       evidence: [ev('AC-02', 'kw'), ev('AC-02', 'load_pct'), ev('AC-02', 'spec_power')],
@@ -150,7 +150,7 @@ export function capexModel(db, demo, R) {
     const sink = makeup * 1000 * 4.19 * (70 - 30) / 3600;                 // kWth to heat make-up 30 → 70 °C
     const kwth = Math.min(0.45 * kComp, sink) * 0.7;                      // 70 % utilisation
     const sm3 = (kwth * N.hours) / eff / N.gasNcv;
-    add({ id: 'air-hr', area: 'Compressed air → steam', asset: 'AC-01, AC-02', name: 'Compressor oil-cooler heat recovery to boiler feed (make-up) water',
+    add({ id: 'air-hr', short: 'Compressor heat recovery', area: 'Compressed air → steam', asset: 'AC-01, AC-02', name: 'Compressor oil-cooler heat recovery to boiler feed (make-up) water',
       base: `${r(kComp)} kW of compression heat rejected to air; make-up ${r(makeup, 1)} t/h at 30 °C (after condensate ECM)`, prop: `Plate heat exchangers recover about ${r(kwth)} kWth, make-up preheated to 70 °C`,
       kwh: 0, sm3, capex: 16, conf: 'Medium',
       evidence: [ev('AC-01', 'oil_temp'), ev('AC-01', 'kw'), ev('SH-01', 'total_flow'), ev('CRS-01', 'recovery')],
@@ -161,7 +161,7 @@ export function capexModel(db, demo, R) {
   {
     const kwtr = A('CH-02', 'kw_tr'), tr = A('CH-02', 'tr'), app = A('CH-02', 'cond_approach');
     const kw = Math.max(0, (kwtr - 0.63) * tr);
-    add({ id: 'ch2-clean', area: 'Chilled water', asset: 'CH-02', name: 'CH-02 condenser tube cleaning and CT-02 blowdown valve repair',
+    add({ id: 'ch2-clean', short: 'CH-02 tube cleaning', area: 'Chilled water', asset: 'CH-02', name: 'CH-02 condenser tube cleaning and CT-02 blowdown valve repair',
       base: `${r(kwtr, 2)} kW/TR at ${r(tr)} TR, approach ${r(app, 1)} °C`, prop: '0.63 kW/TR, approach ≤ 3 °C, cycles of concentration back to 4',
       kwh: kw * N.chillerHours, capex: 2.6, conf: kwtr > 0.7 ? 'High' : 'Medium',
       evidence: [ev('CH-02', 'kw_tr'), ev('CH-02', 'cond_approach'), ev('CH-01', 'cond_approach'), ev('CH-02', 'tr')],
@@ -172,7 +172,7 @@ export function capexModel(db, demo, R) {
   {
     const tr1 = A('CH-01', 'tr'), tr2 = A('CH-02', 'tr');
     const kw = 0.03 * (tr1 + tr2);
-    add({ id: 'ch-atcs', area: 'Chilled water', asset: 'CH-01, CH-02', name: 'Automatic condenser tube cleaning (ball system) on CH-01 and CH-02',
+    add({ id: 'ch-atcs', short: 'Auto tube cleaning CH-01/02', area: 'Chilled water', asset: 'CH-01, CH-02', name: 'Automatic condenser tube cleaning (ball system) on CH-01 and CH-02',
       base: 'Manual cleaning yearly; approach drifts 2–4 °C between cleanings', prop: 'Approach held near clean value all year',
       kwh: kw * N.chillerHours, capex: 26, conf: 'Medium',
       evidence: [ev('CH-01', 'cond_approach'), ev('CH-02', 'cond_approach'), ev('CH-02', 'kw_tr')],
@@ -182,7 +182,7 @@ export function capexModel(db, demo, R) {
   /* 7 · CH-02 replacement */
   {
     const tr2 = A('CH-02', 'tr'); const kw = (0.63 - 0.54) * tr2;
-    add({ id: 'ch2-replace', area: 'Chilled water', asset: 'CH-02', name: 'Replace CH-02 with a 600 TR magnetic-bearing centrifugal chiller',
+    add({ id: 'ch2-replace', short: 'New CH-02 chiller', area: 'Chilled water', asset: 'CH-02', name: 'Replace CH-02 with a 600 TR magnetic-bearing centrifugal chiller',
       base: '0.63 kW/TR when clean (16 years old)', prop: '0.54 kW/TR full load, better at part load',
       kwh: kw * N.chillerHours, capex: 255, conf: 'Medium',
       evidence: [ev('CH-02', 'kw_tr'), ev('CH-02', 'tr')],
@@ -192,7 +192,7 @@ export function capexModel(db, demo, R) {
   /* 8 · IE4 motors on primary CHW pumps */
   {
     const kw0 = A('PCHP-01', 'kw') + A('PCHP-02', 'kw'); const kw = kw0 * (1 - 0.930 / 0.954);
-    add({ id: 'ie4', area: 'Chilled water', asset: 'PCHP-01, PCHP-02', name: 'IE4 motors on primary CHW pumps PCHP-01/02 (37 kW, IE2 today)',
+    add({ id: 'ie4', short: 'IE4 CHW pump motors', area: 'Chilled water', asset: 'PCHP-01, PCHP-02', name: 'IE4 motors on primary CHW pumps PCHP-01/02 (37 kW, IE2 today)',
       base: `${r(kw0)} kW at 93.0 % motor efficiency`, prop: '95.4 % (IE4)',
       kwh: kw * N.hours, capex: 4.8, conf: 'High',
       evidence: [ev('PCHP-01', 'kw'), ev('PCHP-02', 'kw'), ev('PCHP-01', 'dp')],
@@ -203,7 +203,7 @@ export function capexModel(db, demo, R) {
   {
     const hvac = A('MCC-03', 'kw'), metered = A('VFD-01', 'kw') + A('VFD-02', 'kw');
     const fixedFans = 6 * 18.5, kw = 0.25 * fixedFans;
-    add({ id: 'ahu-vfd', area: 'HVAC', asset: 'MCC-03', name: 'VFDs with static-pressure reset on 6 fixed-speed AHU fans (22 kW)',
+    add({ id: 'ahu-vfd', short: 'AHU fan VFDs', area: 'HVAC', asset: 'MCC-03', name: 'VFDs with static-pressure reset on 6 fixed-speed AHU fans (22 kW)',
       base: `HVAC MCC ${r(hvac)} kW; only AHU-1/2 (${r(metered)} kW) are on VFD`, prop: 'Fan speed follows duct static pressure; −25 % fan kW',
       kwh: kw * N.hours, capex: 12.5, conf: 'Low',
       evidence: [ev('MCC-03', 'kw'), ev('VFD-01', 'freq'), ev('VFD-01', 'kw')],
@@ -216,7 +216,7 @@ export function capexModel(db, demo, R) {
     const tgt = 82, dt = Math.max(0, steam * (tgt - rec) / 100);       // t/h extra condensate
     const kwth = dt * 1000 * 4.19 * (tret - 30) / 3600;
     const sm3 = (kwth * N.hours) / eff / N.gasNcv, water = dt * N.hours;
-    add({ id: 'condensate', area: 'Steam', asset: 'CRS-01', name: 'Raise condensate recovery: pumping traps and return lines in the process block',
+    add({ id: 'condensate', short: 'Condensate recovery to 82 %', area: 'Steam', asset: 'CRS-01', name: 'Raise condensate recovery: pumping traps and return lines in the process block',
       base: `Recovery ${r(rec)} % of ${r(steam, 1)} t/h steam`, prop: `${tgt} % (+${r(dt, 1)} t/h at ${r(tret)} °C)`,
       kwh: 0, sm3, water, capex: 24, conf: 'High',
       evidence: [ev('CRS-01', 'recovery'), ev('CRS-01', 'return_temp'), ev('SH-01', 'total_flow'), ev('STZ-01', 'failed_traps')],
@@ -228,7 +228,7 @@ export function capexModel(db, demo, R) {
     const st = A('BLR-01', 'stack_temp'), o2 = A('BLR-01', 'stack_o2'), gas = A('BLR-01', 'gas_flow'), eff = A('BLR-01', 'efficiency');
     const gain = Math.max(0, (st - 130) / 22) + Math.max(0, (o2 - 2.0) * 0.5);   // % points
     const sm3 = gas * N.hours * gain / (eff + gain);
-    add({ id: 'blr-econ', area: 'Steam', asset: 'BLR-01', name: 'BLR-01 feed-water economiser and O₂ trim control',
+    add({ id: 'blr-econ', short: 'BLR-01 economiser + O₂ trim', area: 'Steam', asset: 'BLR-01', name: 'BLR-01 feed-water economiser and O₂ trim control',
       base: `Stack ${r(st)} °C, O₂ ${r(o2, 1)} %, efficiency ${r(eff, 1)} %`, prop: `Stack 130 °C, O₂ 2.0 %, +${r(gain, 1)} % points efficiency`,
       kwh: 0, sm3, capex: 26, conf: 'High',
       evidence: [ev('BLR-01', 'stack_temp'), ev('BLR-01', 'stack_o2'), ev('BLR-01', 'gas_flow'), ev('BLR-01', 'efficiency')],
@@ -240,7 +240,7 @@ export function capexModel(db, demo, R) {
     const thd = A('TR-02', 'thd_i'), wti = A('TR-02', 'wind_temp'), load = A('TR-02', 'load_pct');
     const kw = 3 + Math.max(0, thd - 5) * 0.35;                           // eddy + cable loss avoided
     const pfL = 6;                                                        // PF slab protection, ₹ L/yr
-    add({ id: 'pq-filter', area: 'Power network', asset: 'TR-02, HF-01, APFC-01', name: 'Second 300 A active harmonic filter (N+1) on BB-02 and 7 % detuned APFC steps',
+    add({ id: 'pq-filter', short: 'N+1 harmonic filter, detuned APFC', area: 'Power network', asset: 'TR-02, HF-01, APFC-01', name: 'Second 300 A active harmonic filter (N+1) on BB-02 and 7 % detuned APFC steps',
       base: `TR-02 THD-I ${r(thd, 1)} %, WTI ${r(wti)} °C at ${r(load)} % load; one filter, no redundancy`, prop: 'THD-I < 5 % with either filter out; capacitors protected from resonance',
       kwh: kw * 8760, extraL: pfL, capex: 19, conf: 'Medium',
       evidence: [ev('TR-02', 'thd_i'), ev('TR-02', 'wind_temp'), ev('HF-01', 'comp_current'), ev('APFC-01', 'pf_bus')],
@@ -250,7 +250,7 @@ export function capexModel(db, demo, R) {
   /* 13 · rooftop solar expansion */
   {
     const pr = A('SOL-01', 'pr'); const kwp = 800; const kwh = kwp * N.solarYield;
-    add({ id: 'solar', area: 'Renewables', asset: 'SOL-01', name: 'Rooftop and carport solar: add 0.8 MWp (net-metered, behind GRID-01)',
+    add({ id: 'solar', short: 'Solar +0.8 MWp', area: 'Renewables', asset: 'SOL-01', name: 'Rooftop and carport solar: add 0.8 MWp (net-metered, behind GRID-01)',
       base: `1 MWp running at PR ${r(pr)} %`, prop: `1.8 MWp; +${r(kwh / 1e6, 2)} GWh/yr at ${N.solarYield} kWh/kWp`,
       kwh, value: energyOnly, capex: 336, opex: 4, degrade: 0.005, conf: 'High',
       evidence: [ev('SOL-01', 'pr'), ev('SOL-01', 'ac_kw'), ev('SOL-01', 'irradiance')],

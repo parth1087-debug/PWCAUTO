@@ -44,7 +44,7 @@ export default function SupplyPlan({ c }) {
   /* ---- planned actions, by start hour ---- */
   const actions = [
     ...plan.peakActions.map(a => ({ id: a.id, from: a.hours[0], to: a.hours[1], what: a.name, asset: a.asset, effect: a.kva ? `−${fmtNum(a.kva, 0)} kVA at ${hh(plan.peak.h)}` : '—', note: a.cost, owner: a.owner, kind: 'Peak' })),
-    ...plan.shifts.map(s => ({ id: s.id, from: s.to[0], to: s.to[1], what: `Move ${s.name[0].toLowerCase() + s.name.slice(1)} from ${hh(s.from[0])}–${hh(s.from[1])} to ${hh(s.to[0])}–${hh(s.to[1])}`, asset: s.asset, effect: `${fmtNum(s.kwh, 0)} kWh · ${inr(s.inr)}`, note: s.note, owner: s.owner, kind: 'ToD' })),
+    ...plan.shifts.map(s => ({ id: s.id, from: s.to[0], to: s.to[1], what: `Move ${/^[A-Z][a-z]/.test(s.name) ? s.name[0].toLowerCase() + s.name.slice(1) : s.name} from ${hh(s.from[0])}–${hh(s.from[1])} to ${hh(s.to[0])}–${hh(s.to[1])}`, asset: s.asset, effect: `${fmtNum(s.kwh, 0)} kWh · ${inr(s.inr)}`, note: s.note, owner: s.owner, kind: 'ToD' })),
     { id: 'b1', from: 0, to: 24, what: `Base-load BLR-02 (biomass) up to ${plan.steam.bioCap} t/h; BLR-01 (gas) on swing, min ${PRICES.gasMin} t/h`, asset: 'BLR-02', effect: `${inr(steamSave)} vs today’s split`, note: `Gas kept at the take-or-pay floor (${fmtNum(plan.steam.floorSm3, 0)} Sm³)`, owner: 'Boiler house in-charge', kind: 'Steam' },
     plan.steam.briqDays < 2 && { id: 'b2', from: 9, to: 10, what: `Raise a briquette call-off: stock ${plan.steam.briqStock} t covers ${plan.steam.briqDays} days at plan`, asset: 'BLR-02', effect: `${fmtNum(plan.steam.briqNeed, 0)} t/day`, note: 'Lead time 2 days from the Chakan depot', owner: 'Stores and purchase', kind: 'Steam' },
     { id: 'g1', from: 0, to: 24, what: `DG-01 / DG-02 on mains-failure standby; no peak lopping`, asset: 'DG-01', effect: `₹${fmtNum(dg.cost, 1)}/kWh vs ₹${fmtNum(plan.peakRate, 2)} grid peak`, note: plan.lopHours ? `Lop only in ${plan.lopHours} h above contract` : 'Weekly off-load test 15 min at 15:00 (normal slot)', owner: 'Electrical head', kind: 'DG' },
@@ -103,7 +103,7 @@ export default function SupplyPlan({ c }) {
 
       <div className="grid g21" style={{ marginTop: 16 }}>
         <Card title="Peak shaving · keep MD under the 90 % alert" sub={`Tomorrow's 15-min peak, kVA. Month-to-date MD ${fmtNum(plan.mdMTD, 0)} kVA; demand charge ₹${TARIFF.demand}/kVA-month.`} ask="Which loads drive tomorrow's peak and how do we keep MD under 7,200 kVA?">
-          <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 560 }}><PeakBridge plan={plan} /></div></div>
+          <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 640 }}><PeakBridge plan={plan} /></div></div>
           <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
             {mdSave > 0 ? <>Unshaved, tomorrow would set this month's MD {fmtNum(plan.peak.kva15 - plan.mdBase, 0)} kVA above the {fmtNum(plan.mdBase, 0)} kVA so far: <b style={{ color: 'var(--text)' }}>{inr(plan.mdRisk(plan.peak.kva15))}</b> more on the bill. With the plan: {inr(plan.mdRisk(plan.peakPlan.kva15))}.</> : <>Tomorrow's planned peak stays below this month's MD so far; no extra demand charge.</>}
           </div>

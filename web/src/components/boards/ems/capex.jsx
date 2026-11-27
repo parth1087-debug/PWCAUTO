@@ -43,7 +43,7 @@ export default function CapexBoard({ c }) {
       <div className="en-tiles" style={{ margin: 0 }}>
         <Tile label="Electricity saving" value={gwh(t.kwh)} unit="/yr" tone="brand" foot={`${fmtNum(pctGrid, 1)} % of grid energy · ${fmtNum(t.kwh / NOTES.hours, 0)} kW average`} />
         <Tile label="Fuel saving (PNG)" value={fmtNum(t.sm3 / 1e5, 2)} unit="lakh Sm³/yr" foot={`${gasRows.length} thermal measures · ₹${NOTES.gasPrice}/Sm³`} />
-        <Tile label="Money saved" value={inr(t.save)} unit="/yr" tone="good" foot={`net of running costs · ${fmtNum((t.save * 1e5) / (m.annualKwh * m.tariff) * 100, 1)} % of the energy bill`} />
+        <Tile label="Money saved" value={inr(t.save)} unit="/yr" tone="good" foot={`electricity ${inr(m.rows.reduce((a, r) => a + r.elecL, 0))} · fuel and water ${inr(m.rows.reduce((a, r) => a + r.fuelL + r.waterL, 0))} · net of running costs`} />
         <Tile label="Emissions avoided" value={fmtNum(t.tco2, 0)} unit="tCO₂/yr" foot={`grid ${NOTES.ef} t/MWh · gas ${NOTES.gasEf} kg/Sm³`} />
         <Tile label="Capex" value={inr(t.capex)} foot={`${inr(now.capex)} now · ${inr(pilot.capex)} pilots · ${inr(later.capex)} later`} />
         <Tile label="Blended payback" value={yrs(t.pay)} tone={t.pay <= 3 ? 'good' : 'warn'} foot={`NPV 10 yr at 10 %: ${inr(t.npv)}`} />
@@ -55,30 +55,28 @@ export default function CapexBoard({ c }) {
             <h4><Tag c={DEC_TONE[k]}>{DECISION[k]}</Tag><span className="muted" style={{ fontWeight: 400, fontSize: 12 }}>{s.n} measure{s.n === 1 ? '' : 's'}</span></h4>
             <div className="big">{inr(s.save)}<span className="muted" style={{ fontSize: 12, fontWeight: 400 }}>/yr for {inr(s.capex)}</span></div>
             <div className="muted" style={{ fontSize: 12 }}>{why} Payback {yrs(s.pay)} · {fmtNum(s.tco2, 0)} tCO₂/yr</div>
-            <ul>{m.rows.filter(r => r.decision === k).map(r => <li key={r.id}><button className="en-link" onClick={() => setSel(r.id)}>{r.name.split(':')[0]}</button> <span className="muted num">· {inr(r.saveL)}/yr</span></li>)}</ul>
+            <div className="en-mini" style={{ marginTop: 8 }}>{m.rows.filter(r => r.decision === k).map(r => <React.Fragment key={r.id}><button className="en-link ellipsis" style={{ textAlign: 'left' }} onClick={() => setSel(r.id)}>{r.short}</button><span className="num">{inr(r.saveL)}/yr</span></React.Fragment>)}</div>
           </div>))}
       </div>
 
       <Card title="ECM register, fastest payback first" sub={`Baseline measured over ${R.label} · ₹ at ₹${fmtNum(m.tariff, 2)}/kWh blended (solar at ₹${fmtNum(m.energyOnly, 2)}/kWh), gas ₹${NOTES.gasPrice}/Sm³ · IRR and NPV over ${NOTES.years} years at ${NOTES.discount * 100} % · select a row for evidence, risk and M&V`} flush
         csv={{ name: 'ems-ecm-register', rows: csv }} ask="Which energy conservation measures should we approve first, and why?">
-        <div className="en-tbl"><table className="t" style={{ minWidth: 1180 }}>
-          <thead><tr><th>#</th><th>Measure</th><th>Baseline (measured) → proposed</th><th className="r">Energy saved /yr</th><th className="r">₹ saved /yr</th><th className="r">Capex</th><th className="r">Payback</th><th className="r">IRR</th><th className="r">NPV 10 yr</th><th className="r">tCO₂ /yr</th><th>Confidence</th><th>Recommendation</th></tr></thead>
+        <div className="en-tbl"><table className="t" style={{ minWidth: 1000 }}>
+          <thead><tr><th>#</th><th>Measure</th><th>Baseline (measured) → proposed</th><th className="r">Energy saved /yr</th><th className="r">₹ saved /yr</th><th className="r">Capex</th><th className="r">Payback</th><th className="r">IRR · NPV 10 yr</th><th className="r">tCO₂ /yr</th><th>Recommendation · confidence</th></tr></thead>
           <tbody>{m.rows.map((r, i) => (
             <tr key={r.id} className={`click ${cur.id === r.id ? 'on' : ''}`} onClick={() => setSel(r.id)}>
               <td className="num muted">{i + 1}</td>
-              <td className="wrap" style={{ minWidth: 260 }}><b style={{ fontWeight: 600 }}>{r.name}</b><div className="muted" style={{ fontSize: 11.5 }}>{r.area} · <span className="mono">{r.asset}</span></div></td>
-              <td className="wrap" style={{ fontSize: 12, minWidth: 240 }}>{r.base}<div style={{ color: 'var(--brand)' }}>→ {r.prop}</div></td>
+              <td className="wrap" style={{ minWidth: 200 }}><b style={{ fontWeight: 600 }}>{r.name}</b><div className="muted" style={{ fontSize: 11.5 }}>{r.area} · <span className="mono">{r.asset}</span></div></td>
+              <td className="wrap" style={{ fontSize: 11.5, minWidth: 190 }}>{r.base}<div style={{ color: 'var(--brand)' }}>→ {r.prop}</div></td>
               <td className="r num">{r.kwh ? gwh(r.kwh) : ''}{r.sm3 ? <div>{fmtNum(r.sm3 / 1e3, 0)} k Sm³</div> : null}{r.water ? <div className="muted" style={{ fontSize: 11 }}>+{fmtNum(r.water / 1e3, 1)} k m³ water</div> : null}</td>
               <td className="r num"><b>{inr(r.saveL)}</b></td>
               <td className="r num">{inr(r.capex)}</td>
               <td className="r num" style={{ color: r.pay <= 1 ? 'var(--good)' : r.pay > 4 ? 'var(--warn)' : undefined }}>{yrs(r.pay)}</td>
-              <td className="r num">{r.irr != null ? `${fmtNum(Math.min(r.irr * 100, 999), 0)} %` : '—'}</td>
-              <td className="r num" style={{ color: r.npv < 0 ? 'var(--bad)' : undefined }}>{inr(r.npv)}</td>
+              <td className="r num">{r.irr == null ? '—' : r.irr > 1 ? '> 100 %' : `${fmtNum(r.irr * 100, 0)} %`}<div style={{ fontSize: 11.5, color: r.npv < 0 ? 'var(--bad)' : 'var(--muted)' }}>{r.npv < 0 ? '−' : ''}{inr(Math.abs(r.npv))}</div></td>
               <td className="r num">{fmtNum(r.tco2, 0)}</td>
-              <td><Tag c={CONF[r.conf]}>{r.conf}</Tag></td>
-              <td><Tag c={DEC_TONE[r.decision]}>{DECISION[r.decision]}</Tag></td>
+              <td><Tag c={DEC_TONE[r.decision]}>{DECISION[r.decision]}</Tag><div style={{ fontSize: 11, marginTop: 3 }}><span className="inv-dot" style={{ background: `var(--${CONF[r.conf]})`, width: 7, height: 7, marginRight: 5 }} />{r.conf} confidence</div></td>
             </tr>))}
-            <tr><td /><td><b>Total</b></td><td /><td className="r num"><b>{gwh(t.kwh)}</b><div>{fmtNum(t.sm3 / 1e3, 0)} k Sm³</div></td><td className="r num"><b>{inr(t.save)}</b></td><td className="r num"><b>{inr(t.capex)}</b></td><td className="r num"><b>{yrs(t.pay)}</b></td><td /><td className="r num"><b>{inr(t.npv)}</b></td><td className="r num"><b>{fmtNum(t.tco2, 0)}</b></td><td /><td /></tr>
+            <tr><td /><td><b>Total</b></td><td /><td className="r num"><b>{gwh(t.kwh)}</b><div>{fmtNum(t.sm3 / 1e3, 0)} k Sm³</div></td><td className="r num"><b>{inr(t.save)}</b></td><td className="r num"><b>{inr(t.capex)}</b></td><td className="r num"><b>{yrs(t.pay)}</b></td><td className="r num"><b>{inr(t.npv)}</b></td><td className="r num"><b>{fmtNum(t.tco2, 0)}</b></td><td /></tr>
           </tbody>
         </table></div>
         <div className="inv-detail">

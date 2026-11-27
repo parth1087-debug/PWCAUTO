@@ -20,14 +20,14 @@ export const INV_CSS = `
 .inv-detail { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; padding: 14px 16px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.5; }
 .inv-detail h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
 .inv-ev { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; }
-.inv-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 24px; font-size: 12.5px; }
+.inv-notes { display: grid; grid-template-columns: 1fr; gap: 0; font-size: 12.5px; }
 .inv-notes div { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px dashed var(--line); }
 .inv-notes div span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
 .inv-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
 .inv-note { font-size: 12px; color: var(--muted); padding: 8px 16px 12px; line-height: 1.5; }
 .inv-share { height: 6px; border-radius: 3px; background: var(--bg-3); overflow: hidden; min-width: 60px; }
 .inv-share i { display: block; height: 100%; border-radius: 3px; }
-@media (max-width: 1100px) { .inv-cols { grid-template-columns: 1fr; } .inv-detail, .inv-notes { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .inv-cols { grid-template-columns: 1fr; } .inv-detail { grid-template-columns: 1fr; } }
 `;
 export const InvStyle = () => <style>{INV_CSS}</style>;
 
@@ -52,12 +52,12 @@ export function PriorityMatrix({ rows, onPick, sel, height = 300 }) {
         <XAxis type="number" dataKey="x" scale="log" domain={[0.05, 12]} ticks={[0.1, 0.25, 0.5, 1, 2.5, 5, 10]} tickFormatter={v => fmtNum(v, v < 1 ? 2 : 0)} stroke={p.axis} tickLine={false} axisLine={false} fontSize={11}
           label={{ value: 'Simple payback, years (log scale)', position: 'insideBottom', offset: -8, fontSize: 11, fill: p.axis }} />
         <YAxis type="number" dataKey="y" domain={[0, yMax]} stroke={p.axis} tickLine={false} axisLine={false} fontSize={11} width={52} tickFormatter={v => `₹${v} L`} />
-        <ZAxis type="number" dataKey="z" range={[60, 900]} />
+        <ZAxis type="number" dataKey="z" range={[140, 1300]} />
         <ReferenceLine x={2.5} stroke={p.axis} strokeDasharray="3 3" />
         <Tooltip cursor={{ strokeDasharray: '3 3' }} content={({ active, payload }) => active && payload?.length ? (() => { const d = payload[0].payload; return <TT><b>{d.n}. {d.name}</b><Row k="Saving" v={`${inr(d.saveL)}/yr`} /><Row k="Capex" v={inr(d.capex)} /><Row k="Payback" v={`${fmtNum(d.pay, 2)} yr`} /><Row k="tCO₂/yr" v={fmtNum(d.tco2, 0)} /></TT>; })() : null} />
         <Scatter data={data} isAnimationActive={false} onClick={d => onPick && onPick(d.id)} style={{ cursor: 'pointer' }}>
-          {data.map(d => <Cell key={d.id} fill={decColor(p, d.decision)} fillOpacity={sel === d.id ? 0.95 : 0.6} stroke={sel === d.id ? p.c1 : p.bg} strokeWidth={sel === d.id ? 2.5 : 2} />)}
-          <LabelList dataKey="n" position="center" fontSize={10} fill={p.bg} />
+          {data.map(d => <Cell key={d.id} fill={decColor(p, d.decision)} fillOpacity={sel === d.id ? 0.95 : 0.7} stroke={sel === d.id ? p.axis : p.bg} strokeWidth={2} />)}
+          <LabelList dataKey="n" content={({ x, y, width, height, value }) => <text x={x + width + 3} y={y + height / 2 + 4} fontSize={10.5} fill={p.axis} fontWeight={600}>{value}</text>} />
         </Scatter>
       </ScatterChart>
     </ResponsiveContainer>
