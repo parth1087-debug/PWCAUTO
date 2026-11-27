@@ -648,12 +648,12 @@ table.t { font-size: 13px; }
 
 /* ---------- sidebar modes: full · icons · hidden ---------- */
 .nav-sep { height: 1px; background: var(--line); margin: 10px 6px; }
-.wm-mark { display: none; width: 32px; height: 32px; border-radius: 8px; background: var(--brand); color: #fff; font-family: var(--display); font-weight: 800; font-size: 17px; place-items: center; }
+.wm-mark { display: none; width: 30px; height: 34px; fill: var(--text); }
 .app { transition: grid-template-columns .18s var(--ease); }
 .app.side-icons { grid-template-columns: 64px 1fr; }
 .app.side-hidden { grid-template-columns: 0 1fr; }
 .app.side-hidden .side { visibility: hidden; border: 0; }
-.app.side-icons .wm { display: none; } .app.side-icons .wm-mark { display: grid; }
+.app.side-icons .wm { display: none; } .app.side-icons .wm-mark { display: block; }
 .app.side-icons .logo { padding: 14px 0 10px; justify-content: center; }
 .app.side-icons .user-btn { padding: 6px; justify-content: center; margin: 4px 8px 8px; width: auto; }
 .app.side-icons .user-btn > :not(.av) { display: none; }

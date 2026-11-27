@@ -192,7 +192,7 @@ function Sidebar({ section, sub, sub2, signOut }) {
   const groups = [['Dashboards', mine.filter(a => a.type === 'dash')], ['Forms', mine.filter(a => a.type === 'form')], ['Sheets, decks and documents', mine.filter(a => ['xlsx', 'pptx', 'docx'].includes(a.type))]];
   return (
     <aside className="side">
-      <div className="logo"><span className="wm">FACLON<i>LABS</i></span><span className="wm-mark" aria-hidden>F</span></div>
+      <div className="logo"><span className="wm">FACLON<i>LABS</i></span><svg className="wm-mark" viewBox="0 0 189 214" role="img" aria-label="Faclon Labs"><path d="M95.1701 213.341L41.031 58.4721L20.9397 120.776L53.5509 145.519L59.3662 171.426L0.164307 128.324L42.7641 0L95.1701 155.69L147.006 2.2805L188.329 131.836L129.241 174.618L135.649 146.682L167.074 122.805L146.117 61.0947L95.1701 213.341Z" /></svg></div>
       <div style={{ position: 'relative' }}>
         <button className="user-btn" onClick={() => setMenu(m => !m)} aria-haspopup="menu"><Av u={user} /><div className="grow"><div className="u-n ellipsis">{user.name}</div><div className="u-r ellipsis">{user.role}</div></div><ChevronDown size={15} color="var(--muted)" /></button>
         {menu && <div className="menu" style={{ left: 10, right: 10, top: 54 }} onMouseLeave={() => setMenu(false)}>
